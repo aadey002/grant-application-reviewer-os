@@ -14,6 +14,11 @@ venv/
 # Node
 node_modules/
 .next/
+review-output/
+applications/
+*.db
+*.sqlite
+*.sqlite3
 
 # Archives
 *.zip

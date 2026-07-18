@@ -1,0 +1,5 @@
+{"reviews":[
+  {"review_id":"review-1","application":"../applications/review-1.pdf"},
+  {"review_id":"review-2","application":"../applications/review-2.pdf"},
+  {"review_id":"review-3","application":"../applications/review-3.pdf"}
+]}
