@@ -1,0 +1,410 @@
+[
+    {
+        "type": "text",
+        "text": "FY 2025 HRSA General Terms and Conditions ",
+        "text_level": 1,
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "These terms and conditions apply to all active awards. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1. Administrative Requirements ",
+        "text_level": 1,
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "You must comply with the laws, policies, and terms and conditions included in your Notice of Award (NOA). ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "This includes: ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "requirements of the authorizing statutes and implementing regulations for the programs under which your award is funded   \nappropriations acts provisions   \nterms and conditions included in the HHS Grants Policy Statement (HHS GPS), which HHS revised with an effective date of January 31, 2025.This includes the requirements of applicable HHS regulations, 45 CFR 75, and portions of 2 CFR Part 200. The HHS GPS applies to monetary actions only, including non-competing continuations.   \nthe HHS Administrative and National Policy Requirements (Appendix D of the HHS GPS), revised to include new language about environmental requirements and research involving potential procurement of synthetic nucleic acids.   \nrequirements included in the Notice of Funding Opportunity (NOFO); and   \npolicies specific to the award. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "In case of conflicting or inconsistent requirements, follow the order of precedence indicated in HHS Administrative and National Policy Requirements. This document provides statutory, regulatory, and executive requirements that apply to HHS awards. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "We may list exceptions to individual requirements stated above in the NOA. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Use of the terms “federal award,” “award,” and “grant” refers collectively to federal assistance awards, grants, and cooperative agreements, unless otherwise indicated. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Additionally, SAM.gov and Unique Entity Identifier (UEI) registration is required throughout the lifecycle of all HRSA awards. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "a. Funding Contingency ",
+        "text_level": 1,
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Funding beyond this budget period is contingent upon the availability of appropriated funds for this program, recipient satisfactory performance, program authority, compliance with the Terms and Conditions of the award, and a decision that continued funding is in the best interest of the Federal government. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "This award action is based on HRSA’s approval of the recipient’s application and any modifications at the time of this award. Continued support for this award may be subject to other programmatic considerations to the extent permitted by law, including, but not limited to, Administration priorities and court orders. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Should additional federal funds not be available and/or shifting priorities affect the programmatic objectives of this award, the recipient will work with HRSA to revise any workplan tasks and budget in accordance with 45 CFR 75.308 (Revision of budget and program plans) or any successor regulations that apply to the award. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "b. HRSA Adoption of 2 CFR 200 ",
+        "text_level": 1,
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "On Oct. 2, 2024, HHS published the Interim Final Rule explaining the department’s phased approach for adopting 2 CFR part 200. ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "HRSA awards are subject to the requirements in 45 CFR part 75, except as amended by the following provisions of 2 CFR part 200: ",
+        "page_idx": 1
+    },
+    {
+        "type": "table",
+        "img_path": "images/x99q75.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "\n\n<html><body><table><tr><td>2 CFR 200 Citation</td><td></td><td>NewThreshold</td></tr><tr><td>2CFRS200.1.Definitions,</td><td>Replaces45CFR75Citation 45 CFR §75.2.Definitions,</td><td>$50,000</td></tr><tr><td>\"Modified Total DirectCost\" 2CFRS200.313(e)</td><td>“ModifiedTotalDirectCost” 45 CFRS 75.320(e).Equipment,</td><td></td></tr><tr><td>Equipment,Disposition 2CFRS200.314(a)</td><td>Disposition</td><td>$10,000</td></tr><tr><td>Supplies 2CFRS200.320</td><td>45 CFRS 75.321(a).Supplies 45CFRS75.329.Procurement</td><td>$10,000</td></tr><tr><td>Procurement Methods (Micro-purchase threshold1)</td><td>Procedures (Micro-purchase threshold)</td><td>$50,000</td></tr><tr><td>2CFRS200.333.Fixed amountsubawards</td><td>45CFRS75.353.Fixedamount subawards</td><td>$500,000</td></tr><tr><td>2CFRS200.344.Closeout2</td><td>45CFRS75.381.Closeout</td><td></td></tr><tr><td>2CFRS200.414(f).Indirect costs,DeMinimisRate</td><td>45 CFRS75.414(f).Indirect (F&A) costs, (f)</td><td>15%</td></tr><tr><td>2CFRS200.501.Audit requirements</td><td>45CFRS75.501.Audit requirements</td><td>$1,000,000</td></tr></table></body></html>\n\n",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "c. Subrecipients and Recipients (Pass-Through Entities) Responsibilities ",
+        "text_level": 1,
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "The recipient is the entity that receives a federal award directly from HRSA. ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "The recipient can give a portion of the direct award to other organizations, called subrecipients, to accomplish the goals and objectives of the award. ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In this case, the recipient becomes a pass-through entity and the subrecipient’s award is called a subaward. ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "As a recipient, you must ensure the applicable general terms and conditions stated in this document flow down to subrecipients. See HHS Administrative and National Policy Requirements. ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "d. Prior Approval ",
+        "text_level": 1,
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "You must get prior approval for certain items, as stated in 45 CFR $\\S$ 75.308 and § 75.407. This includes significant rebudgeting of project costs. ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Significant budget changes require prior approval when they constitute a change of scope or exceed 25 percent of total costs or $\\mathbb{\\Phi}250{,}000$ , whichever is less, of the most recent approved award (budget period). Prior approval will also be required when rebudgeting includes ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "funding into a direct cost category not previously requested. If you are not sure your budget   \nchange is beyond the scope, contact your Grants Management Specialist (GMS).   \nWe do not automatically authorize prior approvals under 45 CFR § 75.308(d): o We do not waive cost-related or administrative prior approvals unless specifically stated in your NOA. You must submit these as a Prior Approval action via HRSA Electronic Handbooks (EHBs). o Only responses to prior approval requests signed by the Grants Management Officer (GMO) are valid. ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "If you act based on responses from other officials, you do so at your own risk. We do not consider these responses binding. ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "e. Funding Restrictions ",
+        "text_level": 1,
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "See your NOA, HHS Administrative and National Policy Requirements, and HRSA Legislative Mandates for funding restrictions, such as: ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "• Salary Cap (also see Salary Rate Limitation)   \n• Gun control   \n• Anti-lobbying   \n? Restrictions on abortion Ban on funding embryo research Limitation on use of funds for promotion of legalization of controlled substances Restriction of pornography on computer networks   \n• Restriction on the purchase of sterile needles Prohibition on certain telecommunications and video surveillance services or equipment. ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "f. Roles and Responsibilities. ",
+        "text_level": 1,
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "To see the roles and responsibilities of the GMS and the Program Official (PO) for your award, visit Manage Your Grant - Administrative Management. ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "g. Cybersecurity ",
+        "text_level": 1,
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "You need to follow specific cybersecurity guidelines if you access HHS systems or handle personally identifiable information (PII) or personal health information (PHI). ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "These include requirements such as: ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Creating a cybersecurity plan.   \n• Limiting access and training your staff on cybersecurity and privacy.   \n? Using multi-factor authentication and antivirus software. Routinely backing up data. Creating incident response plans and reporting any cybersecurity incidents to HHS. ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "For full details, see the Framework, the Cybersecurity Act of 2015 at 6 USC § 1533(d), and HHS Guidance. ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "h. Condition for Research Awards that Involve Procurement of Synthetic Nucleid Acids or Benchtop Synthesizers ",
+        "text_level": 1,
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Beginning April 26, 2025, HHS funds may only be used to procure synthetic nucleic acids or benchtop nucleic acid synthesis equipment from sources adhering to the Office of Science and Technology Policy Framework for Nucleid Acid Synthesis Screening. ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The HHS Administrative and National Policy Requirements provide a list of requirements applicable to HHS awards: ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "a. Conflict of Interest ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "See HRSA Federal Financial Assistance Conflict of Interest Policy (COI Policy) ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3. Financial Requirements ",
+        "text_level": 1,
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "a. Salary rate limitation (SRL) ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "See our Salary Cap Summary Table for the latest salary rate limitation. ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The HHS salary rate limitation applies to both direct and indirect costs for all applicable HHS awards. ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "b. Indirect Costs ",
+        "text_level": 1,
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "When HHS is the Federal Cognizant Agency or when HHS is acting as the shared-service provider for another Federal Cognizant Agency, HHS will issue [Negotiated Indirect Cost Agreements] (NICRAs) that incorporate the HHS SRL, to comply with HHS Appropriations Act requirement. ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "If you do not have an approved indirect cost rate that complies with the HHS SRL requirement, you must take and document the following actions: ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Identify all HHS awards where HHS funds are used to pay any salary that exceeds the SRL. This includes both direct and indirect costs, both in whole and any portion of a salary that at a full-time equivalent exceeds the SRL.   \nHave written policies and procedures that ensure you do not draw HHS award funds, direct or indirect, to pay salaries above the HHS SRL. ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "c. Payments ",
+        "text_level": 1,
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Grant funds must be drawn and Federal Financial Reports (FFR) filed using the HHS Payment Management System (PMS). ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The Division of Payment Management, Financial Management Services, Program Support Center, manages PMS and has instructions for obtaining payments. ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Submit direct inquiries about payments: ONE-DHHS Help Desk for PMS Support at 1-877-614-5533 or PMSSupport@psc.hhs.gov. ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "If you do not have access, complete a PMS Access Form (PMS/FFR Form). If you have any questions about accessing PMS, contact the PMS Liaison Accountant. ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "d. Program income ",
+        "text_level": 1,
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "HRSA awards use the additive method for program income earned from your award. ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4. Reporting Requirements ",
+        "text_level": 1,
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Review your NOA, HHS Administrative and National Policy Requirements, and HRSA Manage Your Grant for required reports and method of submission. ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "a. General Reports may include: ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "• Federal Financial Reports (FFR) Noncompeting Continuation (NCC) Progress Reports Tangible Personal Property Report (SF-428) for Equipment and Supplies Real Property Report (SF-429) Subaward Reporting under the Federal Funding Accountability and Transparency Act (FFATA) reporting at sam.gov Recipient integrity and performance ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "b. Audit Reports ",
+        "text_level": 1,
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "If your organization is not a for-profit organization and is required to have audits in accordance with 45 CFR part 75, Subpart F (See 2 CFR § 200.501) because it spends $\\mathbb{\\Phi}1,000,000$ or more in federal funds in one fiscal year, submit the audit reports to the Federal Audit Clearinghouse. Commercial organizations required to have audits should submit the audit reports directly to HRSA. ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "c. Reporting Fraud, Waste, Abuse, and Mismanagement ",
+        "text_level": 1,
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The HHS Office of the Inspector General (OIG) maintains a toll-free number (1-800- HHS-TIPS [1-800-447-8477]; TTY: 1-800-377-4950) and website for receiving information concerning fraud, waste, abuse, and mismanagement under HHS programs. ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Additionally, information may be submitted by mail to: ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Office of the Inspector General   \nDepartment of Health and Human Services   \nAttn: HOTLINE   \n330 Independence Ave., SW   \nWashington DC 20201 ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Such reports are treated as sensitive material. You can decline to give your name if you choose to remain anonymous. ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "5. Termination ",
+        "text_level": 1,
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "a. Circumstances ",
+        "text_level": 1,
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "HRSA or the pass-through entity may terminate this award under any of the following circumstances, per 45 CFR  § 75.372: ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "If your organization fails to comply with the terms and conditions of the award • For cause With your consent, in which case you and HRSA must agree on the termination conditions, including the effective date and, in the case of partial termination, the portion to be terminated ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "By you, upon sending HRSA or the pass-through entity a written notification setting forth the reasons for termination, the effective date, and, in the case of partial termination, the portion to be terminated. ",
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "However, if HRSA or the pass-through entity determines, in the case of partial termination, that the reduced or modified portion of the award or subaward will not accomplish the purposes for which the award was made, HRSA or the pass-through entity may terminate the federal award. ",
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "b. Appeal ",
+        "text_level": 1,
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "HRSA affords appeal rights for remedies for non-compliance, including termination.   \nSee 45 CFR § 75.374 for opportunities to object, hearings, and appeals. ",
+        "page_idx": 5
+    }
+]

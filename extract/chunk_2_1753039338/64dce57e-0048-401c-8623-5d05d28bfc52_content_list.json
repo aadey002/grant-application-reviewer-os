@@ -1,0 +1,732 @@
+[
+    {
+        "type": "text",
+        "text": "2) Follow the NOFO instructions. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": ". Place all information in the order we request.   \n. Write clearly. Complete all application elements and responses to the program requirements. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "3) Keep your audience in mind. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "•  Do not assume that reviewers are familiar with your organization, service area, barriers to health care, or health care needs in your community. •  Think about the review criteria when you write the application. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "4) Be brief and clear. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Provide accurate and honest information. • Include candid accounts of problems and realistic plans to address them. If you omit any required information or data, explain why. Match content in tables, charts, and attachments with the proposal narrative. Your budget should reflect back to the proposed activities. • Fill out forms accurately and completely. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "5) Be organized and logical. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "•  Many applications fail to receive a high score because reviewers: o  Cannot follow the applicant’s thought process. $\\bigcirc$ Determine that application parts do not fit together. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "6) Show evidence of solid fiscal management. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "•  Your application should show that you'll be responsible with public funds. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "7) Attend to technical details. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "•  An expired SAM registration is the top reason applications are rejected.   \n•  Reviewers also reject applications because of file issues. Do not: o  Exceed Grants.gov's 50-character limit for file names $\\bigcirc$ Include special characters in the file name o  Save in the wrong version of Adobe Acrobat o  Save in any file type that we do not accept. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "8) Be careful when you use attachments. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Do not use attachments for information we require in the body of the application.   \nCross-reference all tables and attachments to the appropriate text in the application.   \nUpload the attachments in the order the NOFO requires. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "9) Review your application to ensure it’s accurate and complete. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Before you apply, print out your application. Review to ensure you: ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "o Complied with page limits o Included all attachments ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "10) Submit all information at the same time. ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We will not:   \no  Consider additional information or materials you submit late.   \no Accept emailed applications or supplemental materials once we receive your application. ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "3.8. How to withdraw your application ",
+        "text_level": 1,
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "You may withdraw your application any time before we issue an award. Email ApplicationWaivers@hrsa.gov and the PC and GMS listed in the NOFO. ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "4. AFTER YOU APPLY ",
+        "text_level": 1,
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We review each application to ensure you’re eligible and it’s responsive, complete, and conforms with the NOFO’s requirements. This includes complying with programmatic, budgetary, and grants management requirements. ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Note: ",
+        "text_level": 1,
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "1) We check that each application is complete. ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2) If your application does not pass the initial screening, we’ll email you through the EHBs. (We’ll send it to the person signing the application on behalf of the organization.) The email will tell you that we will not consider the application and you will not receive funding. It is up to us whether we make an award or not at a particular funding level. You cannot appeal the decision to us/HRSA, HHS officials, or boards.   \n3) We screen to make sure you’re eligible. We rate each eligible and complete application based on the program elements and merit review criteria in the NOFO’s Merit review section. ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "How we ensure objectivity in our review ",
+        "text_level": 1,
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Experts serving on a merit review panel perform the reviews. Experts have the training and experience in fields or disciplines related to the program. ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We screen each reviewer to avoid conflicts of interest. Reviewers must give an objective, unbiased evaluation based on the review criteria. ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In selecting review committee members, we may consider other factors to improve the makeup of the committee, for example, where they’re located. ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Review criteria ",
+        "text_level": 1,
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The criteria allow the review panel to look at the quality of a proposed project and decide how likely it is to succeed. The criteria are related, and we consider them as a whole when judging the overall quality of an application. ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Note: We created indicators for each review criterion. These help you present important information related to that criterion and to provide the reviewer with a standard for evaluation. The NOFO outlines the review criteria outlined in detail and scoring points. ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We may apply funding factors as we review. Funding factors are other factors that we may use in selecting approved applications for award. We apply funding factors after the merit review panel ranks the applications. ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In the NOFO you’ll learn: ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "What information you need to give us so it can be determined if you qualify for the funding factor   \nWho decides if you’ve met the funding factor(s) (the merit review panel or HRSA staff) ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The NOFO explains what we prefer, our priorities, or anything special we may consider. We’ll be clear on how this may affect your application. For example, whether they result in us giving additional points. However, qualifying for a funding factor does not guarantee that your application will be funded. ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "How we notify you of an award ",
+        "text_level": 1,
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "You’ll receive written notification through the EHBs of the result of your application review. This includes a summary of the expert committee’s evaluation of your application’s strengths, mets7, and weaknesses, as well as a score as applicable. ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "If we award you funding, we’ll email a Notice of Award (NOA) to the AOR and PI\\PD. ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The Grants Management Officer (GMO) issues the NOA through our Electronic Handbooks (EHBs). ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The NOA is a legal document. It says we’ve made an award and tells you: ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "• How much funding we’re awarding   \n• What terms and conditions you must follow When the award begins Non-federal share (if it applies) When we expect the project to end (total period of performance) ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The NOA is the only document authorizing you to begin work on the project. Any other communication announcing that we selected your application does not authorize you to begin work. ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We issue the NOA before the award’s start date. You can find the expected start date in the NOFO’s Summary. ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "You may have to respond to conditions in the NOA before you draw/request funds. ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Until an NOA for the initial budget period has been issued, any costs for the project are at your own risk. ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Registering in ID.me for Payment Management System (PMS) Access ",
+        "text_level": 1,
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "If you receive an NOA and accept the award, you will need to create an account with ID.me to access HHS’ PMS system. PMS is the tool used for managing award payments. This is a new requirement that improves identity assurance since it enables multi-factor authentication. For more information, visit the PMS website. ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "How to report on your award ",
+        "text_level": 1,
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "If you receive an award from us, you must comply with standard reporting and review activities. The NOFO or NOA will note if you do not have to do this. Visit the NOFO’s Reporting section to see if your program requires program-specific reporting. ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The NOA provides specific information; however, these are the standard requirements: ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Complete an audit ",
+        "text_level": 1,
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Effective October 1, 2024, HHS adopted the following superseding provision: 2 CFR 200.501, Audit requirements which increases the single audit threshold to $\\mathbb{\\Phi}1\\,,000\\,,000$ . ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Complete status reports ",
+        "text_level": 1,
+        "page_idx": 3
+    },
+    {
+        "type": "table",
+        "img_path": "images/4pevh4.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "\n\n<html><body><table><tr><td>Type of report</td><td>Why we need it</td><td>When it's due</td><td>Where to submit it</td></tr><tr><td>Federal Financial Report</td><td>Tells us what you've spent on the project.</td><td>Every year after the end of the budget period. Check reporting requirements on your Notice of</td><td>Payment Management System (PMS)</td></tr><tr><td>Progress report(s)</td><td>Lets us knowhow the project is going so far.</td><td>Award. It depends. Check your Notice of Award. It could be once every three months, once every six months, or once a year.</td><td>Electronic Handbooks (EHBs)</td></tr></table></body></html>\n\n",
+        "page_idx": 3
+    },
+    {
+        "type": "table",
+        "img_path": "images/qlceq4.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "\n\n<html><body><table><tr><td>Type of report</td><td>Why we need it</td><td>When it's due</td><td>Where to submit it</td></tr><tr><td>Final report</td><td>Captures your entire project: Goals you had. Strategies you used. Barriers you faced. Impact you made.</td><td>120 calendar days after the period of performance ends.</td><td>Electronic Handbooks (EHBs)</td></tr><tr><td>Tangible personal property report</td><td>Details equipment and supplies you purchased over $10,000 per item</td><td>120 calendar days after the period of performance ends. Note: You only have to report if you made purchases like these.</td><td>Electronic Handbooks (EHBs)</td></tr></table></body></html>\n\n",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Effective October 1, 2024, HHS adopted the following superseding provision: 2 CFR 200.344, Closeout. ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Transparency Act reporting ",
+        "text_level": 1,
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "New awards (“Type 1”8) must report information that the Federal Funding Accountability and Transparency Act (FFATA) requires. ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "You must report during the entire period of performance. This applies to anyone who receives a grant or cooperative agreement. For example, a competing continuation (“Type 2”) or non-competing continuation (“Type 5”). ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "What to report ",
+        "text_level": 1,
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "•  Each first-tier subaward of $\\mathbb{\\Phi}25{,}000$ or more in federal funds Executive total compensation for you and your subrecipient’s five most highly paid executives (See Appendix A to 2 CFR part 170) ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Read your NOA for more details. ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "5. POLICIES, ASSURANCES, DEFINITIONS, AND ACRONYMS ",
+        "text_level": 1,
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "5.1. Administrative and national policy requirements ",
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "If you receive a Notice of Award, you must comply with everything in this section including the following regulations and requirements. ",
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "45 CFR part 75 - Uniform Administrative Requirements, Cost Principles, and   \nAudit Requirements for HHS Awards (UAR)   \nEffective October 1, 2024, HHS adopted the following superseding provisions:   \no 2 CFR 200.1, Definitions, Modified Total Direct Cost   \no 2 CFR 200.1, Definitions, Equipment   \no 2 CFR 200.1, Definitions, Supply   \no 2 CFR 200.313(e), Equipment, Disposition   \no 2 CFR 200.314(a), Supplies   \no 2 CFR 200.320, Methods of procurement to be followed   \no 2 CFR 200.333, Fixed amount subawards   \no 2 CFR 200.344, Closeout   \no 2 CFR 200.414(f), Indirect (F&A) costs   \no 2 CFR 200.501, Audit requirements   \nHHS Grants Policy Statement (October 1, 2024)   \nHHS Administrative and National Policy Requirements ",
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgment of federal funding ",
+        "text_level": 1,
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "You must comply with Public Law (P.L.) 118-47, and follow Division D, Title V, $\\S$ 505 and state your acceptance of federal funds. ",
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Refer to Communicating and Acknowledging Federal Funding for how to comply. ",
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Conflict of interest ",
+        "text_level": 1,
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We established a Federal Financial Assistance Conflict of Interest Policy (COI Policy) to comply with 45 CFR § 75.112. Under this policy: ",
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "•  You must disclose in writing any potential conflict of interest We must: o  Explain how we will handle financial conflicts of interest o  Decide which outside activities, relationships, or financial interests are proper or improper o Give you enough time to notify us of outside activities, relationships, or financial interests ",
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Offer a review process ",
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Financial management standards ",
+        "text_level": 1,
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Follow the guidance at 45 CFR Subpart E – Cost Principles and  45 CFR 75.302. ",
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "You must put internal controls in place. This ensures that costs you charge to HRSA awards are allowable, reasonable, allocable, necessary, and documented. For example, you must ensure you only charge actual time you worked on HRSA projects to HRSA awards, and your management approved the time worked. For more details, visit Internal Controls at a Glance | Tips for Developing Effective Internal Controls ",
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "You must also have internal controls that ensure that you monitor and evaluate costs you charge to HRSA awards through subawards. ",
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "HRSA funds must retain their award-specific identity. Do not commingle with state funds or other federal funds. “Commingling funds” typically means depositing or recording funds in a general account without the ability to identify each specific source of funds for any spending. ",
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Healthy People 2030 ",
+        "text_level": 1,
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Led by HHS, Healthy People 2030 is the nation's 10-year plan for addressing our most critical public health priorities and challenges. ",
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Since 1980, HHS's Office of Disease Prevention and Health Promotion has set measurable objectives and targets to improve the health and well-being of the nation. ",
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Life sciences research program requirement ",
+        "text_level": 1,
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The following requirement applies only to a life sciences research program that has the potential to procure synthetic nucleic acids or benchtop nucleic acid synthesis equipment: ",
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Beginning April 26, 2025, HHS funds may only be used  to procure synthetic nucleic acids or benchtop nucleic acid synthesis equipment  from sources adhering to the Office of Science and Technology Policy Framework for Nucleic Acid Synthesis Screening. HHS awardees are expected to adhere to the Office of Science and Technology Policy Framework for Nucleic Acid Synthesis Screening for HHS projects. ",
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Mandatory disclosures ",
+        "text_level": 1,
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "You must submit any information related to violations of federal criminal law involving fraud, bribery, or gratuity violations potentially affecting the federal award. See Mandatory Disclosures, 45 CFR 75.113. ",
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "How to tell us about a violation ",
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Write to us: ",
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "HRSA via attachment as part of your application ",
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "AND ",
+        "text_level": 1,
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "U.S. Department of Health and Human Services Office of Inspector General ",
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "For full details, visit HHS OIG Grant Self Disclosure Program ",
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Prohibition on certain telecommunications and video surveillance services or equipment For details, see the HRSA Grants Policy Bulletin Number: 2021-01E. ",
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Smoke-free workplace   \nFor details, see Pro-Children Act – Non-Smoking in the HHS Administrative and National Policy Requirements. Trafficking in persons   \nFor details, see Trafficking Victims Protection: HHS Administrative and National Policy Requirements. ",
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "5.2. Compliance requirements at a glance ",
+        "text_level": 1,
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/xypphv.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "\n\n<html><body><table><tr><td>Recipient type</td><td>Administrative requirements</td><td>Cost principles</td><td>Audit requirements</td></tr><tr><td>State, Local, and Tribal Governments</td><td>45 CFR part 75</td><td>45CFRpart75; subpart E</td><td>2 CFR200.501,Audit requirements</td></tr><tr><td>Colleges and Universities</td><td>45CFRpart 75</td><td>45 CFR part 75; subpart E</td><td>2 CFR 200.501,Audit requirements</td></tr><tr><td>Non-Profits</td><td>45CFRpart75</td><td>45 CFR part 75; subpart E</td><td>2 CFR200.501,Audit requirements</td></tr><tr><td>Hospitals</td><td>45CFRpart75</td><td>45CFRpart75 Appendix IX</td><td>2 CFR200.501,Audit requirements</td></tr><tr><td>For-Profits</td><td>45CFRpart75</td><td>48CFRsubpart31.2 (FAR 31.2)</td><td>2CFR200.501,Audit requirements</td></tr></table></body></html>\n\n",
+        "page_idx": 7
+    },
+    {
+        "type": "table",
+        "img_path": "images/9ob7nb.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "\n\n<html><body><table><tr><td>Recipient type</td><td>Administrative requirements</td><td>Cost principles</td><td>Audit requirements</td></tr><tr><td>Foreign</td><td>45 CFR part 75</td><td>As stated in this table's previous five rows for each recipient type: 45 CFR part 75; subpart E:45CFRpart75, Appendix IX; or 48 CFR subpart 31.2 (FAR 31.2)</td><td>2CFR200.501,Audit requirements exceptwherewe determine that applying these subparts would be inconsistent with the international obligations of the United States or the statutes or regulations of a foreign government.</td></tr></table></body></html>\n\n",
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5.3. Definitions ",
+        "text_level": 1,
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Refer to 45 CFR § 75.2 Definitions. Effective October 1, 2024, the three definitions (Modified Total Direct Cost, Equipment, and Supply) listed in 5.1. Administrative and national policy requirements supersede. ",
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5.4. Acronyms ",
+        "text_level": 1,
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "AL Assistance Listing (formerly the Catalog of Federal Domestic Assistance (CFDA))   \nAO Authorizing Official   \nAOR Authorized Organization Representative   \nBPHC Bureau of Primary Health Care   \nBHW Bureau of Health Workforce   \nCAS Cost Allocation Services   \nCCR Central Contractor Registration (now defunct)   \nCFR Code of Federal Regulations   \nCGMO Chief Grants Management Officer   \nDSO Digital Services Operation   \nDUNS Data Universal Numbering System   \nEHBs Electronic Handbooks   \nEIN Employer Identification Number   \nEO Executive Order   \nFAQ Frequently Asked Questions   \nFAR Federal Acquisition Regulation   \nFFATA Federal Funding Accountability and Transparency Act   \nFORHP Federal Office of Rural Health Policy   \nFY Fiscal Year   \nF&A Facilities and Administration   \nGMO Grants Management Officer   \nGMS Grants Management Specialist   \nHAB HIV/AIDS Bureau   \nHHS Health and Human Services   \nHRSA Health Resources and Services Administration   \nHSB Healthcare Systems Bureau   \nIE Internet Explorer   \nMCHB Maternal and Child Health Bureau   \nMTDC Modified Total Direct Cost   \nNCC Noncompeting Continuation   \nNHAS National HIV/AIDS Strategy   \nNOA Notice of Award   \nNOFO Notice of Funding Opportunity   \nOFAM Office of Federal Assistance Management   \nOMB Office of Management and Budget   \nORO Office of Regional Operations   \nOS Operating System   \nPC Program Contact   \nPD Project Director   \nP.L. Public Law   \nPO Project Officer / Program Official   \nPOC Point of Contact   \nR&R Research and Related   \nSAM System for Award Management   \nSF Standard Form   \nTA Technical Assistance   \nTIN Tax Identification Number   \nUEI Unique Entity Identifier ",
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "6. CONTACT US ",
+        "text_level": 1,
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "6.1. HRSA contacts ",
+        "text_level": 1,
+        "page_idx": 9
+    },
+    {
+        "type": "table",
+        "img_path": "images/qw35f5.jpg",
+        "table_caption": [],
+        "table_footnote": [
+            "Note: The PC and the GMS work as a team in many award-related activities. "
+        ],
+        "table_body": "\n\n<html><body><table><tr><td colspan=\"2\">Topic Whotocontact</td><td>Wheretofindcontactdetails</td></tr><tr><td>Program-related</td><td>Program contact (PC)</td><td>NOFO Section Agency contacts</td></tr><tr><td>Business, administrative, or financial</td><td>Grants management specialist (GMS)</td><td>NOFO Section Agency contacts</td></tr></table></body></html>\n\n",
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "6.2. Grants.gov customer support ",
+        "text_level": 1,
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "If you have a question or need technical support Grants.gov Call Center   \nCall: 1-800-518-4726 (International: 606-545-5035) Email: support@grants.gov ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "• Available 24 hours a day, 7 days a week, except federal holidays. Visit Support Center or Self-Service Knowledge Base. ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Note: Get a case number when you call so you can track your issue. ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "7. FAQ AND CHECKLISTS ",
+        "text_level": 1,
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "7.1. Software ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "7.1.1. What software do I need to use Grants.gov?   \nYou’ll need latest compatible version of Adobe Reader. Use Grants.gov’s Adobe Acrobat Reader Software Tip Sheet. 7.1.2. Can I download Adobe Reader onto my computer?   \nMaybe. Your organization’s computer network may not allow you to download software. Check with your IT department or system administrator. ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "7.1.3. Can I use Grants.gov on a Macintosh (Mac)? Yes. ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "7.2.  BUDGET INFORMATION - Non-Construction Programs (SF-424A) ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "7.2.1. Where do I find this form? In the application package ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "7.2.2. How long is the budget period? Budget periods are generally 12 months. ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "7.2.3. How many budgets must I include when I apply?   \nWhen you apply, you must submit one-year budgets for each of budget period within the requested period of performance. ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "7.3. Receiving your application ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "7.3.1. When must I apply?   \nYou must apply on Grants.gov by 11:59 p.m. ET on the due date. In some cases, the time may differ. Refer to the NOFO for an exact date and time. ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Grants.gov must receive and verify your application under the correct funding ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "HRSA Heath Resources& Services Administration ",
+        "text_level": 1,
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "opportunity number by the application deadline. It can take up to two days for Grants.gov to verify your application. ",
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Best practice: Apply at least three calendar days before the deadline. If you have any errors or technical problems, you’ll have time to correct them and apply before the deadline. ",
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "7.3.2. How can I track my application? What emails will you and Grants.gov send? ",
+        "text_level": 1,
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Check the status of your application after you apply using Track My Application. Grants.gov will include this link when they email you to confirm they received your application. ",
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Grants.gov will send four emails to your Authorizing Organization Representative (AOR). ",
+        "page_idx": 11
+    },
+    {
+        "type": "table",
+        "img_path": "images/sayrsz.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "\n\n<html><body><table><tr><td>Email Number</td><td>Subject line</td><td>What it tells you</td><td>When you'll get it</td></tr><tr><td>1</td><td>Submission Receipt</td><td>Confirms Grants.gov received your application</td><td>Within 48 hours</td></tr><tr><td>2</td><td>Submission Validation or Rejected with Errors</td><td>Tells you whether Grants.gov verified or rejected it</td><td>Within48hours</td></tr><tr><td>3</td><td>Grantor Agency Retrieval Receipt</td><td>Informs you that we (HRSA) received it</td><td>Hours after you receive the second email</td></tr><tr><td>4</td><td>Agency Tracking Number Assignment</td><td>Gives you an application tracking number</td><td>Within three business days</td></tr></table></body></html>\n\n",
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "7.4. Grants.gov FAQ and training guides ",
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Frequently Asked Questions by Applicants Applicant Training ",
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "7.5. Am I ready to apply? ",
+        "text_level": 1,
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": " I’ve read the NOFO and this Application Guide.   \n My organization is eligible to apply for this funding opportunity.   \n I’m applying to the correct funding opportunity number.   \n My proposed project responds to the program’s goals and objectives.   \n My application does not go over the award ceiling listed in the NOFO.   \n I completed all forms and attachments listed in the NOFO and this Guide.  My application does not go over the page limit.   \n I’m planning to apply at least three calendar days before the deadline.   \n I received an email from Grants.gov confirming they received my application.   \n I’ve received a Grants.gov email with my agency application tracking number. ",
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "",
+        "page_idx": 12
+    }
+]

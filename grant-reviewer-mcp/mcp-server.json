@@ -1,0 +1,14 @@
+{
+  "name": "agent_generated_grant_reviewer",
+  "exhibit_name": "Grant Reviewer MCP",
+  "type": 3,
+  "command": "sh /workspace/grant-reviewer-mcp/run.sh",
+  "args": [],
+  "env": {},
+  "description": "Comprehensive grant evaluation system for HRSA, SAMHSA, and other federal health grant applications. Provides autonomous AI-driven evaluation with professional scoring, detailed comments, and complete reviewer worksheets following agency-specific standards and guidelines.",
+  "description_for_agent": "Professional grant evaluation MCP server that processes PDF/Word grant applications and NOFOs, generates agency-compliant scores and comments (HRSA/SAMHSA), creates reviewer worksheets, validates completeness, and provides detailed feedback for funding decisions. Supports document analysis, criterion-based scoring, strength/weakness identification, and report generation.",
+  "user_params": {
+    "args": {},
+    "env": {}
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "folders": [],
+  "documents": [
+    {
+      "id": 1,
+      "title": "HRSA Scoring Rubric.doc",
+      "filename": "20250721_052526_HRSA Scoring Rubric.doc",
+      "file_size": 61440,
+      "agency": "HRSA",
+      "document_type": "rubric",
+      "status": "uploaded",
+      "description": "HRSA scoring rubric for grant evaluation",
+      "tags": "HRSA,rubric,scoring",
+      "created_at": "2025-07-20 21:25:26.780492",
+      "updated_at": "2025-07-20 21:25:26.791140"
+    },
+    {
+      "id": 2,
+      "title": "Guidelines for Writing Strengths-Weaknesses and Met.pdf",
+      "filename": "20250721_052531_Guidelines for Writing Strengths-Weaknesses and Met.pdf",
+      "file_size": 191288,
+      "agency": "HRSA",
+      "document_type": "guidelines",
+      "status": "uploaded",
+      "description": "Guidelines for writing strengths, weaknesses and met criteria comments",
+      "tags": "HRSA,guidelines,comments,evaluation",
+      "created_at": "2025-07-20 21:25:31.696120",
+      "updated_at": "2025-07-20 21:25:31.706629"
+    },
+    {
+      "id": 3,
+      "title": "HRSA Scoring Rubric.doc",
+      "filename": "20250721_054030_HRSA Scoring Rubric.doc",
+      "file_size": 61440,
+      "agency": "HRSA",
+      "document_type": "application",
+      "status": "uploaded",
+      "description": "Official HRSA scoring rubric for grant evaluation",
+      "tags": "",
+      "created_at": "2025-07-20 21:40:30.472971",
+      "updated_at": "2025-07-20 21:40:30.478905"
+    },
+    {
+      "id": 4,
+      "title": "Guidelines for Writing Strengths-Weaknesses and Met.pdf",
+      "filename": "20250721_054035_Guidelines for Writing Strengths-Weaknesses and Met.pdf",
+      "file_size": 191288,
+      "agency": "HRSA",
+      "document_type": "application",
+      "status": "uploaded",
+      "description": "Official guidelines for writing reviewer comments",
+      "tags": "",
+      "created_at": "2025-07-20 21:40:35.455664",
+      "updated_at": "2025-07-20 21:40:35.460928"
+    }
+  ],
+  "evaluations": [
+    {
+      "id": 1,
+      "document_id": 2,
+      "evaluation_type": "comprehensive",
+      "status": "completed",
+      "overall_score": 85.5,
+      "agency": "HRSA",
+      "created_at": "2025-07-20 21:25:36.277604",
+      "completed_at": "2025-07-20 21:25:41.768551"
+    },
+    {
+      "id": 2,
+      "document_id": 3,
+      "evaluation_type": "comprehensive",
+      "status": "completed",
+      "overall_score": 85.5,
+      "agency": "HRSA",
+      "created_at": "2025-07-20 21:40:59.719761",
+      "completed_at": "2025-07-20 21:41:05.107071"
+    }
+  ],
+  "extracted_at": "2025-07-21T07:36:01.950573"
+}

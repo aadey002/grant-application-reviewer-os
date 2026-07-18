@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+.env.*
+!.env.example
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Node
+node_modules/
+.next/
+
+# Archives
+*.zip
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Personal / sensitive documents (resumes, RCI forms, specific-expertise docs)
+Adetoro_Oriaifo*
+SAMHSA_RCI*
+SAMHSA RCI*
+RCI Form*
+SM-26-*
+FINAL SM-26-*
+
+# Test artifacts from MiniMax Agent
+test.txt
+test.pdf
+test_*.txt
+simple_test.txt
+debug_test.txt
+diagnostic_test.txt
+deploy_url.txt
+drag_and_drop_test.txt
+drag_drop_test.txt
+final_test_upload.txt
+persistence_test.txt
+upload_test.txt

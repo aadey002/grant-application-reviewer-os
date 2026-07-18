@@ -1,0 +1,114 @@
+[
+    {
+        "type": "text",
+        "text": "Application Scoring Criteria ",
+        "text_level": 1,
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Applications will be screened jointly by ONDCP and SAMHSA to determine whether applicants meet all statutory eligibility requirements as outlined in this RFA.  Applications submitted by coalitions that meet all statutory eligibility requirements will then be scored by a peer review panel according to the evaluation criteria described above. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Peer reviewers will score each bullet for questions 1, 2, 3, and 5 using the following definitions of each descriptor: ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Outstanding: The applicant organization explicitly addresses the bullet by providing comprehensive descriptions, thorough details, and examples.  Relevant examples and data are included to support the information presented.  The applicant organization demonstrates a strong understanding of the topic and the level of detail reinforces each response clearly and how the project will be implemented. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Very Good: The applicant organization provides significant descriptions and relevant details in addressing the bullet but the response is not fully comprehensive.  The applicant organization demonstrates a sound understanding of the topic and includes pertinent examples.  It is possible to specify what makes the response better than acceptable but not up to the standards of outstanding. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Acceptable: The applicant organization provides a basic response to the bullet but does not include enough detail or pertinent examples.  Key descriptions, details, and examples are limited. The applicant organization does not effectively translate the requirements of the RFA into practice. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Marginal: The applicant organization provides minimal details and insufficient descriptions that do not completely answer the bullet.  Limited information is presented or the applicant merely repeats information included in the RFA.  The applicant may answer part of the bullet but miss a key point or there are major gaps in the information presented. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Unacceptable:  The applicant organization does not explicitly address the bullet.  The applicant organization states the question, but does not elaborate on the response.  The applicant organization skips or otherwise ignores the question or includes irrelevant information that does not answer the question.  As a result, the answer is completely deficient in addressing the bullet. ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "For Question 4, peer reviewers will provide an overall rating for the 12-Month Action Plan using the following definitions of each descriptor: ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Outstanding: It fully addresses both DFC goals.  The Action Plan includes objectives that coincide with problems identified in the data provided in Question 3 of the Project Narrative. The strategies and activities included will effectively address each objective.  The Action Plan must fully meet all four of the following requirements: (1) The template provided in Table 4 is used; (2) The two DFC goals in Table 3 are included; (3) All of the objectives are measurable (change to be measured is identified) and include a specific date by when change will be accomplished, how much change will occur and the population addressed; and (4) At least two named substances are addressed. ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Very Good: The two DFC goals are addressed but one of the goals is not fully comprehensive or not completely in alignment with the identified data provided in Question 3.  The strategies and activities will effectively address each objective. The Action Plan must fully meet all four of the following requirements: (1) The template provided in Table 4 is used; (2) The two DFC goals in Table 3 are included; (3) All of the objectives are measurable (change to be measured is identified) and include a specific date by when change will be accomplished, how much change will occur and the population addressed; and (4) At least two named substances are addressed. ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Acceptable: The two DFC goals are satisfactorily addressed but are not comprehensive and do not fully coincide with the data provided in Question 3.  It is not clear that the strategies and activities will allow the objectives to be met.  Not all of the objectives are measurable. ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Marginal: The two DFC goals are not satisfactorily addressed and are not in alignment with the data presented in Question 3.  Insufficient strategies and activities are included that will not allow the objectives to be met.  The objectives are not measurable. ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Unacceptable: The applicant organization skips or otherwise fails to address the criteria for the Action Plan.  The required template is not used.  None of the objectives are measurable. ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "\\*Example of a measurable objective:  By 9/29/15 (specific date) increase by $5\\%$ (amount of change) perception of peer disapproval of alcohol use (what change will be measured) among 8, 10, and 12th grade students (population to be addressed) by youth survey results. ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Point scale ranges are provided below: ",
+        "text_level": 1,
+        "page_idx": 2
+    },
+    {
+        "type": "table",
+        "img_path": "images/hh6bkd.jpg",
+        "table_caption": [
+            "Questions 1 & 5 will be scored using the following 15 point scale: "
+        ],
+        "table_footnote": [],
+        "table_body": "\n\n<html><body><table><tr><td>Outstanding point range:</td><td>Very Good point range:</td><td>Acceptable point range:</td><td>Marginal point range:</td><td>Unacceptable point range:</td></tr><tr><td>15-14</td><td>13-12</td><td>11</td><td>10-9</td><td>8-0</td></tr></table></body></html>\n\n",
+        "page_idx": 2
+    },
+    {
+        "type": "table",
+        "img_path": "images/hynhy8.jpg",
+        "table_caption": [
+            "Questions 2 & 3 will be scored using the following 20 point scale: "
+        ],
+        "table_footnote": [],
+        "table_body": "\n\n<html><body><table><tr><td>Outstanding</td><td>Very Good</td><td>Acceptable</td><td>Marginal</td><td>Unacceptable</td></tr><tr><td>point range: 20-18</td><td>point range: 17-16</td><td>point range: 15-14</td><td>point range: 13-12</td><td>point range: 11-0</td></tr></table></body></html>\n\n",
+        "page_idx": 2
+    },
+    {
+        "type": "table",
+        "img_path": "images/6j5msy.jpg",
+        "table_caption": [
+            "Question 4 (Action Plan) will be scored using the following 30 point scale: "
+        ],
+        "table_footnote": [],
+        "table_body": "\n\n<html><body><table><tr><td>Outstanding</td><td>Very Good</td><td>Acceptable</td><td>Marginal</td><td>Unacceptable</td></tr><tr><td>point range:</td><td>point range:</td><td>point range:</td><td>point range:</td><td>point range:</td></tr><tr><td>30-27</td><td>26-24</td><td>23-21</td><td>20-18</td><td>17-0</td></tr></table></body></html>\n\n",
+        "page_idx": 2
+    }
+]

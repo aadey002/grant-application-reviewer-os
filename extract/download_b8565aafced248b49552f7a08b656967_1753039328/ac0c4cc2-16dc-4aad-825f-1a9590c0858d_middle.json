@@ -1,0 +1,4352 @@
+{
+    "pdf_info": [
+        {
+            "preproc_blocks": [
+                {
+                    "type": "title",
+                    "bbox": [
+                        208,
+                        70,
+                        404,
+                        92
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                208,
+                                74,
+                                403,
+                                90
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        208,
+                                        74,
+                                        403,
+                                        90
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Application Scoring Criteria",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 0
+                        }
+                    ],
+                    "index": 0
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        71,
+                        101,
+                        538,
+                        164
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                73,
+                                105,
+                                537,
+                                118
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        73,
+                                        105,
+                                        537,
+                                        118
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Applications will be screened jointly by ONDCP and SAMHSA to determine whether applicants",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 1
+                        },
+                        {
+                            "bbox": [
+                                71,
+                                120,
+                                520,
+                                133
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        120,
+                                        520,
+                                        133
+                                    ],
+                                    "score": 1.0,
+                                    "content": "meet all statutory eligibility requirements as outlined in this RFA.  Applications submitted by",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 2
+                        },
+                        {
+                            "bbox": [
+                                71,
+                                136,
+                                518,
+                                150
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        136,
+                                        518,
+                                        150
+                                    ],
+                                    "score": 1.0,
+                                    "content": "coalitions that meet all statutory eligibility requirements will then be scored by a peer review",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 3
+                        },
+                        {
+                            "bbox": [
+                                71,
+                                151,
+                                352,
+                                165
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        151,
+                                        352,
+                                        165
+                                    ],
+                                    "score": 1.0,
+                                    "content": "panel according to the evaluation criteria described above.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 4
+                        }
+                    ],
+                    "index": 2.5
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        71,
+                        175,
+                        536,
+                        206
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                69,
+                                176,
+                                536,
+                                193
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        69,
+                                        176,
+                                        536,
+                                        193
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Peer reviewers will score each bullet for questions 1, 2, 3, and 5 using the following definitions",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 5
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                192,
+                                161,
+                                209
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        192,
+                                        161,
+                                        209
+                                    ],
+                                    "score": 1.0,
+                                    "content": "of each descriptor:",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 6
+                        }
+                    ],
+                    "index": 5.5
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        71,
+                        223,
+                        537,
+                        301
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                72,
+                                225,
+                                482,
+                                239
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        225,
+                                        482,
+                                        239
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Outstanding: The applicant organization explicitly addresses the bullet by providing",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 7
+                        },
+                        {
+                            "bbox": [
+                                71,
+                                241,
+                                523,
+                                255
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        241,
+                                        523,
+                                        255
+                                    ],
+                                    "score": 1.0,
+                                    "content": "comprehensive descriptions, thorough details, and examples.  Relevant examples and data are",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 8
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                255,
+                                538,
+                                272
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        255,
+                                        538,
+                                        272
+                                    ],
+                                    "score": 1.0,
+                                    "content": "included to support the information presented.  The applicant organization demonstrates a strong ",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 9
+                        },
+                        {
+                            "bbox": [
+                                73,
+                                273,
+                                523,
+                                286
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        73,
+                                        273,
+                                        523,
+                                        286
+                                    ],
+                                    "score": 1.0,
+                                    "content": "understanding of the topic and the level of detail reinforces each response clearly and how the",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 10
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                289,
+                                209,
+                                302
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        289,
+                                        209,
+                                        302
+                                    ],
+                                    "score": 1.0,
+                                    "content": "project will be implemented.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 11
+                        }
+                    ],
+                    "index": 9
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        71,
+                        318,
+                        535,
+                        396
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                70,
+                                318,
+                                533,
+                                335
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        318,
+                                        533,
+                                        335
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Very Good: The applicant organization provides significant descriptions and relevant details in",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 12
+                        },
+                        {
+                            "bbox": [
+                                71,
+                                336,
+                                521,
+                                350
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        336,
+                                        521,
+                                        350
+                                    ],
+                                    "score": 1.0,
+                                    "content": "addressing the bullet but the response is not fully comprehensive.  The applicant organization",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 13
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                352,
+                                531,
+                                366
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        352,
+                                        531,
+                                        366
+                                    ],
+                                    "score": 1.0,
+                                    "content": "demonstrates a sound understanding of the topic and includes pertinent examples.  It is possible",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 14
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                367,
+                                494,
+                                381
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        367,
+                                        494,
+                                        381
+                                    ],
+                                    "score": 1.0,
+                                    "content": "to specify what makes the response better than acceptable but not up to the standards of ",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 15
+                        },
+                        {
+                            "bbox": [
+                                71,
+                                382,
+                                131,
+                                399
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        382,
+                                        131,
+                                        399
+                                    ],
+                                    "score": 1.0,
+                                    "content": "outstanding.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 16
+                        }
+                    ],
+                    "index": 14
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        71,
+                        413,
+                        538,
+                        475
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                71,
+                                415,
+                                514,
+                                430
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        415,
+                                        514,
+                                        430
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Acceptable: The applicant organization provides a basic response to the bullet but does not ",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 17
+                        },
+                        {
+                            "bbox": [
+                                71,
+                                431,
+                                538,
+                                445
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        431,
+                                        538,
+                                        445
+                                    ],
+                                    "score": 1.0,
+                                    "content": "include enough detail or pertinent examples.  Key descriptions, details, and examples are limited.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 18
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                448,
+                                504,
+                                460
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        448,
+                                        504,
+                                        460
+                                    ],
+                                    "score": 1.0,
+                                    "content": "The applicant organization does not effectively translate the requirements of the RFA into",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 19
+                        },
+                        {
+                            "bbox": [
+                                69,
+                                463,
+                                112,
+                                476
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        69,
+                                        463,
+                                        112,
+                                        476
+                                    ],
+                                    "score": 1.0,
+                                    "content": "practice.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 20
+                        }
+                    ],
+                    "index": 18.5
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        71,
+                        492,
+                        539,
+                        555
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                70,
+                                494,
+                                538,
+                                510
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        494,
+                                        538,
+                                        510
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Marginal: The applicant organization provides minimal details and insufficient descriptions that",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 21
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                510,
+                                524,
+                                525
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        510,
+                                        524,
+                                        525
+                                    ],
+                                    "score": 1.0,
+                                    "content": "do not completely answer the bullet.  Limited information is presented or the applicant merely",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 22
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                527,
+                                538,
+                                541
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        527,
+                                        538,
+                                        541
+                                    ],
+                                    "score": 1.0,
+                                    "content": "repeats information included in the RFA.  The applicant may answer part of the bullet but miss a ",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 23
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                542,
+                                373,
+                                558
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        542,
+                                        373,
+                                        558
+                                    ],
+                                    "score": 1.0,
+                                    "content": "key point or there are major gaps in the information presented.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 24
+                        }
+                    ],
+                    "index": 22.5
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        71,
+                        572,
+                        536,
+                        634
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                70,
+                                573,
+                                535,
+                                589
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        573,
+                                        535,
+                                        589
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Unacceptable:  The applicant organization does not explicitly address the bullet.  The applicant ",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 25
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                590,
+                                488,
+                                604
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        590,
+                                        488,
+                                        604
+                                    ],
+                                    "score": 1.0,
+                                    "content": "organization states the question, but does not elaborate on the response.  The applicant",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 26
+                        },
+                        {
+                            "bbox": [
+                                71,
+                                606,
+                                533,
+                                619
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        606,
+                                        533,
+                                        619
+                                    ],
+                                    "score": 1.0,
+                                    "content": "organization skips or otherwise ignores the question or includes irrelevant information that does",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 27
+                        },
+                        {
+                            "bbox": [
+                                71,
+                                622,
+                                533,
+                                636
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        622,
+                                        533,
+                                        636
+                                    ],
+                                    "score": 1.0,
+                                    "content": "not answer the question.  As a result, the answer is completely deficient in addressing the bullet.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 28
+                        }
+                    ],
+                    "index": 26.5
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        71,
+                        651,
+                        519,
+                        682
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                70,
+                                652,
+                                518,
+                                668
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        652,
+                                        518,
+                                        668
+                                    ],
+                                    "score": 1.0,
+                                    "content": "For Question 4, peer reviewers will provide an overall rating for the 12-Month Action Plan",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 29
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                669,
+                                312,
+                                684
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        669,
+                                        312,
+                                        684
+                                    ],
+                                    "score": 1.0,
+                                    "content": "using the following definitions of each descriptor:",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 30
+                        }
+                    ],
+                    "index": 29.5
+                }
+            ],
+            "layout_bboxes": [],
+            "page_idx": 0,
+            "page_size": [
+                612.0,
+                792.0
+            ],
+            "_layout_tree": [],
+            "images": [],
+            "tables": [],
+            "interline_equations": [],
+            "discarded_blocks": [
+                {
+                    "type": "discarded",
+                    "bbox": [
+                        303,
+                        731,
+                        308,
+                        740
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                302,
+                                731,
+                                309,
+                                741
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        302,
+                                        731,
+                                        309,
+                                        741
+                                    ],
+                                    "score": 1.0,
+                                    "content": "1",
+                                    "type": "text"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "need_drop": false,
+            "drop_reason": [],
+            "para_blocks": [
+                {
+                    "type": "title",
+                    "bbox": [
+                        208,
+                        70,
+                        404,
+                        92
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                208,
+                                74,
+                                403,
+                                90
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        208,
+                                        74,
+                                        403,
+                                        90
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Application Scoring Criteria",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 0
+                        }
+                    ],
+                    "index": 0,
+                    "page_num": "page_0",
+                    "page_size": [
+                        612.0,
+                        792.0
+                    ]
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        71,
+                        101,
+                        538,
+                        164
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                73,
+                                105,
+                                537,
+                                118
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        73,
+                                        105,
+                                        537,
+                                        118
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Applications will be screened jointly by ONDCP and SAMHSA to determine whether applicants",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 1
+                        },
+                        {
+                            "bbox": [
+                                71,
+                                120,
+                                520,
+                                133
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        120,
+                                        520,
+                                        133
+                                    ],
+                                    "score": 1.0,
+                                    "content": "meet all statutory eligibility requirements as outlined in this RFA.  Applications submitted by",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 2
+                        },
+                        {
+                            "bbox": [
+                                71,
+                                136,
+                                518,
+                                150
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        136,
+                                        518,
+                                        150
+                                    ],
+                                    "score": 1.0,
+                                    "content": "coalitions that meet all statutory eligibility requirements will then be scored by a peer review",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 3
+                        },
+                        {
+                            "bbox": [
+                                71,
+                                151,
+                                352,
+                                165
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        151,
+                                        352,
+                                        165
+                                    ],
+                                    "score": 1.0,
+                                    "content": "panel according to the evaluation criteria described above.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 4
+                        }
+                    ],
+                    "index": 2.5,
+                    "page_num": "page_0",
+                    "page_size": [
+                        612.0,
+                        792.0
+                    ],
+                    "bbox_fs": [
+                        71,
+                        105,
+                        537,
+                        165
+                    ]
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        71,
+                        175,
+                        536,
+                        206
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                69,
+                                176,
+                                536,
+                                193
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        69,
+                                        176,
+                                        536,
+                                        193
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Peer reviewers will score each bullet for questions 1, 2, 3, and 5 using the following definitions",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 5
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                192,
+                                161,
+                                209
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        192,
+                                        161,
+                                        209
+                                    ],
+                                    "score": 1.0,
+                                    "content": "of each descriptor:",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 6
+                        }
+                    ],
+                    "index": 5.5,
+                    "page_num": "page_0",
+                    "page_size": [
+                        612.0,
+                        792.0
+                    ],
+                    "bbox_fs": [
+                        69,
+                        176,
+                        536,
+                        209
+                    ]
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        71,
+                        223,
+                        537,
+                        301
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                72,
+                                225,
+                                482,
+                                239
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        225,
+                                        482,
+                                        239
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Outstanding: The applicant organization explicitly addresses the bullet by providing",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 7
+                        },
+                        {
+                            "bbox": [
+                                71,
+                                241,
+                                523,
+                                255
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        241,
+                                        523,
+                                        255
+                                    ],
+                                    "score": 1.0,
+                                    "content": "comprehensive descriptions, thorough details, and examples.  Relevant examples and data are",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 8
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                255,
+                                538,
+                                272
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        255,
+                                        538,
+                                        272
+                                    ],
+                                    "score": 1.0,
+                                    "content": "included to support the information presented.  The applicant organization demonstrates a strong ",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 9
+                        },
+                        {
+                            "bbox": [
+                                73,
+                                273,
+                                523,
+                                286
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        73,
+                                        273,
+                                        523,
+                                        286
+                                    ],
+                                    "score": 1.0,
+                                    "content": "understanding of the topic and the level of detail reinforces each response clearly and how the",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 10
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                289,
+                                209,
+                                302
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        289,
+                                        209,
+                                        302
+                                    ],
+                                    "score": 1.0,
+                                    "content": "project will be implemented.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 11
+                        }
+                    ],
+                    "index": 9,
+                    "page_num": "page_0",
+                    "page_size": [
+                        612.0,
+                        792.0
+                    ],
+                    "bbox_fs": [
+                        70,
+                        225,
+                        538,
+                        302
+                    ]
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        71,
+                        318,
+                        535,
+                        396
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                70,
+                                318,
+                                533,
+                                335
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        318,
+                                        533,
+                                        335
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Very Good: The applicant organization provides significant descriptions and relevant details in",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 12
+                        },
+                        {
+                            "bbox": [
+                                71,
+                                336,
+                                521,
+                                350
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        336,
+                                        521,
+                                        350
+                                    ],
+                                    "score": 1.0,
+                                    "content": "addressing the bullet but the response is not fully comprehensive.  The applicant organization",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 13
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                352,
+                                531,
+                                366
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        352,
+                                        531,
+                                        366
+                                    ],
+                                    "score": 1.0,
+                                    "content": "demonstrates a sound understanding of the topic and includes pertinent examples.  It is possible",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 14
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                367,
+                                494,
+                                381
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        367,
+                                        494,
+                                        381
+                                    ],
+                                    "score": 1.0,
+                                    "content": "to specify what makes the response better than acceptable but not up to the standards of ",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 15
+                        },
+                        {
+                            "bbox": [
+                                71,
+                                382,
+                                131,
+                                399
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        382,
+                                        131,
+                                        399
+                                    ],
+                                    "score": 1.0,
+                                    "content": "outstanding.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 16
+                        }
+                    ],
+                    "index": 14,
+                    "page_num": "page_0",
+                    "page_size": [
+                        612.0,
+                        792.0
+                    ],
+                    "bbox_fs": [
+                        70,
+                        318,
+                        533,
+                        399
+                    ]
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        71,
+                        413,
+                        538,
+                        475
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                71,
+                                415,
+                                514,
+                                430
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        415,
+                                        514,
+                                        430
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Acceptable: The applicant organization provides a basic response to the bullet but does not ",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 17
+                        },
+                        {
+                            "bbox": [
+                                71,
+                                431,
+                                538,
+                                445
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        431,
+                                        538,
+                                        445
+                                    ],
+                                    "score": 1.0,
+                                    "content": "include enough detail or pertinent examples.  Key descriptions, details, and examples are limited.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 18
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                448,
+                                504,
+                                460
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        448,
+                                        504,
+                                        460
+                                    ],
+                                    "score": 1.0,
+                                    "content": "The applicant organization does not effectively translate the requirements of the RFA into",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 19
+                        },
+                        {
+                            "bbox": [
+                                69,
+                                463,
+                                112,
+                                476
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        69,
+                                        463,
+                                        112,
+                                        476
+                                    ],
+                                    "score": 1.0,
+                                    "content": "practice.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 20
+                        }
+                    ],
+                    "index": 18.5,
+                    "page_num": "page_0",
+                    "page_size": [
+                        612.0,
+                        792.0
+                    ],
+                    "bbox_fs": [
+                        69,
+                        415,
+                        538,
+                        476
+                    ]
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        71,
+                        492,
+                        539,
+                        555
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                70,
+                                494,
+                                538,
+                                510
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        494,
+                                        538,
+                                        510
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Marginal: The applicant organization provides minimal details and insufficient descriptions that",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 21
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                510,
+                                524,
+                                525
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        510,
+                                        524,
+                                        525
+                                    ],
+                                    "score": 1.0,
+                                    "content": "do not completely answer the bullet.  Limited information is presented or the applicant merely",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 22
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                527,
+                                538,
+                                541
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        527,
+                                        538,
+                                        541
+                                    ],
+                                    "score": 1.0,
+                                    "content": "repeats information included in the RFA.  The applicant may answer part of the bullet but miss a ",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 23
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                542,
+                                373,
+                                558
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        542,
+                                        373,
+                                        558
+                                    ],
+                                    "score": 1.0,
+                                    "content": "key point or there are major gaps in the information presented.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 24
+                        }
+                    ],
+                    "index": 22.5,
+                    "page_num": "page_0",
+                    "page_size": [
+                        612.0,
+                        792.0
+                    ],
+                    "bbox_fs": [
+                        70,
+                        494,
+                        538,
+                        558
+                    ]
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        71,
+                        572,
+                        536,
+                        634
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                70,
+                                573,
+                                535,
+                                589
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        573,
+                                        535,
+                                        589
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Unacceptable:  The applicant organization does not explicitly address the bullet.  The applicant ",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 25
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                590,
+                                488,
+                                604
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        590,
+                                        488,
+                                        604
+                                    ],
+                                    "score": 1.0,
+                                    "content": "organization states the question, but does not elaborate on the response.  The applicant",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 26
+                        },
+                        {
+                            "bbox": [
+                                71,
+                                606,
+                                533,
+                                619
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        606,
+                                        533,
+                                        619
+                                    ],
+                                    "score": 1.0,
+                                    "content": "organization skips or otherwise ignores the question or includes irrelevant information that does",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 27
+                        },
+                        {
+                            "bbox": [
+                                71,
+                                622,
+                                533,
+                                636
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        622,
+                                        533,
+                                        636
+                                    ],
+                                    "score": 1.0,
+                                    "content": "not answer the question.  As a result, the answer is completely deficient in addressing the bullet.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 28
+                        }
+                    ],
+                    "index": 26.5,
+                    "page_num": "page_0",
+                    "page_size": [
+                        612.0,
+                        792.0
+                    ],
+                    "bbox_fs": [
+                        70,
+                        573,
+                        535,
+                        636
+                    ]
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        71,
+                        651,
+                        519,
+                        682
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                70,
+                                652,
+                                518,
+                                668
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        652,
+                                        518,
+                                        668
+                                    ],
+                                    "score": 1.0,
+                                    "content": "For Question 4, peer reviewers will provide an overall rating for the 12-Month Action Plan",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 29
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                669,
+                                312,
+                                684
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        669,
+                                        312,
+                                        684
+                                    ],
+                                    "score": 1.0,
+                                    "content": "using the following definitions of each descriptor:",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 30
+                        }
+                    ],
+                    "index": 29.5,
+                    "page_num": "page_0",
+                    "page_size": [
+                        612.0,
+                        792.0
+                    ],
+                    "bbox_fs": [
+                        70,
+                        652,
+                        518,
+                        684
+                    ]
+                }
+            ]
+        },
+        {
+            "preproc_blocks": [
+                {
+                    "type": "text",
+                    "bbox": [
+                        70,
+                        70,
+                        536,
+                        197
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                73,
+                                74,
+                                507,
+                                87
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        73,
+                                        74,
+                                        507,
+                                        87
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Outstanding: It fully addresses both DFC goals.  The Action Plan includes objectives that",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 0
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                89,
+                                519,
+                                104
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        89,
+                                        519,
+                                        104
+                                    ],
+                                    "score": 1.0,
+                                    "content": "coincide with problems identified in the data provided in Question 3 of the Project Narrative.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 1
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                105,
+                                529,
+                                118
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        105,
+                                        529,
+                                        118
+                                    ],
+                                    "score": 1.0,
+                                    "content": "The strategies and activities included will effectively address each objective.  The Action Plan",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 2
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                121,
+                                531,
+                                136
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        121,
+                                        531,
+                                        136
+                                    ],
+                                    "score": 1.0,
+                                    "content": "must fully meet all four of the following requirements: (1) The template provided in Table 4",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 3
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                136,
+                                533,
+                                152
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        136,
+                                        533,
+                                        152
+                                    ],
+                                    "score": 1.0,
+                                    "content": "is used; (2) The two DFC goals in Table 3 are included; (3) All of the objectives are measurable",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 4
+                        },
+                        {
+                            "bbox": [
+                                71,
+                                153,
+                                498,
+                                167
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        153,
+                                        498,
+                                        167
+                                    ],
+                                    "score": 1.0,
+                                    "content": "(change to be measured is identified) and include a specific date by when change will be",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 5
+                        },
+                        {
+                            "bbox": [
+                                71,
+                                168,
+                                528,
+                                183
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        168,
+                                        528,
+                                        183
+                                    ],
+                                    "score": 1.0,
+                                    "content": "accomplished, how much change will occur and the population addressed; and (4) At least two",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 6
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                184,
+                                228,
+                                197
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        184,
+                                        228,
+                                        197
+                                    ],
+                                    "score": 1.0,
+                                    "content": "named substances are addressed.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 7
+                        }
+                    ],
+                    "index": 3.5
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        70,
+                        214,
+                        541,
+                        324
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                71,
+                                215,
+                                540,
+                                231
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        215,
+                                        540,
+                                        231
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Very Good: The two DFC goals are addressed but one of the goals is not fully comprehensive or",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 8
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                233,
+                                532,
+                                245
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        233,
+                                        532,
+                                        245
+                                    ],
+                                    "score": 1.0,
+                                    "content": "not completely in alignment with the identified data provided in Question 3.  The strategies and",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 9
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                248,
+                                529,
+                                261
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        248,
+                                        529,
+                                        261
+                                    ],
+                                    "score": 1.0,
+                                    "content": "activities will effectively address each objective. The Action Plan must fully meet all four of",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 10
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                263,
+                                522,
+                                279
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        263,
+                                        522,
+                                        279
+                                    ],
+                                    "score": 1.0,
+                                    "content": "the following requirements: (1) The template provided in Table 4 is used; (2) The two DFC ",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 11
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                279,
+                                536,
+                                293
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        279,
+                                        536,
+                                        293
+                                    ],
+                                    "score": 1.0,
+                                    "content": "goals in Table 3 are included; (3) All of the objectives are measurable (change to be measured is",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 12
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                294,
+                                532,
+                                310
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        294,
+                                        532,
+                                        310
+                                    ],
+                                    "score": 1.0,
+                                    "content": "identified) and include a specific date by when change will be accomplished, how much change",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 13
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                312,
+                                525,
+                                324
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        312,
+                                        525,
+                                        324
+                                    ],
+                                    "score": 1.0,
+                                    "content": "will occur and the population addressed; and (4) At least two named substances are addressed.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 14
+                        }
+                    ],
+                    "index": 11
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        71,
+                        341,
+                        530,
+                        387
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                71,
+                                343,
+                                529,
+                                358
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        343,
+                                        529,
+                                        358
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Acceptable: The two DFC goals are satisfactorily addressed but are not comprehensive and do",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 15
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                359,
+                                515,
+                                374
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        359,
+                                        515,
+                                        374
+                                    ],
+                                    "score": 1.0,
+                                    "content": "not fully coincide with the data provided in Question 3.  It is not clear that the strategies and",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 16
+                        },
+                        {
+                            "bbox": [
+                                71,
+                                374,
+                                488,
+                                390
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        374,
+                                        488,
+                                        390
+                                    ],
+                                    "score": 1.0,
+                                    "content": "activities will allow the objectives to be met.  Not all of the objectives are measurable.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 17
+                        }
+                    ],
+                    "index": 16
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        71,
+                        405,
+                        536,
+                        450
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                70,
+                                406,
+                                535,
+                                422
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        406,
+                                        535,
+                                        422
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Marginal: The two DFC goals are not satisfactorily addressed and are not in alignment with the",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 18
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                422,
+                                513,
+                                436
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        422,
+                                        513,
+                                        436
+                                    ],
+                                    "score": 1.0,
+                                    "content": "data presented in Question 3.  Insufficient strategies and activities are included that will not ",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 19
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                438,
+                                392,
+                                452
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        438,
+                                        392,
+                                        452
+                                    ],
+                                    "score": 1.0,
+                                    "content": "allow the objectives to be met.  The objectives are not measurable.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 20
+                        }
+                    ],
+                    "index": 19
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        71,
+                        468,
+                        533,
+                        498
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                70,
+                                469,
+                                533,
+                                486
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        469,
+                                        533,
+                                        486
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Unacceptable: The applicant organization skips or otherwise fails to address the criteria for the ",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 21
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                486,
+                                495,
+                                501
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        486,
+                                        495,
+                                        501
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Action Plan.  The required template is not used.  None of the objectives are measurable.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 22
+                        }
+                    ],
+                    "index": 21.5
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        71,
+                        541,
+                        534,
+                        584
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                69,
+                                541,
+                                526,
+                                558
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        69,
+                                        541,
+                                        450,
+                                        558
+                                    ],
+                                    "score": 1.0,
+                                    "content": "*Example of a measurable objective:  By 9/29/15 (specific date) increase by ",
+                                    "type": "text"
+                                },
+                                {
+                                    "bbox": [
+                                        450,
+                                        542,
+                                        467,
+                                        554
+                                    ],
+                                    "score": 0.85,
+                                    "content": "5\\%",
+                                    "type": "inline_equation",
+                                    "height": 12,
+                                    "width": 17
+                                },
+                                {
+                                    "bbox": [
+                                        468,
+                                        541,
+                                        526,
+                                        558
+                                    ],
+                                    "score": 1.0,
+                                    "content": " (amount of ",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 23
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                555,
+                                534,
+                                573
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        555,
+                                        534,
+                                        573
+                                    ],
+                                    "score": 1.0,
+                                    "content": "change) perception of peer disapproval of alcohol use (what change will be measured) among 8,",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 24
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                571,
+                                460,
+                                585
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        571,
+                                        460,
+                                        585
+                                    ],
+                                    "score": 1.0,
+                                    "content": "10, and 12th grade students (population to be addressed) by youth survey results.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 25
+                        }
+                    ],
+                    "index": 24
+                }
+            ],
+            "layout_bboxes": [],
+            "page_idx": 1,
+            "page_size": [
+                612.0,
+                792.0
+            ],
+            "_layout_tree": [],
+            "images": [],
+            "tables": [],
+            "interline_equations": [],
+            "discarded_blocks": [
+                {
+                    "type": "discarded",
+                    "bbox": [
+                        303,
+                        731,
+                        309,
+                        740
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                302,
+                                731,
+                                310,
+                                742
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        302,
+                                        731,
+                                        310,
+                                        742
+                                    ],
+                                    "score": 1.0,
+                                    "content": "2",
+                                    "type": "text"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "need_drop": false,
+            "drop_reason": [],
+            "para_blocks": [
+                {
+                    "type": "text",
+                    "bbox": [
+                        70,
+                        70,
+                        536,
+                        197
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                73,
+                                74,
+                                507,
+                                87
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        73,
+                                        74,
+                                        507,
+                                        87
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Outstanding: It fully addresses both DFC goals.  The Action Plan includes objectives that",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 0
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                89,
+                                519,
+                                104
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        89,
+                                        519,
+                                        104
+                                    ],
+                                    "score": 1.0,
+                                    "content": "coincide with problems identified in the data provided in Question 3 of the Project Narrative.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 1
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                105,
+                                529,
+                                118
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        105,
+                                        529,
+                                        118
+                                    ],
+                                    "score": 1.0,
+                                    "content": "The strategies and activities included will effectively address each objective.  The Action Plan",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 2
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                121,
+                                531,
+                                136
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        121,
+                                        531,
+                                        136
+                                    ],
+                                    "score": 1.0,
+                                    "content": "must fully meet all four of the following requirements: (1) The template provided in Table 4",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 3
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                136,
+                                533,
+                                152
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        136,
+                                        533,
+                                        152
+                                    ],
+                                    "score": 1.0,
+                                    "content": "is used; (2) The two DFC goals in Table 3 are included; (3) All of the objectives are measurable",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 4
+                        },
+                        {
+                            "bbox": [
+                                71,
+                                153,
+                                498,
+                                167
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        153,
+                                        498,
+                                        167
+                                    ],
+                                    "score": 1.0,
+                                    "content": "(change to be measured is identified) and include a specific date by when change will be",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 5
+                        },
+                        {
+                            "bbox": [
+                                71,
+                                168,
+                                528,
+                                183
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        168,
+                                        528,
+                                        183
+                                    ],
+                                    "score": 1.0,
+                                    "content": "accomplished, how much change will occur and the population addressed; and (4) At least two",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 6
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                184,
+                                228,
+                                197
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        184,
+                                        228,
+                                        197
+                                    ],
+                                    "score": 1.0,
+                                    "content": "named substances are addressed.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 7
+                        }
+                    ],
+                    "index": 3.5,
+                    "page_num": "page_1",
+                    "page_size": [
+                        612.0,
+                        792.0
+                    ],
+                    "bbox_fs": [
+                        70,
+                        74,
+                        533,
+                        197
+                    ]
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        70,
+                        214,
+                        541,
+                        324
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                71,
+                                215,
+                                540,
+                                231
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        215,
+                                        540,
+                                        231
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Very Good: The two DFC goals are addressed but one of the goals is not fully comprehensive or",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 8
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                233,
+                                532,
+                                245
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        233,
+                                        532,
+                                        245
+                                    ],
+                                    "score": 1.0,
+                                    "content": "not completely in alignment with the identified data provided in Question 3.  The strategies and",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 9
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                248,
+                                529,
+                                261
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        248,
+                                        529,
+                                        261
+                                    ],
+                                    "score": 1.0,
+                                    "content": "activities will effectively address each objective. The Action Plan must fully meet all four of",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 10
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                263,
+                                522,
+                                279
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        263,
+                                        522,
+                                        279
+                                    ],
+                                    "score": 1.0,
+                                    "content": "the following requirements: (1) The template provided in Table 4 is used; (2) The two DFC ",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 11
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                279,
+                                536,
+                                293
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        279,
+                                        536,
+                                        293
+                                    ],
+                                    "score": 1.0,
+                                    "content": "goals in Table 3 are included; (3) All of the objectives are measurable (change to be measured is",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 12
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                294,
+                                532,
+                                310
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        294,
+                                        532,
+                                        310
+                                    ],
+                                    "score": 1.0,
+                                    "content": "identified) and include a specific date by when change will be accomplished, how much change",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 13
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                312,
+                                525,
+                                324
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        312,
+                                        525,
+                                        324
+                                    ],
+                                    "score": 1.0,
+                                    "content": "will occur and the population addressed; and (4) At least two named substances are addressed.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 14
+                        }
+                    ],
+                    "index": 11,
+                    "page_num": "page_1",
+                    "page_size": [
+                        612.0,
+                        792.0
+                    ],
+                    "bbox_fs": [
+                        70,
+                        215,
+                        540,
+                        324
+                    ]
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        71,
+                        341,
+                        530,
+                        387
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                71,
+                                343,
+                                529,
+                                358
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        343,
+                                        529,
+                                        358
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Acceptable: The two DFC goals are satisfactorily addressed but are not comprehensive and do",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 15
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                359,
+                                515,
+                                374
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        359,
+                                        515,
+                                        374
+                                    ],
+                                    "score": 1.0,
+                                    "content": "not fully coincide with the data provided in Question 3.  It is not clear that the strategies and",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 16
+                        },
+                        {
+                            "bbox": [
+                                71,
+                                374,
+                                488,
+                                390
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        374,
+                                        488,
+                                        390
+                                    ],
+                                    "score": 1.0,
+                                    "content": "activities will allow the objectives to be met.  Not all of the objectives are measurable.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 17
+                        }
+                    ],
+                    "index": 16,
+                    "page_num": "page_1",
+                    "page_size": [
+                        612.0,
+                        792.0
+                    ],
+                    "bbox_fs": [
+                        71,
+                        343,
+                        529,
+                        390
+                    ]
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        71,
+                        405,
+                        536,
+                        450
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                70,
+                                406,
+                                535,
+                                422
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        406,
+                                        535,
+                                        422
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Marginal: The two DFC goals are not satisfactorily addressed and are not in alignment with the",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 18
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                422,
+                                513,
+                                436
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        422,
+                                        513,
+                                        436
+                                    ],
+                                    "score": 1.0,
+                                    "content": "data presented in Question 3.  Insufficient strategies and activities are included that will not ",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 19
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                438,
+                                392,
+                                452
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        438,
+                                        392,
+                                        452
+                                    ],
+                                    "score": 1.0,
+                                    "content": "allow the objectives to be met.  The objectives are not measurable.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 20
+                        }
+                    ],
+                    "index": 19,
+                    "page_num": "page_1",
+                    "page_size": [
+                        612.0,
+                        792.0
+                    ],
+                    "bbox_fs": [
+                        70,
+                        406,
+                        535,
+                        452
+                    ]
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        71,
+                        468,
+                        533,
+                        498
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                70,
+                                469,
+                                533,
+                                486
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        469,
+                                        533,
+                                        486
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Unacceptable: The applicant organization skips or otherwise fails to address the criteria for the ",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 21
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                486,
+                                495,
+                                501
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        486,
+                                        495,
+                                        501
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Action Plan.  The required template is not used.  None of the objectives are measurable.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 22
+                        }
+                    ],
+                    "index": 21.5,
+                    "page_num": "page_1",
+                    "page_size": [
+                        612.0,
+                        792.0
+                    ],
+                    "bbox_fs": [
+                        70,
+                        469,
+                        533,
+                        501
+                    ]
+                },
+                {
+                    "type": "text",
+                    "bbox": [
+                        71,
+                        541,
+                        534,
+                        584
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                69,
+                                541,
+                                526,
+                                558
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        69,
+                                        541,
+                                        450,
+                                        558
+                                    ],
+                                    "score": 1.0,
+                                    "content": "*Example of a measurable objective:  By 9/29/15 (specific date) increase by ",
+                                    "type": "text"
+                                },
+                                {
+                                    "bbox": [
+                                        450,
+                                        542,
+                                        467,
+                                        554
+                                    ],
+                                    "score": 0.85,
+                                    "content": "5\\%",
+                                    "type": "inline_equation",
+                                    "height": 12,
+                                    "width": 17
+                                },
+                                {
+                                    "bbox": [
+                                        468,
+                                        541,
+                                        526,
+                                        558
+                                    ],
+                                    "score": 1.0,
+                                    "content": " (amount of ",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 23
+                        },
+                        {
+                            "bbox": [
+                                70,
+                                555,
+                                534,
+                                573
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        70,
+                                        555,
+                                        534,
+                                        573
+                                    ],
+                                    "score": 1.0,
+                                    "content": "change) perception of peer disapproval of alcohol use (what change will be measured) among 8,",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 24
+                        },
+                        {
+                            "bbox": [
+                                72,
+                                571,
+                                460,
+                                585
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        571,
+                                        460,
+                                        585
+                                    ],
+                                    "score": 1.0,
+                                    "content": "10, and 12th grade students (population to be addressed) by youth survey results.",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 25
+                        }
+                    ],
+                    "index": 24,
+                    "page_num": "page_1",
+                    "page_size": [
+                        612.0,
+                        792.0
+                    ],
+                    "bbox_fs": [
+                        69,
+                        541,
+                        534,
+                        585
+                    ]
+                }
+            ]
+        },
+        {
+            "preproc_blocks": [
+                {
+                    "type": "title",
+                    "bbox": [
+                        70,
+                        72,
+                        270,
+                        86
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                71,
+                                73,
+                                269,
+                                87
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        73,
+                                        269,
+                                        87
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Point scale ranges are provided below:",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 0
+                        }
+                    ],
+                    "index": 0
+                },
+                {
+                    "type": "table",
+                    "bbox": [
+                        66,
+                        119,
+                        438,
+                        175
+                    ],
+                    "blocks": [
+                        {
+                            "type": "table_caption",
+                            "bbox": [
+                                70,
+                                103,
+                                403,
+                                117
+                            ],
+                            "group_id": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        104,
+                                        401,
+                                        120
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                71,
+                                                104,
+                                                401,
+                                                120
+                                            ],
+                                            "score": 1.0,
+                                            "content": "Questions 1 & 5 will be scored using the following 15 point scale:",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "index": 1
+                                }
+                            ],
+                            "index": 1
+                        },
+                        {
+                            "type": "table_body",
+                            "bbox": [
+                                66,
+                                119,
+                                438,
+                                175
+                            ],
+                            "group_id": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        66,
+                                        119,
+                                        438,
+                                        175
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                66,
+                                                119,
+                                                438,
+                                                175
+                                            ],
+                                            "score": 0.999974250793457,
+                                            "html": "<html><body><table><tr><td>Outstanding point range:</td><td>Very Good point range:</td><td>Acceptable point range:</td><td>Marginal point range:</td><td>Unacceptable point range:</td></tr><tr><td>15-14</td><td>13-12</td><td>11</td><td>10-9</td><td>8-0</td></tr></table></body></html>",
+                                            "type": "table",
+                                            "image_path": "hh6bkd.jpg"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 3,
+                            "virtual_lines": [
+                                {
+                                    "bbox": [
+                                        66,
+                                        119,
+                                        438,
+                                        137.66666666666666
+                                    ],
+                                    "spans": [],
+                                    "index": 2
+                                },
+                                {
+                                    "bbox": [
+                                        66,
+                                        137.66666666666666,
+                                        438,
+                                        156.33333333333331
+                                    ],
+                                    "spans": [],
+                                    "index": 3
+                                },
+                                {
+                                    "bbox": [
+                                        66,
+                                        156.33333333333331,
+                                        438,
+                                        174.99999999999997
+                                    ],
+                                    "spans": [],
+                                    "index": 4
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 2.0
+                },
+                {
+                    "type": "table",
+                    "bbox": [
+                        66,
+                        222,
+                        438,
+                        277
+                    ],
+                    "blocks": [
+                        {
+                            "type": "table_caption",
+                            "bbox": [
+                                70,
+                                206,
+                                402,
+                                220
+                            ],
+                            "group_id": 1,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        208,
+                                        401,
+                                        222
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                72,
+                                                208,
+                                                401,
+                                                222
+                                            ],
+                                            "score": 1.0,
+                                            "content": "Questions 2 & 3 will be scored using the following 20 point scale:",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "index": 5
+                                }
+                            ],
+                            "index": 5
+                        },
+                        {
+                            "type": "table_body",
+                            "bbox": [
+                                66,
+                                222,
+                                438,
+                                277
+                            ],
+                            "group_id": 1,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        66,
+                                        222,
+                                        438,
+                                        277
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                66,
+                                                222,
+                                                438,
+                                                277
+                                            ],
+                                            "score": 0.999926745891571,
+                                            "html": "<html><body><table><tr><td>Outstanding</td><td>Very Good</td><td>Acceptable</td><td>Marginal</td><td>Unacceptable</td></tr><tr><td>point range: 20-18</td><td>point range: 17-16</td><td>point range: 15-14</td><td>point range: 13-12</td><td>point range: 11-0</td></tr></table></body></html>",
+                                            "type": "table",
+                                            "image_path": "hynhy8.jpg"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 7,
+                            "virtual_lines": [
+                                {
+                                    "bbox": [
+                                        66,
+                                        222,
+                                        438,
+                                        240.33333333333334
+                                    ],
+                                    "spans": [],
+                                    "index": 6
+                                },
+                                {
+                                    "bbox": [
+                                        66,
+                                        240.33333333333334,
+                                        438,
+                                        258.6666666666667
+                                    ],
+                                    "spans": [],
+                                    "index": 7
+                                },
+                                {
+                                    "bbox": [
+                                        66,
+                                        258.6666666666667,
+                                        438,
+                                        277.0
+                                    ],
+                                    "spans": [],
+                                    "index": 8
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 6.0
+                },
+                {
+                    "type": "table",
+                    "bbox": [
+                        66,
+                        324,
+                        439,
+                        379
+                    ],
+                    "blocks": [
+                        {
+                            "type": "table_caption",
+                            "bbox": [
+                                70,
+                                308,
+                                447,
+                                322
+                            ],
+                            "group_id": 2,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        309,
+                                        447,
+                                        324
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                72,
+                                                309,
+                                                447,
+                                                324
+                                            ],
+                                            "score": 1.0,
+                                            "content": "Question 4 (Action Plan) will be scored using the following 30 point scale:",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "index": 9
+                                }
+                            ],
+                            "index": 9
+                        },
+                        {
+                            "type": "table_body",
+                            "bbox": [
+                                66,
+                                324,
+                                439,
+                                379
+                            ],
+                            "group_id": 2,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        66,
+                                        324,
+                                        439,
+                                        379
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                66,
+                                                324,
+                                                439,
+                                                379
+                                            ],
+                                            "score": 0.9999222755432129,
+                                            "html": "<html><body><table><tr><td>Outstanding</td><td>Very Good</td><td>Acceptable</td><td>Marginal</td><td>Unacceptable</td></tr><tr><td>point range:</td><td>point range:</td><td>point range:</td><td>point range:</td><td>point range:</td></tr><tr><td>30-27</td><td>26-24</td><td>23-21</td><td>20-18</td><td>17-0</td></tr></table></body></html>",
+                                            "type": "table",
+                                            "image_path": "6j5msy.jpg"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 11,
+                            "virtual_lines": [
+                                {
+                                    "bbox": [
+                                        66,
+                                        324,
+                                        439,
+                                        342.3333333333333
+                                    ],
+                                    "spans": [],
+                                    "index": 10
+                                },
+                                {
+                                    "bbox": [
+                                        66,
+                                        342.3333333333333,
+                                        439,
+                                        360.66666666666663
+                                    ],
+                                    "spans": [],
+                                    "index": 11
+                                },
+                                {
+                                    "bbox": [
+                                        66,
+                                        360.66666666666663,
+                                        439,
+                                        378.99999999999994
+                                    ],
+                                    "spans": [],
+                                    "index": 12
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 10.0
+                }
+            ],
+            "layout_bboxes": [],
+            "page_idx": 2,
+            "page_size": [
+                612.0,
+                792.0
+            ],
+            "_layout_tree": [],
+            "images": [],
+            "tables": [
+                {
+                    "type": "table",
+                    "bbox": [
+                        66,
+                        119,
+                        438,
+                        175
+                    ],
+                    "blocks": [
+                        {
+                            "type": "table_caption",
+                            "bbox": [
+                                70,
+                                103,
+                                403,
+                                117
+                            ],
+                            "group_id": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        104,
+                                        401,
+                                        120
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                71,
+                                                104,
+                                                401,
+                                                120
+                                            ],
+                                            "score": 1.0,
+                                            "content": "Questions 1 & 5 will be scored using the following 15 point scale:",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "index": 1
+                                }
+                            ],
+                            "index": 1
+                        },
+                        {
+                            "type": "table_body",
+                            "bbox": [
+                                66,
+                                119,
+                                438,
+                                175
+                            ],
+                            "group_id": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        66,
+                                        119,
+                                        438,
+                                        175
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                66,
+                                                119,
+                                                438,
+                                                175
+                                            ],
+                                            "score": 0.999974250793457,
+                                            "html": "<html><body><table><tr><td>Outstanding point range:</td><td>Very Good point range:</td><td>Acceptable point range:</td><td>Marginal point range:</td><td>Unacceptable point range:</td></tr><tr><td>15-14</td><td>13-12</td><td>11</td><td>10-9</td><td>8-0</td></tr></table></body></html>",
+                                            "type": "table",
+                                            "image_path": "hh6bkd.jpg"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 3,
+                            "virtual_lines": [
+                                {
+                                    "bbox": [
+                                        66,
+                                        119,
+                                        438,
+                                        137.66666666666666
+                                    ],
+                                    "spans": [],
+                                    "index": 2
+                                },
+                                {
+                                    "bbox": [
+                                        66,
+                                        137.66666666666666,
+                                        438,
+                                        156.33333333333331
+                                    ],
+                                    "spans": [],
+                                    "index": 3
+                                },
+                                {
+                                    "bbox": [
+                                        66,
+                                        156.33333333333331,
+                                        438,
+                                        174.99999999999997
+                                    ],
+                                    "spans": [],
+                                    "index": 4
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 2.0
+                },
+                {
+                    "type": "table",
+                    "bbox": [
+                        66,
+                        222,
+                        438,
+                        277
+                    ],
+                    "blocks": [
+                        {
+                            "type": "table_caption",
+                            "bbox": [
+                                70,
+                                206,
+                                402,
+                                220
+                            ],
+                            "group_id": 1,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        208,
+                                        401,
+                                        222
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                72,
+                                                208,
+                                                401,
+                                                222
+                                            ],
+                                            "score": 1.0,
+                                            "content": "Questions 2 & 3 will be scored using the following 20 point scale:",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "index": 5
+                                }
+                            ],
+                            "index": 5
+                        },
+                        {
+                            "type": "table_body",
+                            "bbox": [
+                                66,
+                                222,
+                                438,
+                                277
+                            ],
+                            "group_id": 1,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        66,
+                                        222,
+                                        438,
+                                        277
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                66,
+                                                222,
+                                                438,
+                                                277
+                                            ],
+                                            "score": 0.999926745891571,
+                                            "html": "<html><body><table><tr><td>Outstanding</td><td>Very Good</td><td>Acceptable</td><td>Marginal</td><td>Unacceptable</td></tr><tr><td>point range: 20-18</td><td>point range: 17-16</td><td>point range: 15-14</td><td>point range: 13-12</td><td>point range: 11-0</td></tr></table></body></html>",
+                                            "type": "table",
+                                            "image_path": "hynhy8.jpg"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 7,
+                            "virtual_lines": [
+                                {
+                                    "bbox": [
+                                        66,
+                                        222,
+                                        438,
+                                        240.33333333333334
+                                    ],
+                                    "spans": [],
+                                    "index": 6
+                                },
+                                {
+                                    "bbox": [
+                                        66,
+                                        240.33333333333334,
+                                        438,
+                                        258.6666666666667
+                                    ],
+                                    "spans": [],
+                                    "index": 7
+                                },
+                                {
+                                    "bbox": [
+                                        66,
+                                        258.6666666666667,
+                                        438,
+                                        277.0
+                                    ],
+                                    "spans": [],
+                                    "index": 8
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 6.0
+                },
+                {
+                    "type": "table",
+                    "bbox": [
+                        66,
+                        324,
+                        439,
+                        379
+                    ],
+                    "blocks": [
+                        {
+                            "type": "table_caption",
+                            "bbox": [
+                                70,
+                                308,
+                                447,
+                                322
+                            ],
+                            "group_id": 2,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        309,
+                                        447,
+                                        324
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                72,
+                                                309,
+                                                447,
+                                                324
+                                            ],
+                                            "score": 1.0,
+                                            "content": "Question 4 (Action Plan) will be scored using the following 30 point scale:",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "index": 9
+                                }
+                            ],
+                            "index": 9
+                        },
+                        {
+                            "type": "table_body",
+                            "bbox": [
+                                66,
+                                324,
+                                439,
+                                379
+                            ],
+                            "group_id": 2,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        66,
+                                        324,
+                                        439,
+                                        379
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                66,
+                                                324,
+                                                439,
+                                                379
+                                            ],
+                                            "score": 0.9999222755432129,
+                                            "html": "<html><body><table><tr><td>Outstanding</td><td>Very Good</td><td>Acceptable</td><td>Marginal</td><td>Unacceptable</td></tr><tr><td>point range:</td><td>point range:</td><td>point range:</td><td>point range:</td><td>point range:</td></tr><tr><td>30-27</td><td>26-24</td><td>23-21</td><td>20-18</td><td>17-0</td></tr></table></body></html>",
+                                            "type": "table",
+                                            "image_path": "6j5msy.jpg"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 11,
+                            "virtual_lines": [
+                                {
+                                    "bbox": [
+                                        66,
+                                        324,
+                                        439,
+                                        342.3333333333333
+                                    ],
+                                    "spans": [],
+                                    "index": 10
+                                },
+                                {
+                                    "bbox": [
+                                        66,
+                                        342.3333333333333,
+                                        439,
+                                        360.66666666666663
+                                    ],
+                                    "spans": [],
+                                    "index": 11
+                                },
+                                {
+                                    "bbox": [
+                                        66,
+                                        360.66666666666663,
+                                        439,
+                                        378.99999999999994
+                                    ],
+                                    "spans": [],
+                                    "index": 12
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 10.0
+                }
+            ],
+            "interline_equations": [],
+            "discarded_blocks": [
+                {
+                    "type": "discarded",
+                    "bbox": [
+                        303,
+                        731,
+                        309,
+                        740
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                302,
+                                731,
+                                309,
+                                742
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        302,
+                                        731,
+                                        309,
+                                        742
+                                    ],
+                                    "score": 1.0,
+                                    "content": "3",
+                                    "type": "text"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "need_drop": false,
+            "drop_reason": [],
+            "para_blocks": [
+                {
+                    "type": "title",
+                    "bbox": [
+                        70,
+                        72,
+                        270,
+                        86
+                    ],
+                    "lines": [
+                        {
+                            "bbox": [
+                                71,
+                                73,
+                                269,
+                                87
+                            ],
+                            "spans": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        73,
+                                        269,
+                                        87
+                                    ],
+                                    "score": 1.0,
+                                    "content": "Point scale ranges are provided below:",
+                                    "type": "text"
+                                }
+                            ],
+                            "index": 0
+                        }
+                    ],
+                    "index": 0,
+                    "page_num": "page_2",
+                    "page_size": [
+                        612.0,
+                        792.0
+                    ]
+                },
+                {
+                    "type": "table",
+                    "bbox": [
+                        66,
+                        119,
+                        438,
+                        175
+                    ],
+                    "blocks": [
+                        {
+                            "type": "table_caption",
+                            "bbox": [
+                                70,
+                                103,
+                                403,
+                                117
+                            ],
+                            "group_id": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        71,
+                                        104,
+                                        401,
+                                        120
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                71,
+                                                104,
+                                                401,
+                                                120
+                                            ],
+                                            "score": 1.0,
+                                            "content": "Questions 1 & 5 will be scored using the following 15 point scale:",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "index": 1
+                                }
+                            ],
+                            "index": 1
+                        },
+                        {
+                            "type": "table_body",
+                            "bbox": [
+                                66,
+                                119,
+                                438,
+                                175
+                            ],
+                            "group_id": 0,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        66,
+                                        119,
+                                        438,
+                                        175
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                66,
+                                                119,
+                                                438,
+                                                175
+                                            ],
+                                            "score": 0.999974250793457,
+                                            "html": "<html><body><table><tr><td>Outstanding point range:</td><td>Very Good point range:</td><td>Acceptable point range:</td><td>Marginal point range:</td><td>Unacceptable point range:</td></tr><tr><td>15-14</td><td>13-12</td><td>11</td><td>10-9</td><td>8-0</td></tr></table></body></html>",
+                                            "type": "table",
+                                            "image_path": "hh6bkd.jpg"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 3,
+                            "virtual_lines": [
+                                {
+                                    "bbox": [
+                                        66,
+                                        119,
+                                        438,
+                                        137.66666666666666
+                                    ],
+                                    "spans": [],
+                                    "index": 2
+                                },
+                                {
+                                    "bbox": [
+                                        66,
+                                        137.66666666666666,
+                                        438,
+                                        156.33333333333331
+                                    ],
+                                    "spans": [],
+                                    "index": 3
+                                },
+                                {
+                                    "bbox": [
+                                        66,
+                                        156.33333333333331,
+                                        438,
+                                        174.99999999999997
+                                    ],
+                                    "spans": [],
+                                    "index": 4
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 2.0,
+                    "page_num": "page_2",
+                    "page_size": [
+                        612.0,
+                        792.0
+                    ]
+                },
+                {
+                    "type": "table",
+                    "bbox": [
+                        66,
+                        222,
+                        438,
+                        277
+                    ],
+                    "blocks": [
+                        {
+                            "type": "table_caption",
+                            "bbox": [
+                                70,
+                                206,
+                                402,
+                                220
+                            ],
+                            "group_id": 1,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        208,
+                                        401,
+                                        222
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                72,
+                                                208,
+                                                401,
+                                                222
+                                            ],
+                                            "score": 1.0,
+                                            "content": "Questions 2 & 3 will be scored using the following 20 point scale:",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "index": 5
+                                }
+                            ],
+                            "index": 5
+                        },
+                        {
+                            "type": "table_body",
+                            "bbox": [
+                                66,
+                                222,
+                                438,
+                                277
+                            ],
+                            "group_id": 1,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        66,
+                                        222,
+                                        438,
+                                        277
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                66,
+                                                222,
+                                                438,
+                                                277
+                                            ],
+                                            "score": 0.999926745891571,
+                                            "html": "<html><body><table><tr><td>Outstanding</td><td>Very Good</td><td>Acceptable</td><td>Marginal</td><td>Unacceptable</td></tr><tr><td>point range: 20-18</td><td>point range: 17-16</td><td>point range: 15-14</td><td>point range: 13-12</td><td>point range: 11-0</td></tr></table></body></html>",
+                                            "type": "table",
+                                            "image_path": "hynhy8.jpg"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 7,
+                            "virtual_lines": [
+                                {
+                                    "bbox": [
+                                        66,
+                                        222,
+                                        438,
+                                        240.33333333333334
+                                    ],
+                                    "spans": [],
+                                    "index": 6
+                                },
+                                {
+                                    "bbox": [
+                                        66,
+                                        240.33333333333334,
+                                        438,
+                                        258.6666666666667
+                                    ],
+                                    "spans": [],
+                                    "index": 7
+                                },
+                                {
+                                    "bbox": [
+                                        66,
+                                        258.6666666666667,
+                                        438,
+                                        277.0
+                                    ],
+                                    "spans": [],
+                                    "index": 8
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 6.0,
+                    "page_num": "page_2",
+                    "page_size": [
+                        612.0,
+                        792.0
+                    ]
+                },
+                {
+                    "type": "table",
+                    "bbox": [
+                        66,
+                        324,
+                        439,
+                        379
+                    ],
+                    "blocks": [
+                        {
+                            "type": "table_caption",
+                            "bbox": [
+                                70,
+                                308,
+                                447,
+                                322
+                            ],
+                            "group_id": 2,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        72,
+                                        309,
+                                        447,
+                                        324
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                72,
+                                                309,
+                                                447,
+                                                324
+                                            ],
+                                            "score": 1.0,
+                                            "content": "Question 4 (Action Plan) will be scored using the following 30 point scale:",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "index": 9
+                                }
+                            ],
+                            "index": 9
+                        },
+                        {
+                            "type": "table_body",
+                            "bbox": [
+                                66,
+                                324,
+                                439,
+                                379
+                            ],
+                            "group_id": 2,
+                            "lines": [
+                                {
+                                    "bbox": [
+                                        66,
+                                        324,
+                                        439,
+                                        379
+                                    ],
+                                    "spans": [
+                                        {
+                                            "bbox": [
+                                                66,
+                                                324,
+                                                439,
+                                                379
+                                            ],
+                                            "score": 0.9999222755432129,
+                                            "html": "<html><body><table><tr><td>Outstanding</td><td>Very Good</td><td>Acceptable</td><td>Marginal</td><td>Unacceptable</td></tr><tr><td>point range:</td><td>point range:</td><td>point range:</td><td>point range:</td><td>point range:</td></tr><tr><td>30-27</td><td>26-24</td><td>23-21</td><td>20-18</td><td>17-0</td></tr></table></body></html>",
+                                            "type": "table",
+                                            "image_path": "6j5msy.jpg"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "index": 11,
+                            "virtual_lines": [
+                                {
+                                    "bbox": [
+                                        66,
+                                        324,
+                                        439,
+                                        342.3333333333333
+                                    ],
+                                    "spans": [],
+                                    "index": 10
+                                },
+                                {
+                                    "bbox": [
+                                        66,
+                                        342.3333333333333,
+                                        439,
+                                        360.66666666666663
+                                    ],
+                                    "spans": [],
+                                    "index": 11
+                                },
+                                {
+                                    "bbox": [
+                                        66,
+                                        360.66666666666663,
+                                        439,
+                                        378.99999999999994
+                                    ],
+                                    "spans": [],
+                                    "index": 12
+                                }
+                            ]
+                        }
+                    ],
+                    "index": 10.0,
+                    "page_num": "page_2",
+                    "page_size": [
+                        612.0,
+                        792.0
+                    ]
+                }
+            ]
+        }
+    ],
+    "_parse_type": "txt",
+    "_version_name": "0.10.6"
+}

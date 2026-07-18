@@ -1,0 +1,1957 @@
+[
+    {
+        "type": "text",
+        "text": "U.S. Department of Health and Human Services ",
+        "text_level": 1,
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Health Resources & Services Administration ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Application Guide ",
+        "text_level": 1,
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "A guide to help you prepare and submit a Workspace Application Package to Grants.gov ",
+        "text_level": 1,
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Use this along with HRSA notices of funding opportunities (NOFOs) ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Updated March 6, 2025 ",
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Table of Contents ",
+        "text_level": 1,
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "1. INTRODUCTION . ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "1.1. ABOUT HRSA   \n1.2. ABOUT THIS GUIDE .   \n1.3. DOCUMENT VERSION CONTROL . 1   \n1.4. UPDATES FROM THE LAST VERSION . ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2. REGISTER AND APPLY THROUGH GRANTS.GOV USING WORKSPACE ........ ",
+        "text_level": 1,
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2.1  GET REGISTERED.. 2   \n2.2. FIND FUNDING OPPORTUNITIES . 3   \n2.3  OVERVIEW ON HOW TO APPLY 3   \n2.4. APPLY ON TIME AND PROVE YOU SUBMITTED ON TIME 4   \n2.5. LATE APPLICATIONS .. 5   \n2.6. REQUESTING A WAIVER .. 5 ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "3. DETAILED INSTRUCTIONS ON HOW TO APPLY . ",
+        "text_level": 1,
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "3.1. HOW TO COMPLETE FORMS, NARRATIVES, AND ATTACHMENTS .   \n3.2. HOW TO FORMAT NARRATIVES AND ATTACHMENTS .. 22   \n3.3. HOW TO ORDER APPLICATION CONTENT (TABLE OF CONTENTS) . ....    22227747   \n3.4. APPLICATION PAGE LIMIT ..   \n3.5. DATE AND TIME TO APPLY ...   \n3.6. HOW TO CORRECT MISTAKES..   \n3.7. HOW TO WRITE A STRONG APPLICATION . 28   \n3.8. HOW TO WITHDRAW YOUR APPLICATION .. 30 ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "4. AFTER YOU APPLY.. 30 ",
+        "text_level": 1,
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "5. POLICIES, ASSURANCES, DEFINITIONS, AND ACRONYMS . 34 ",
+        "text_level": 1,
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "5.1. ADMINISTRATIVE AND NATIONAL POLICY REQUIREMENTS . 34   \n5.2. COMPLIANCE REQUIREMENTS AT A GLANCE . 36   \n5.3. DEFINITIONS.. 37   \n5.4. ACRONYMS .. . 37 ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "6. CONTACT US . 8 ",
+        "text_level": 1,
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "6.1. HRSA CONTACTS . 38   \n6.2. GRANTS.GOV CUSTOMER SUPPORT . 39 ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "7. FAQ AND CHECKLISTS . 39 ",
+        "text_level": 1,
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "7.1. SOFTWARE.. . 39   \n7.2. BUDGET INFORMATION - NON-CONSTRUCTION PROGRAMS (SF-424A) . . 39   \n7.3. RECEIVING YOUR APPLICATION ... . 39   \n7.4. GRANTS.GOV FAQ AND TRAINING GUIDES . . 40   \n7.5. AM I READY TO APPLY? . 40 ",
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "1. INTRODUCTION ",
+        "text_level": 1,
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "1.1. About HRSA ",
+        "text_level": 1,
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Our programs provide broad access to health care to people who are geographically isolated and economically or medically vulnerable. This includes programs that deliver health services to people with HIV, pregnant women, mothers, and their families, those with low incomes, residents of rural areas, American Indians, and Alaska Natives, and those otherwise unable to access high-quality health care. ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We also support health infrastructure by training health professionals and assigning them to areas where they are needed most. We provide financial support to health care providers, and advance telehealth. ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "And we oversee programs that give discounts on prescription drugs to safety net providers, facilitate organ, bone marrow, and cord blood transplantation, compensate people injured by vaccination, and maintain data on health care malpractice payments. ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Learn more about HRSA and explore data and maps on our health care programs. ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "1.2. About this guide ",
+        "text_level": 1,
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We created this guide to help you prepare and apply to HRSA notices of funding opportunities (NOFOs) through Grants.gov. This guide does not replace program guidance in NOFOs. ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Note: If you received an award and want to request a subsequent budget period, you need to submit a Non-Competing Continuation Progress Report for continued funding of the next budget period. ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "1.3. Document Version Control ",
+        "text_level": 1,
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We periodically update this guide to align with statutory, regulatory, and policy changes. ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "1.4. Updates from the last version ",
+        "text_level": 1,
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "March 6, 2025 ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Updated salary rate limit amount and examples. New salary rate limit for Executive Senior Level II increased January 2025 from $\\mathbb{S}221$ ,900 to $\\mathbb{\\Phi}225,700$ . ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Revised sections 1.1 and 5.1 to comply with Executive Orders signed by the President (to the extent permitted by law). ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "November 6, 2024 ",
+        "text_level": 1,
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "•  In the transition from 45 CFR 75 to 2 CFR 200 and 300, HHS is using a phased approach, where we implement key provisions that provide flexibilities to the HHS grants community in October 2024 and implement the remainder of 2 CFR in October 2025. ",
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "o See various sections that state “Effective October 1, 2024”: Equipment, Supplies, Complete an audit, Complete status reports, and 5.1. Administrative and national policy requirements   \no Source: Interim Final Rule. ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Updated the HHS Grants Policy Statement (GPS) link, that now leads to the new October 1, 2024 version ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Clarified that the salary rate limit applies to both direct and indirect costs, per the revised GPS ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "•  Added new Life sciences research program requirement for specific programs. ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2. REGISTER AND APPLY THROUGH GRANTS.GOV USING WORKSPACE ",
+        "text_level": 1,
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.1 Get Registered ",
+        "text_level": 1,
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "SAM.gov ",
+        "text_level": 1,
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "First you must register and have an active account with SAM.gov. As part of registration, SAM will assign a Unique Entity Identifier (UEI) to you. SAM.gov registration can take several weeks. Begin that process today. ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "To register, go to SAM.gov Entity Registration and click Get Started. From the same page, you can also click on the Entity Registration Checklist for the information you will need to register. ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "People assigned an Entity Administrator role in SAM.gov must be an employee, officer, or board member. This ensures an entity can control who has permission to control roles within their entity. ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Here’s what this means: ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "•  Entity Administrators assigning roles to non-employees can only assign a Data Entry role or lower. If your organization uses an Entity Administrator Role Request Letter (formerly called “notarized letter”), you cannot assign the Entity Administrator role to a nonemployee. Entity Administrator roles assigned to non-employees will be converted to Data Entry roles. In a Data Entry role, non-employees can create and manage entity registration data entry. They cannot manage roles. ",
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "If you’re an applicant using a non-employee or if you’re a non-employee working with an entity to manage registrations, please read (and share) GSA’s A Change in SAM.gov will Affect Access for Some Entity Administrators. ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Grants.gov ",
+        "text_level": 1,
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "You must also have an active account with Grants.gov and apply online. ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "2.2. Find funding opportunities ",
+        "text_level": 1,
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "There are multiple ways you can search on Grants.gov. ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "1. Enter keyword or phrase in the BASIC SEARCH CRITERIA search box.   \n2. Use one of these tabs off the home page: •  Browse Newest •  Browse Categories •  Browse Agencies •  Browse Eligibilities   \n3. Select the SEARCH GRANTS tab, enter the funding opportunity number (Example: HRSA-25-000)or federal assistance listing number, and then select the funding opportunity for which you wish to apply.   \n4. Search for the funding opportunity under the APPLICANTS tab under How to Apply for Grants. Select “Search for Opportunity Package.” Enter the funding opportunity number. (Example: HRSA-25-000.) ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Refer to the NOFO for eligibility criteria or use filters to help narrow your search. ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Eligibility key words: ",
+        "text_level": 1,
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Institutions of Higher Education   \n• Non-Profit Entities   \n• Private For-Profit Entities   \n• Public Entities Tribes and Tribal Organizations ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Subscribe to a NOFO ",
+        "text_level": 1,
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We may modify the NOFO, add documents, or republish it before it closes. If you subscribe to the NOFO, you’ll get an email with updates. ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Select the subscribe button on the grant opportunity page. ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "2.3 Overview on how to apply ",
+        "text_level": 1,
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "You apply online using Workspace. It allows you shared access and editing of the application’s web forms. You can create an instance of a Workspace for each NOFO. ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "This is an overview of applying on Grants.gov. Review complete instructions on Grants.gov’s How to Apply for Grants. ",
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "1) Create a Workspace: Complete your application online. Route it through your organization for review before you submit. ",
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "2) Complete a Workspace: Add people to the workspace. Complete all the required forms. Check for errors before you submit. ",
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "a. Adobe Reader: Instead of filling out web forms, you can download the forms as PDFs in Workspace. Save each PDF to your local device storage, network drive(s), or external drives, and then access through Adobe Reader. NOTE: Visit the Adobe Software Compatibility page on Grants.gov to download the appropriate version of the software.   \nb. Mandatory form fields: In the forms, some fields have a different background color and border. You also can identify mandatory fields by hovering over each box. You must complete these.   \nc.  Complete SF-424 fields first: The forms allow you to fill in common required fields across other forms, such as applicant name, address, and UEI number. To trigger this feature, you must complete the SF-424 information first. Once complete, this information will transfer to the other forms. ",
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3) Submit a Workspace: Use the Sign and Submit button on the Manage Workspace page, under the Forms tab. You must complete this step to apply. ",
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Best practice: Try to apply at least three calendar days before the deadline stated in the NOFO. Applying a bit earlier than the deadline gives you time if there is a problem to fix errors and still submit on time. ",
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4) Track a Workspace: After you submit a Workspace package, Grants.gov assigns a tracking number (GRANTXXXXXXXX). You’ll see the number on the page confirming your submission. ",
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Refer to Applicant Training for user guides and videos. ",
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "For Grants.gov customer support, see Section 6.2. ",
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "2.4. Apply on time and prove you submitted on time ",
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Submit online at Grants.gov. You must apply by 11:59 p.m. ET on the due date/deadline we list in the NOFO’s Deadlines section. ",
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Grants.gov creates an electronic date and time stamp when you apply. Grants.gov will confirm they received your application in an email it sends to your AOR. The email includes a tracking number (GRANTXXXXXXXX). This email serves as proof that Grants.gov received your application on time. ",
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We do not have to accept late applications. ",
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Note: If there’s an error, Grants.gov will email your AOR about that instead. ",
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "2.5. Late applications ",
+        "text_level": 1,
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "If your application does not meet the criteria in the NOFO’s Deadlines section, and a HRSA-approved waiver under the following Section 2.6 does not extend the deadline, we will consider it late and will not review it. ",
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "2.6. Requesting a waiver ",
+        "text_level": 1,
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/9emp3c.jpg",
+        "table_caption": [
+            "Apply by the deadline in the NOFO. "
+        ],
+        "table_footnote": [],
+        "table_body": "\n\n<html><body><table><tr><td>Reasons we will not extend a deadline</td><td>Reasons we may extend a deadline</td></tr><tr><td>Grants.gov verification errors</td><td>Natural disaster (example: flood or hurricane</td></tr><tr><td>Last-minute sign up</td><td>Service disruption (example: a prolonged blackout)</td></tr><tr><td>Errorsduetoacustom-built systemto system (S2S) connection</td><td>Technical issue on our side that prevented you from applying on time</td></tr><tr><td>Errors s you make while submitting</td><td></td></tr></table></body></html>\n\n",
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "If you cannot apply by the deadline, please request a waiver as soon as possible by emailing ApplicationWaivers@hrsa.gov. Any waiver requests received more than five calendar days after the opportunity’s closing date will not be granted. ",
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "What to include in your email: ",
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "HRSA funding opportunity number (HRSA-##-###) • Reason for waiver request Organization name Address Telephone number Unique Entity Identifier (UEI) number Name, address, and telephone number of the PD Grants.gov tracking number1 (GRANTXXXXXXXX) (if you received a “Rejected with Errors” email from Grants.gov) Case numbers (if you called Grants.gov or SAM.gov and they gave them to you) Emails from Grants.gov or SAM.gov, or other details ",
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "We’ll use the information you provide to decide if we’ll grant you a waiver. ",
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "HRSA Heath Resources& Services Administration ",
+        "text_level": 1,
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "3. DETAILED INSTRUCTIONS ON HOW TO APPLY ",
+        "text_level": 1,
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Apply on Grants.gov. Use the package included with the funding opportunity. Use English and whole number budget figures in U.S. dollars. (45 CFR § 75.111(a)). ",
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "If you use Applicant System-to-System (S2S) and run into issues when you apply, that is not a valid reason to request a waiver. ",
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Follow these instructions unless we note otherwise in the NOFO. We’ll consider applications that do not follow the instructions non-responsive and will not review. ",
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "3.1.  How to complete forms, narratives, and attachments ",
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "3.1.1. Application for Federal Assistance (SF-424)   \nFollow the form’s instructions. All fields marked with an asterisk (\\*) and a different background color are required. ",
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "The SF-424 form has multiple fields. If you mouse over each field, instructions will appear in a text box. The following gives you a breakdown of those fields. ",
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "\\* 1. Type of Submission (required) There are three fields to choose from: ",
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "•  Pre-application. We normally do not request a pre-application. Unless the NOFO says otherwise, choose from the remaining two fields. Application. This applies to most. Changed/Corrected Application. Check if your submission is to change or correct a previously submitted application. Unless we request it, you may not use this form to submit changes after the application deadline. ",
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "\\* 2. Type of Application (required) There are three initial fields to choose from: ",
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "•  New. An application that is being submitted for the first time.   \n• Continuation. An extension for an additional funding/budget period for a project with a projected completion date. This can include renewals. Revision. Any change in the federal government's financial obligation or contingent liability from an existing obligation. If you check revision, the corresponding field will open and allow you to enter the appropriate letter(s). More than one of the following may be selected: o  A: Increase Award o  B: Decrease Award o C: Increase Duration o  D: Decrease Duration o  E: Other (specify) o  AC: Increase Award, Increase Duration ",
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "o AD: Increase Award, Decrease Duration o BC: Decrease Award, Increase Duration o BD: Decrease Award, Decrease Duration \\* 3. Date Received (required) ",
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "The date received is completed automatically if submitted via Grants.gov Workspace.   \nIf submitting via other methods use the following format mm/dd/yyyy. ",
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "4. Applicant Identifier (optional) Add your organization’s control number if it applies. ",
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5a. Federal Entity Identifier (optional) Add your organization’s Federal Entity Identifier if it applies. ",
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5b. Federal Award Identifier (optional) ",
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "For new applications, leave blank. For a continuation or revision to an existing award, enter the previously assigned federal award identifier number. If a changed/corrected application, enter the federal award identifier if it applies. ",
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "The following two fields (6 and 7) are for State Use Only: ",
+        "text_level": 1,
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "6. Date Received by State (optional) Leave this field blank. This date will be assigned by the state if it applies. ",
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "7. State Application Identifier (optional) Leave this field blank. This identifier will be assigned by the state if it applies. ",
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "8. Applicant Information ",
+        "text_level": 1,
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "\\* 8a. Legal Name (required)   \nEnter the legal name of the applicant that will undertake the assistance activity. This is the organization that has registered with the System for Award Management (SAM). ",
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "\\* 8b. Employer/Taxpayer Identification Number (EIN/TIN) (required) ",
+        "text_level": 1,
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Enter the employer or taxpayer identification number (EIN or TIN) as assigned by the Internal Revenue Service. If your organization is not in the US, enter 44-4444444. ",
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "\\* 8.c: UEI (required) ",
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Your organization (and subrecipients of our award funds) must have a unique entity identifier (UEI) number to apply. ",
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "A missing or incorrect UEI number is the top reason Grants.gov rejects an application for errors. ",
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "8.d: Address (required) Enter details for the following fields: ",
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "\\* Street1 (required) ",
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "• Street2 (optional)   \n• \\* City (required)   \n• County/Parish (optional)   \n? \\* State (required) Province (optional) \\* Country (required) \\* Zip/Postal Code (required) In this last address field, enter your 9-digit ZIP code. Use USPS: Look Up a Zip code. ",
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "8.e: Organizational Unit (optional) ",
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "There are two fields: Department Name and Division Name. Enter the name of the primary organizational unit, department, or division that will undertake the assistance activity. ",
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "8.f: Name and contact information of person to be contacted on matters involving this application (required) ",
+        "text_level": 1,
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Fill in your Project Director’s name. This person and name are separate from the Authorized Representative (same as AOR) in field 21. (Ensure they use an out of office email that says who to contact while they’re out.) ",
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Prefix (optional) \\* First Name (required) Middle Name (recommended - If no middle name, add N/A) \\* Last Name (required) Suffix (optional) Title (optional) Organizational Affiliation (Enter organizational affiliation if different from the applicant organization) \\* Telephone Number (required daytime number) • Fax Number (optional) \\* Email (required) ",
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "\\* 9. Type of Applicant 1: Select Applicant Type (required) ",
+        "text_level": 1,
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Select a minimum of one applicant type from the drop-down menu or select up to three applicant types, per NOFO instructions. If “\\* Other” is selected, then specify Other Type of Applicant in text box. ",
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "\\* 10. Name of Federal Agency (required) ",
+        "text_level": 1,
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Grants.gov pre-populates this field with “Health Resources and Services Administration.” ",
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "\\* 11: Catalog of Federal Domestic Assistance Number (required) Grants.gov pre-populates this field with the federal assistance listing number (AL) number (formerly referred to as CFDA number) listed in every NOFO. ",
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Assistance Listing Title field (required) is also prepopulated. ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "\\* 12. Funding Opportunity Number (required) Grants.gov pre-populates this field with the number found on the NOFO. Title field (required) is also pre-populated with the NOFO title. ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "13. Competition Identification Number ",
+        "text_level": 1,
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Grants.gov pre-populates this field with the number found on the NOFO.   \nTitle field is also pre-populated with the NOFO title. ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "14. Areas Affected by Project (Cities, Counties, States, etc.) (as needed) This data element is intended for use only by programs for which the area(s) affected are likely to be different from the place(s) of performance reported on the SF-424 Project/Performance Site Location(s) Form. Add attachment to enter additional areas, if needed. ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "\\* 15. Descriptive Title of Applicant's Project (required) ",
+        "text_level": 1,
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Enter a brief, descriptive title of the project. You may attach supporting documents, if requested in the NOFO. ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "16. Congressional Districts Of (required) ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "\\* 16a. Enter the applicant’s congressional district.   \n\\* 16b. Enter the primary district affected by the program or project. ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Instructions for 16a and 16b: Enter in the following format: 2-character state abbreviation – 3-character district number (for example, CA-005 for California 5th district, CA-012 for California 12th district, NC-103 for North Carolina’s 103rd district). If all congressional districts in a state are affected, enter “all” for the district number (for example, MD-all for all congressional districts in Maryland). If nationwide, that is, all districts within all states are affected, enter US-all. If the program/project is outside the United States, enter 00.000. This optional data element is intended for use only by programs for which the area(s) affected are likely to be different than place(s) of performance reported on the SF-424 Project/Performance Site Location(s) form. Attach an additional list of program/project congressional districts, if needed. ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "17. Proposed Project (required) There are two fields to complete: ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "a. \\* Start Date b. \\* End Date ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "18. Estimate Funding $(\\mathfrak{s})$ (required) ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Enter the amounts for the first budget period. Enter “0” for none if it applies. ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "a. \\* Federal (required) b. \\* Applicant (required) ",
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "If cost sharing/match is required in the NOFO, enter the amount you’re contributing during the first budget period. c.  \\* State (required) d. \\* Local (required) e. \\* Other (required) f.  \\* Program Income (required) g. \\* TOTAL (required) ",
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "\\* 19. Is Application Subject to Review by State Under Executive Order 12372 Process? (required) ",
+        "text_level": 1,
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "There are three boxes to choose from: ",
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "a. This application was made available to the State under the Executive Order 12372 Process for review on [add date]   \nb. Program is subject to E.O. 12372 but has not been selected by the State for review.   \nc.  Program is not covered by E.O. 12372. ",
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "If a NOFO is subject to EO 12372, “Intergovernmental Review of Federal Programs,” it will say so. ",
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "EO 12372 allows states to set up a system to review applications from within their states for help under certain federal programs. ",
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Contact your single point of contact as early as possible. Alert them to the prospective applications and receive any instructions on the state’s process this EO uses. Select the appropriate box. If “a.” is selected, enter the date the application was submitted to the State. ",
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Note: Federally recognized Native American tribes or tribal organizations do not need to do this. ",
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "\\* 20. Is the Applicant Delinquent on any Federal Debt? (required) ",
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Check “Yes” or “No.” Select the appropriate box. This question applies to your organization, not the person who signs as the authorized representative. Categories of federal debt include but may not be limited to delinquent audit disallowances, loans, and taxes. If yes, include an explanation in an attachment. ",
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "\\* 21. \\*By signing this application, I certify (1) to the statements contained in the list of certifications\\*\\* and (2) that the statements herein are true, complete and accurate to the best of my knowledge. I also provide the required assurances\\*\\* and agree to comply with any resulting terms if I accept an award. I am aware that any false, fictitious, or fraudulent statements or claims may subject me to criminal, civil, or administrative penalties. (U.S. Code, Title 18, Section 1001) (required) ",
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Check the “I AGREE” box. ",
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "HRSA Heath Resources&ServicesAdministration ",
+        "text_level": 1,
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Authorized Representative (required) ",
+        "text_level": 1,
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "This last section of the SF-424 form has multiple fields to be signed and dated by your organization’s authorized representative: ",
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Prefix (optional)   \nFirst Name (required)   \nMiddle Name (recommended - If no middle name, add N/A)   \nLast Name (required)   \nSuffix (optional)   \nTitle (required)   \nTelephone Number (required daytime number)   \nFax Number (optional)   \nEmail (required)   \nSignature of Authorized Representative (required) ",
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A copy of the governing body’s authorization for you to sign this application as the official representative must be on file in your organization’s office. For all Grants.gov submissions, the signature of the authorized representative and the date signed are completed upon submission. ",
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "3.1.2. Project abstract ",
+        "text_level": 1,
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Use the Standard OMB-approved Project Abstract Summary form that Grants.gov includes in the workspace application package. Do not upload the abstract as an attachment or it may count toward the page limit. ",
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Summarize the application in the Project Abstract field. Use 4,000 characters or less. Do not include personally identifiable information (PII) in abstract form. The public and Congress may see your abstract. Make sure it’s clear, accurate, short. Do not refer to other parts of the application. Describe the needs you’ll address, the proposed services, and the group(s) you’ll serve. ",
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "If you receive an award, we’ll put your project abstract on public websites and databases, including USAspending.gov. See the NOFO for additional information that we may require you to add to the project abstract. ",
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "3.1.3. Project narrative ",
+        "text_level": 1,
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "You must describe all aspects of the proposed project. Make it brief, self-explanatory, consistent with forms and attachments, and well-organized so that reviewers can understand it. See the NOFO for specific instructions. ",
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "3.1.4. Project Budget Information - Non-Construction Programs (SF-424A) These instructions may differ from the ones on Grants.gov. When you complete the SF-424A, follow instructions in the NOFO and these instructions, that include the salary rate limit and funding restrictions (specific and general). ",
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "The total project costs are the total allowable costs (including direct and indirect costs) that you incur while carrying out a HRSA-supported project or activity. Total project costs include costs you charge to the award and costs you bear to satisfy a matching or cost-sharing2 requirement, as it applies. ",
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Classification of costs ",
+        "text_level": 1,
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "There is no universal rule for classifying certain costs as direct or indirect F&A under every accounting system. ",
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "A cost may be direct regarding some service or function, but indirect with respect to the federal award or other final cost objective. ",
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Treat each item of cost incurred for the same purpose consistently in similar situations, either as a direct or an indirect F&A cost. This helps avoid possible double charging of federal awards. ",
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Review guidelines for deciding on direct and indirect F&A costs charged to federal awards in 45 CFR part 75, subpart E. ",
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Multi-year non-construction projects ",
+        "text_level": 1,
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Complete Sections A – F of the SF-424A Budget Information – Non-Construction Programs form. ",
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "SECTION A – Budget summary, ROWS 1–4 ",
+        "text_level": 1,
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Provide budget amounts for the first four years of the project Enter the amounts in the “New or Revised Budget” column, not the “Estimated Unobligated Funds” column ",
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "SECTION B – Budget categories SECTION B 6. Object class categories ",
+        "text_level": 1,
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Provide the object class category breakdown (that is, line-item budget) for each year of the period of performance as specified in the NOFO. ",
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "•  Use column (1) to provide category amounts for year one.   \n• If it applies, use columns (2) through (4) for each budget year that follows. If it applies, for year five, submit a copy of Section B of the SF-424A as an attachment. (The NOFO will list a specific attachment number. We do not count this in the page limit.). ",
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "SECTION B 7. Program Income ",
+        "text_level": 1,
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Enter the estimated amount of total program income, if any, expected to be directly generated by or earned from your project. Program income includes but is not limited to, income from fees for services performed, the use or rental of real or personal property acquired under federally funded projects, the sale of commodities or items fabricated under an award, license fees and royalties on patents and copyrights, and interest on loans made with award funds. For more information, please refer to the NOFO and the Uniform Administrative Requirements at 2 CFR $\\S\\S$ 200.2 and 200.307; 45 CFR §§ 75.2 and 75.307. If program income does not apply, leave blank. ",
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "",
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "SECTION C – Non-federal resources ",
+        "text_level": 1,
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Only complete if the cost sharing guidance in the NOFO requires it. Lines 8– 11 correspond to the first four years of the project.   \nIf it applies, for year five, submit a copy of Section C of the SF-424A as an attachment (NOFO will list a specific attachment number. We do not count this in the page limit.). ",
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "SECTION D – Forecasted cash needs ",
+        "text_level": 1,
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "If you do not have to include cost sharing/matching: only complete line “13. Federal” in the first column titled “Total for 1st Year.” •  If must include cost sharing/matching: complete all three lines in the first column, “Total for 1st Year.” o  13. Federal o  14. Non-Federal o  15. Total (Sum of lines 13 and 14) ",
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "SECTION E – Budget estimates of federal funds needed for balance of the project ",
+        "text_level": 1,
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Complete line 16 of the Future Funding Periods columns for the outyears, with (b) First being the $2^{\\mathsf{n d}}$ year, (c) Second being the $3^{\\lceil{\\mathsf{d}}}$ year, etc. ",
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "SECTION F – Other budget information ",
+        "text_level": 1,
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Optional. For this last section of the SF-424A form, follow the specific Budget instructions listed in the NOFO. ",
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Funding policies and limitations If noted in the NOFO, the following applies: ",
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Salary rate limit ",
+        "text_level": 1,
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "The current appropriations act provides a salary rate limit, that applies to both direct and indirect costs. The law limits the salary amount that may be awarded and charged to HRSA grants and cooperative agreements. ",
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "You may not use award funds to pay someone’s salary at a rate above Executive Level II, which is $\\mathbb{\\Phi}225,700$ (effective January 2025). This amount reflects the person’s base salary. It does not include fringe benefits or any income that you may allow the person to earn outside of your organization’s duties. ",
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "This salary rate limit also applies to subrecipients under a HRSA grant or cooperative agreement. ",
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Note that these or other salary rate limits will apply in the following fiscal years, as the law requires. For more details, see HHS Grants Policy Statement. ",
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Here’s a breakdown and examples of the limit: ",
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Person’s actual base full-time salary paid from your organization’s funds: $\\mathbb{\\Phi}255{,}000$ ",
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "They’ll devote $50\\%$ of their time to the project Direct salary \\$127,500 Fringe $(25\\%$ of salary) \\$31,875 ",
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Amount that you may claim on the application budget due to the statutory salary rate limit: ",
+        "page_idx": 15
+    },
+    {
+        "type": "table",
+        "img_path": "images/l2nq30.jpg",
+        "table_caption": [],
+        "table_footnote": [
+            "Total \\$159,375 "
+        ],
+        "table_body": "\n\n<html><body><table><tr><td>Person's base full-timesalarya adjusted to Executive Level Il: They'll devote 50% of their time to the project:</td><td>$225,700</td></tr><tr><td>Direct salary</td><td>$112,850</td></tr><tr><td>Fringe (25% of salary) Total</td><td>$ 56,425 $169.275</td></tr></table></body></html>\n\n",
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Staff Justification Table (varied Full-Time Employee (FTE) percentages) ",
+        "text_level": 1,
+        "page_idx": 15
+    },
+    {
+        "type": "table",
+        "img_path": "images/fze3cr.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "\n\n<html><body><table><tr><td>Name</td><td>Position Title</td><td>% of FTE</td><td>Base Salary</td><td>Adjusted Annual Salary*</td><td>Federal Amount Requested</td></tr><tr><td>J. Smith</td><td>CEO</td><td>50</td><td>$255,000</td><td>$225,700</td><td>$110,950</td></tr><tr><td>M. Green</td><td>Dentist</td><td>100</td><td>$230,000</td><td>$225,700</td><td>$225,700</td></tr><tr><td>C.Moore</td><td>Physician</td><td>50</td><td>$200,000</td><td>No adjustment needed</td><td>$100,000</td></tr><tr><td>R.Doe</td><td>Nurse Practitioner</td><td>100</td><td>$120,000</td><td>No adjustment needed</td><td>$120,000</td></tr><tr><td>H. Black</td><td>Outreach Director</td><td>50</td><td>$70,000</td><td>No adjustment needed</td><td>$35,000</td></tr><tr><td>D.Jones</td><td>Data/AP Specialist</td><td>25</td><td>$50,000</td><td>No adjustment needed</td><td>$12,500</td></tr><tr><td></td><td>TOTAL</td><td></td><td>$925,000</td><td></td><td>$604,150</td></tr></table></body></html>\n\n",
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "\\*Use when salary is over the $\\mathbb{\\Phi}225,700$ limit. ",
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "To consider costs allowable and allocable, make sure that: ",
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Official records support staff costs that reflect the work performed Internal controls provide reasonable assurance ",
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Funding restrictions (specific mandates) ",
+        "text_level": 1,
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Statutory/legislative mandates (orders) in annual appropriations must be followed when the appropriation funds HRSA programs. ",
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Make sure you have strong policies and procedures and handle your finances well. This way you’ll avoid spending any HRSA funds on banned activities. ",
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "When you receive federal funding, you agree to follow federal rules. This may include limits on how you may use funds for lobbying, executive salaries, gun control, abortion, etc. ",
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Like all other award requirements, we can audit (check) how effective your policies, procedures, and controls are. ",
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Review recent Legislative Mandates ",
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Funding restrictions (in general) ",
+        "text_level": 1,
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "You may request funding up to the ceiling amount listed in the NOFO. ",
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Awards to support projects beyond the first budget year will depend on whether: ",
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "•  Congress appropriates funds   \n•  Your progress meets the project’s objectives   \n•  We decide that continued funding is in the federal government’s best interest ",
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Unallowable costs The NOFO specifies unallowable costs that apply to each funding opportunity. ",
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Consult the cost principles for a complete explanation: ",
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Section 5.2 Compliance Requirements at a Glance UAR Subpart E – Cost Principles at 45 CFR part 75 ",
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Requirements that the program statute, regulations, or the terms and conditions of the award specify may also govern the allowability of costs under individual HRSA awards. These requirements are more important than the general information we provide here or in the regulations that we reference. ",
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Note: A cost is unallowable if it is not reasonable, necessary, allocable to the award, or adequately documented (45 CFR § 75.403). In addition, the cost must be related to the specific program. For example, a medical training program should not include construction costs. ",
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Refer to the Allowable and Unallowable Costs and Activities section in the HHS Grants Policy Statement (October 1, 2024) for more details. ",
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "NOTE: If you do not document costs—such as vouchers, invoices, timekeeping records—with enough detail to determine if the cost is allowable and allocable, then your annual audit might reflect that you cannot charge the costs to the HRSA award. You will need to return the funds if you do not record the costs. ",
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "3.1.5. Budget narrative ",
+        "text_level": 1,
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Detail your budget. Explain the amounts we request for each line of the budget in Section B. 6. Object Class Categories. Amounts here should match and be mathematically correct with amounts in your SF-424 and SF-424A. ",
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "You should describe how each item will help you carry out the project’s objectives. ",
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "For budget years that follow, highlight the changes from year one or show that you’ve made no big budget changes during the period of performance. ",
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Note: Do not use the budget narrative to expand the project narrative. ",
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Object class categories ",
+        "text_level": 1,
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "•  Personnel costs: List each staff member who you’ll support with funds. Include their name (if possible), position title, percentage of full-time equivalency, and annual salary. If noted in the NOFO, follow the salary rate limit guidance imposed by the current appropriations act. ",
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Fringe benefits: List everything that makes up the fringe benefit rate. For example: health insurance, taxes, unemployment insurance, life insurance, retirement plans, and tuition reimbursement. ",
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "The fringe benefits should be directly proportional to the staff costs that you set aside for the project. ",
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "If the NOFO mentions salary rate limit, you must adjust the fringe benefit proportionally for anyone with a base salary above the statutory salary rate limit (that is, $\\mathbb{5}225,700\\rangle$ . ",
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Note: Directly proportional means that as one amount increases, another amount increases at the same rate. ",
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "•  Travel: List travel costs according to local and long-distance travel. ",
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "For local travel, give the mileage rate, number of miles, reason for travel and staff member or consumers traveling. ",
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "For meetings, trainings, and workshops: Include expenses like airfare, lodging, parking, and per diem for each person and each trip. ",
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "o Name the traveler(s), if possible.   \no Describe the reason for travel.   \no Include the number of trips involved, the destinations, and the number of people for whom you’re requesting funds. ",
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Equipment: List costs and explain the reason(s) why you the need the equipment to carry out the program’s goals. Give us a detailed status of current equipment. Effective October 1, 2024, HHS adopted the following superseding provisions: ",
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "2 CFR 200.1, Definitions, Equipment   \n2 CFR 200.313(e), Equipment, Disposition ",
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Supplies3: List the items that you’ll use to carry out the proposed project. Separate supplies into three categories ",
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "o Office (for example, paper or pencils) o Medical (for example, syringes, blood tubes, or gloves) o Educational (for example, brochures or videos) ",
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "You must list items separately. ",
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Effective October 1, 2024, HHS adopted the following superseding provisions: ",
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "2 CFR 200.1, Definitions, Supply   \n2 CFR 200.314(a), Supplies ",
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Contractual/consultant: Explain the purpose of each contract, how you estimated the costs, and the specific product you expect to come from each contract. ",
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Do not provide line-item details on proposed contracts. Instead, provide the basis for your cost estimate for the contract. You’re responsible for ensuring that your organization or institution has an established and adequate procurement system in place with fully developed written procedures for awarding and monitoring all contracts. ",
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "List the total costs for all consultant services. Identify each consultant, the services they will perform, total number of days, travel costs, and total estimated costs. ",
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Executive Orders 12549 and 12689, 2 CFR parts 180 and 376 affect non-federal entities and contractors. These restrict awards, subawards, and contracts with certain parties that cannot participate in federal assistance programs or activities. ",
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Other: ",
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "Include all costs that do not fit into any other category. Explain each cost in this category (for example, electronic health record, provider licenses, audit, legal counsel). ",
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "Rent, utilities, and insurance fall under this category if they are not included in an approved indirect cost rate. ",
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "Include the cost of anything that helps anyone access project-related content. ",
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "o Sign language interpreters (categorize as Other or Contractual/consultant)   \no Plain language and health literacy print materials in formats like Braille or large print)   \no  Services that help translate or interpret language ",
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "Subawards ",
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "For subawards to entities that will help carry out the work of the award, describe how you will monitor their work to ensure they’re properly using the funds. See 45 CFR § 75.351 Subrecipient and contractor determinations. ",
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "Notify potential subrecipients that they must register in SAM and provide you, the recipient, with their UEI number (see 2 CFR part 25). ",
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "•  Indirect costs: Costs that meet common or joint objectives but do not relate to a specific project or program. For example: the cost of running and maintaining facilities, depreciation, and employee salaries. ",
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "Note: Some use the term “facilities and administration” (F&A) for indirect costs. ",
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "If your organization does not have an indirect cost (IDC) rate negotiated with the federal government, you may take one of the two following actions: ",
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "o Apply for an IDC rate through HHS’s Program Support Center (PSC). Visit PSC’s Indirect Cost Negotiations to learn more about rate agreements, the process for applying for them, and the regional offices which negotiate them.   \no Per 2 CFR 200.414(f), if you do not have a current negotiated indirect cost rate (including provisional rate), you may elect to charge a de minimis rate.   If you choose this method, you must charge costs consistently as either direct or indirect. This rate is up to $15\\%$ of modified total direct costs (MTDC). See 2 CFR 200.1 for the definition of MTDC. You can use this rate indefinitely or until you elect to negotiate a rate. ",
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "If you include indirect costs, either attach a copy of the indirect cost rate agreement or specify that you are electing to charge a de minimis rate. This will not count toward the page limit if the NOFO requires you include it. ",
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "How we provide funding for a multi-year award ",
+        "text_level": 1,
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "NOFOs can have periods of performance of one to five years. ",
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Most competitive awards have a one-year budget period. However, the period of performance may be up to five years. ",
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "It works like this: ",
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "1. You submit your progress report(s) and other required documents.   \n2. We approve them.   \n3. The budget period renews.   \n4. We release funds for the following year. ",
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "We decide if we fund beyond the one-year budget period but within the multi-year period of performance. This depends on three factors. ",
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "1. We have funds.   \n2. You make good progress.   \n3. We determine if continuing to fund you is in our best interest. ",
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "3.1.6. Attachments ",
+        "text_level": 1,
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Provide as the NOFO specifies Upload into the application – we will not open or review anything you hyperlink Count toward the application page limit that the NOFO specifies (unless we note differently)   \nLabel clearly ",
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "3.1.7. Staffing plan & job descriptions ",
+        "text_level": 1,
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "If required in the NOFO, present a plan and justify it. Include education and experience and explain why you’re requesting the amount of time for each staff position. ",
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "In the attachment that the NOFO specifies, include the following for proposed project staff: ",
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "•  Position descriptions with the roles, responsibilities, and qualifications Biographical sketches for any key personnel. When it applies, these sketches should include training, language fluency, and experience working with the groups of people you serve who come from different cultures and speak other languages. ",
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "See 45 CFR § 75.430 Compensation—personal services. ",
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "3.1.8. Key Contacts ",
+        "text_level": 1,
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Key Contacts Forms are required for all Key Personnel. See SF-424 Application for Federal Assistance – Table of Contents for more details and Principals and Personnel definitions. ",
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "3.1.9. Assurances ",
+        "text_level": 1,
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "If you expect research involving human subjects, you must: ",
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Protect human subjects from research risks. (See the Code of Federal Regulations, Title 45 – Public Welfare, Part 46 – Protection of Human Subjects). ",
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Hold a Federal Wide Assurance (FWA) of compliance from the HHS Office for Human Research Protections (OHRP) before award. You must include your Human Subject Assurance Number (from the FWA) in your application. If you do not have an assurance when you apply, you must show that you’ll get one from OHRP before award. ",
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Initial and continuing approval of the research by an appropriately constituted and registered institutional review board (IRB). For instructions on registering IRBs and obtaining FWAs, see the OHRP website. For any questions on human subjects protection research, please visit HRSA’S human subjects protection research website or contact HRSA’s human subject protection experts at Protections@hrsa.gov. ",
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Read Certificates of Confidentiality for HRSA-Supported Research ",
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "3.1.10. Certifications ",
+        "text_level": 1,
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Complete the required Certification Regarding Lobbying Form and, if it applies, the Disclosure of Lobbying Activities Form. We provide both in the application package. ",
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Lobbying ",
+        "text_level": 1,
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "1. You may not use federal funds to pay any person to influence or attempt to influence an officer or employee of an agency, a member of Congress, an officer or employee of Congress, or an employee of a member of Congress connected to any of the following: ",
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "•  Awarding of any federal contract Creating any federal grant or loan • Entering into any cooperative agreement • Extending, continuing, renewing, changing any federal contract, grant, loan, or cooperative agreement Similarly, no one may do this on your behalf. 2. Submit Standard Form-LLL, ''Disclosure of Lobbying Activities,” if you use or have used any funds other than federal funds to pay any person for influencing or attempting to influence an officer or employee of any agency, a Member of Congress, an officer or employee of Congress, or an employee of a Member of Congress in connection with this federal contract, grant, loan, or cooperative agreement. ",
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "",
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "3. All subawards must use the certification language in the award documents. Tiers include subcontracts, subgrants, and contracts under grants, loans, and cooperative agreements. All subrecipients must certify and disclose accordingly. ",
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "Your signature means that you are certifying the information is correct; you must provide this signed form before you draw down any funds under this award if you are a successful applicant. (See section 1352, title 31, U.S. Code.) ",
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "If anyone fails to file the required certification, they may have to pay a civil penalty between $\\mathbb{\\Phi}10{,}000$ and $\\mathbb{\\Phi}{100}{,}000$ for each failure. ",
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "Federal Debt ",
+        "text_level": 1,
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "You may not receive a federal grant if you, or your organization, has a judgment lien filed against you for a debt to the United States. ",
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "By signing the SF-424, you certify that you are not overdue on federal debt in keeping with OMB Circular A-129. Examples of relevant debt include: ",
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "Unpaid payroll or other taxes • Audit disallowances (that is, costs determined to be unallowable) Guaranteed and direct student loans Benefits that were overpaid ",
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "If you’re behind on federal debt, you must prove that you’ve arranged to repay the agency to which you owe the debt. Upload this explanation as an attachment. ",
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "Debarment, suspension, ineligibility, and voluntary exclusion certification By submitting this proposal, you’re saying the following are true. ",
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "A. This certification in this clause is a material representation of fact. If it is later determined that the prospective recipient knowingly submitted an erroneous certification, in addition to other remedies available to the federal government, HHS may pursue available remedies, including but not limited to, suspension and/or debarment.   \nB. The prospective recipient shall provide immediate written notice to HRSA if at any time the recipient learns that its certification was erroneous when submitted or had become erroneous due to changed circumstances.   \nC. The terms covered transaction, debarred, suspended, ineligible, lower tier covered transaction, participant, person, primary covered transaction, principal, ",
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "proposal, and voluntarily excluded, as used in this certification, are defined in 2 CFR part 180, as supplemented by 2 CFR part 376. ",
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "D. The prospective recipient agrees by submitting this proposal that, should the proposed covered transaction be entered into, it shall not knowingly enter into any lower tier covered transaction with a person who is proposed for debarment under 2 CFR part ${\\underline{{180,}}}$ or 48 CFR part 9, subpart 9.4, debarred, suspended, declared ineligible, or voluntarily excluded from participation in this covered transaction, unless authorized in writing by HRSA. ",
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "E. The prospective recipient further agrees by submitting this proposal that it will include this clause titled “Certification Regarding Debarment, Suspension, Ineligibility and Voluntary Exclusion,'' without modification, in all lower tier covered transactions and in all solicitations for lower tier covered transactions and receive a copy of the signed attestation by such lower tier contractor/subrecipient. ",
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "F. A recipient may rely upon a certification of a prospective recipient in a lower tier covered transaction that neither it nor its principals, are proposed for debarment under 2 CFR part 180 or 48 CFR part 9, subpart 9.4, debarred, suspended, ineligible, or voluntarily excluded from covered transactions, unless it knows that the certification is erroneous. A participant may decide the method and frequency by which it determines the eligibility of its principals. HRSA strongly encourages each participant to check the Excluded Parties database in the System for Award Management. ",
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "G. Nothing contained in this certification requires establishment of a system of records in order to provide the certification required by this certification. ",
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "H. Except for transactions authorized under paragraph E of this statement, if a participant in a covered transaction knowingly enters into a lower tier covered transaction with a person who is proposed for debarment under 2 CFR part 180 or 48 CFR part 9, subpart 9.4, suspended, debarred, ineligible, or voluntarily excluded from participation in this transaction, in addition to other remedies available to the federal government, the Department may pursue available remedies, including, but not limited to, suspension and/or debarment. ",
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "3.2. How to format narratives and attachments ",
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "3.2.1. Font ",
+        "text_level": 1,
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "•  Use a readable font, such as Times New Roman, Arial, Courier, or CG Times. •  Make text and tables single-spaced. All text must be at least a 12-point font •  For charts, graphs, footnotes, and budget tables, you may use a different (at least 10-point) pitch or size font. ",
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "3.2.2. Paper size and margins ",
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "•  Ensure that we can print your application on 8½” x 11” white paper.   \n•  Margins must be at least one inch at the top, bottom, left and right of the paper. Left-align text. ",
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "3.2.3. Names ",
+        "text_level": 1,
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "On each page as the footer, include your organization’s name and 10-digit award number (if competing continuation or competing supplement). ",
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "3.2.4. Section headings ",
+        "text_level": 1,
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "Put all section headings flush left in bold type. ",
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "3.2.5. Page numbering ",
+        "text_level": 1,
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "Do not number the standard OMB-approved forms. • Number each attachment page sequentially (that is, 1, 2, 3). Reset the numbering for each attachment. Treat each attachment as a separate section. ",
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "3.2.6. Attachments Guidelines ",
+        "text_level": 1,
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "Unless the NOFO says differently, do not submit organizational brochures or other promotional materials (for example, slides, films, clips). ",
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "Although Grants.gov allows you to upload other types of attachments, we only accept the following: ",
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "File types ",
+        "text_level": 1,
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "o .DOC/.DOCX - Microsoft Word   \no .RTF - Rich Text Format   \no .TXT - Text   \no .WPD - Word Perfect Document   \no .PDF - Adobe Portable Document Format   \no .XLS/.XLSX - Microsoft Excel   \no .VSD - Microsoft Visio ",
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "File names ",
+        "text_level": 1,
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "Only use the following characters when naming your attachments: ",
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "$\\bigcirc$ Uppercase letters: A–Z   \n$\\bigcirc$ Lowercase letters: a–z   \no Numbers: 0–9   \no Characters: apostrophe, comma, semicolon, hyphen, space, period, exclamation point, parenthesis, curly braces, square brackets, ampersand, tilde, at sign, number sign, dollar sign, percent sign, plus sign, equal sign ",
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "File names MUST be under 50 characters. ",
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "When we print your application, documents will print as you have formatted them. If you use Excel or other spreadsheets, reviewers will only see information that is set in the “Print Area.” ",
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "3.3. How to order application content (Table of Contents) ",
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "We use an automatic numbering approach. This ensures applications are consistent when we print them. ",
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "We use a standard package from Grants.gov and a standard order of forms. The NOFO tells you where to upload specific attachments 1 to maximum of 15. ",
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "HRSA Health Resources & Services Administration ",
+        "text_level": 1,
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "SF-424 Application for Federal Assistance – Table of Contents ",
+        "text_level": 1,
+        "page_idx": 26
+    },
+    {
+        "type": "table",
+        "img_path": "images/rxfif6.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "\n\n<html><body><table><tr><td></td><td>Recommendation: number the attachment pages sequentially and reset the numbering for each attachment. Do not attempt to numberstandard OMB-approvedformpages. Do not include a table of contents for the entire application. HRSA will create a table of contents in the order specified.</td></tr></table></body></html>\n\n",
+        "page_idx": 26
+    },
+    {
+        "type": "table",
+        "img_path": "images/cxs0bh.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "\n\n<html><body><table><tr><td>Application Component</td><td>Document Type</td><td>Document Name</td><td>Instructions</td></tr><tr><td>Project abstract</td><td>Form</td><td>Project Abstract Summary Form</td><td>Ensure the Project Abstract field succinctly describes the project in plain language that the public can understand and use without the full proposal. Use 4,0oo characters or less.</td></tr><tr><td>Project narrative</td><td>Form</td><td>Project Narrative Attachment Form</td><td>Supports the upload of Mandatory Project Narrative document.</td></tr><tr><td>Project narrative</td><td>Attachment</td><td>Mandatory Project Narrative File</td><td>Must upload in Project Narrative Attachment form. Select the \"Add Mandatory Project Narrative File\"button.</td></tr><tr><td>Budget narrative</td><td>Form</td><td>Budget Narrative Attachment Form</td><td>Supports the upload of Mandatory Budget Narrative.</td></tr><tr><td>Budget narrative</td><td>Attachment</td><td>Mandatory Budget Narrative</td><td>Must upload in Budget Narrative File(s) Attachment form.</td></tr><tr><td>Attachments</td><td>Form</td><td>Attachments Form</td><td>Supports up to 15 numbered attachments. This form only contains the attachment list.</td></tr><tr><td>Attachments1to15</td><td>Attachment</td><td>Attachment Forms 1 to 15</td><td>Upload in Attachments Form 1-15. Refer to the Attachments section in the NOFO for specific sequence and requirements. Unless the NOFO says otherwise, we count attachments in the page limit. Provide additional supporting documents, if it applies, using the available rows. Do not use the rows assigned to a specific purpose in the program NOFO. Merge similar documents into a single document. If you include several documents in the attachment, use a table of contents cover page specific to the attachment. We will not count the table of contents page in the page limit.</td></tr></table></body></html>\n\n",
+        "page_idx": 26
+    },
+    {
+        "type": "table",
+        "img_path": "images/gzsvdh.jpg",
+        "table_caption": [],
+        "table_footnote": [
+            "4 To improve grant award data accuracy, HHS requires that applicant street addresses (SF-424 face page and Project/Performance Site Location Form) contain a valid 9-digit Zip code. Look Up a Zip code on USPS. 5 See 2 CFR § 180.995 and 2 CFR § 376.995 6 Key personnel: The principal investigator / project director and others who help develop or carry out the program or execute a project or program in a real, measurable way, whether they receive salaries, compensation or other benefits under the award. "
+        ],
+        "table_body": "\n\n<html><body><table><tr><td>Application Component</td><td>Document Type</td><td>Document Name</td><td>Instructions</td></tr><tr><td>Other required forms and attachments</td><td></td><td></td><td></td></tr><tr><td></td><td>Form</td><td>Application for Federal Assistance (SF-424)</td><td>Complete pages 1 to 3.</td></tr><tr><td></td><td>Attachment</td><td>Additional Congressional District</td><td>Can upload on the third page of SF-424 - Box 16.</td></tr><tr><td></td><td>Form</td><td>SF-424A Budget Information - Non- Construction Programs</td><td>Supports data for the budget.</td></tr><tr><td></td><td>Form</td><td>Disclosure of Lobbying Activities (SF-LLL)</td><td>Supports structured data for lobbying activities.</td></tr><tr><td></td><td>Form</td><td>Project/Performance Site Location(s)4</td><td>Supports primary and 299 additional sites in structured form.</td></tr><tr><td></td><td>Attachment</td><td>Additional Performance Site Location(s)3</td><td>Can upload in the SF-424 Performance Site Location(s) form as a single document with all additional site location(s).</td></tr><tr><td></td><td>Form</td><td>Grants.gov Lobbying Form</td><td>Supports required lobbying assurances.</td></tr><tr><td></td><td>Form</td><td>Key Contacts</td><td>Submit direct contact information for all principals5 and key personnel6. personnel you submit. If someone does not have a middle name, add N/A on the form.</td></tr></table></body></html>\n\n",
+        "page_idx": 27
+    },
+    {
+        "type": "text",
+        "text": "HRSA Heath Resources& Services Administration ",
+        "text_level": 1,
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "3.4. Application page limit ",
+        "text_level": 1,
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "The NOFO will tell you the page limit. We will not review any pages that exceed the page limit. Do not go over it when you upload attachments. We recommend you use Grants.gov workspace forms connected to your NOFO to avoid going over the page limit. ",
+        "page_idx": 28
+    },
+    {
+        "type": "table",
+        "img_path": "images/px9bq4.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "\n\n<html><body><table><tr><td colspan=\"2\">Does not count in the page limit</td><td>Does count in the page limit</td></tr><tr><td>package applies)</td><td>Standard OMB-approved forms in the workspace application Project_Abstract Summary Indirect Cost Rate Agreement Proof of non-profit status (if it</td><td>An OMB-approved form not in the NOFO's workspace application package</td></tr></table></body></html>\n\n",
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "Note: Print all attachments and confirm the number of pages before you submit. ",
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "3.5. Date and time to apply ",
+        "text_level": 1,
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "Letter of intent Only submit a letter of intent if the NOFO requests it. ",
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "The letter should identify your organization and intent to apply, and briefly describe the proposal. ",
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "Email the letter to HRSADSO@hrsa.gov by the date on the NOFO. Use the HRSA opportunity number as the email subject (HRSA-##-####). Note: We will not confirm that we’ve received your letter of intent. ",
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "Application deadline   \nApply by 11:59 p.m. ET on the date we list in the NOFO’s Deadlines section. (We’ll   \nnote if it’s different.) ",
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "You’ve applied when: ",
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "•  Your AOR or designee applies via Grants.gov to the correct funding opportunity number.   \n•  Grants.gov verifies it on or before the deadline. ",
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "3.6. How to correct mistakes ",
+        "text_level": 1,
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "If you apply more than once before the deadline, we’ll only accept and review the last one. Grants.gov must verify it and it must be under the correct funding opportunity number. ",
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "HRSA Heath Resources& Services Administration ",
+        "text_level": 1,
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "If you apply under the wrong funding opportunity number, we may deem it nonresponsive (decide you did not do what we asked and reject your application). Refer to Section 2.6 for more guidance. ",
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "To correct a mistake, in Box 1 of the SF-424, check “Changed/Corrected Application,” and submit the corrected version before the deadline. ",
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "If Grants.gov rejects your application due to errors, you must correct and resubmit before the deadline. ",
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "Make sure the AOR applies by the deadline. We will not accept incomplete, rejected, or otherwise delayed applications after the deadline. ",
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "3.7. How to write a strong application ",
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "Applications must follow the page limits provided in the NOFO. So, be brief, but precise as you describe: ",
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "Goals and objectives ",
+        "text_level": 1,
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "o Define them clearly o Be specific ",
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "Need ",
+        "text_level": 1,
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "o  The need for the service or activity that the grant will support o  Your organization's track record in fulfilling that need ",
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "Response and impact ",
+        "text_level": 1,
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "Show how you plan to achieve the program’s purpose o Include supporting data whenever possible ",
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "Resources and capabilities ",
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "o Elaborate on your organization’s knowledge, staffing, and fiscal stability o Explain how these ensure you can carry out your proposal and meet the goals of the grant program ",
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "Budget ",
+        "text_level": 1,
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "o  A realistic plan that matches your goals and objectives o  Include a narrative that justifies the costs ",
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "Follow Our 10 Tips ",
+        "text_level": 1,
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "1) Start preparing the application early. •  Allow plenty of time to gather required information. • Submit well before the deadline. Power failures are not an excuse for applying late. ",
+        "page_idx": 29
+    }
+]
