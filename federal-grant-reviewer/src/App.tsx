@@ -1,8 +1,8 @@
 import React from 'react';
-import GrantReviewerApp from './components/GrantReviewerApp';
+import SafeReviewDashboard from './components/SafeReviewDashboard';
 
 function App() {
-  return <GrantReviewerApp />;
+  return <SafeReviewDashboard />;
 }
 
 export default App;

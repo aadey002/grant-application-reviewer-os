@@ -35,6 +35,7 @@ try:
     from grant_reviewer.scoring_engine import ScoringEngine
     from grant_reviewer.comment_generator import CommentGenerator
     from grant_reviewer.report_generator import ReportGenerator
+    from grant_reviewer.safe_review import review_application
     MCP_AVAILABLE = True
     logger.info("MCP Agent components loaded successfully")
 except ImportError as e:
@@ -78,6 +79,42 @@ except Exception as e:
 
 # Serve uploaded files
 app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
+
+@app.post("/safe-reviews/run")
+async def run_safe_reviews(
+    applications: list[UploadFile] = File(...),
+    nofos: list[UploadFile] = File(...),
+    rubrics: list[UploadFile] = File(...),
+    worksheets: list[UploadFile] = File(...),
+):
+    """Store and run exactly three isolated, complete review packages."""
+    groups = {"applications": applications, "nofos": nofos, "rubrics": rubrics, "worksheets": worksheets}
+    if any(len(items) != 3 for items in groups.values()):
+        raise HTTPException(status_code=400, detail="Each of the three reviews requires an application, NOFO, rubric, and worksheet/instructions")
+    results = []
+    allowed = {".pdf", ".doc", ".docx", ".txt"}
+    for index, upload in enumerate(applications, start=1):
+        if Path(upload.filename or "").suffix.lower() != ".pdf":
+            raise HTTPException(status_code=400, detail=f"{upload.filename}: application must be PDF")
+        review_dir = UPLOADS_DIR / f"review-{index}"
+        review_dir.mkdir(exist_ok=True)
+        package_files = {}
+        for kind, items in groups.items():
+            document = items[index - 1]
+            extension = Path(document.filename or "").suffix.lower()
+            if extension not in allowed:
+                raise HTTPException(status_code=400, detail=f"{document.filename}: unsupported file type")
+            content = await document.read()
+            if not content or len(content) > 75 * 1024 * 1024:
+                raise HTTPException(status_code=400, detail=f"{document.filename}: invalid file size")
+            path = review_dir / f"{kind[:-1]}{extension}"
+            with open(path, "wb") as handle:
+                handle.write(content)
+            package_files[kind[:-1]] = {"filename": document.filename, "path": str(path)}
+        result = review_application(f"review-{index}", Path(package_files["application"]["path"]))
+        result["package_files"] = package_files
+        results.append(result)
+    return {"success": True, "reviews": results}
 
 async def perform_full_analysis(file_path: str, agency: str, document_id: int) -> Dict[str, Any]:
     """Perform complete grant analysis using MCP agent components."""

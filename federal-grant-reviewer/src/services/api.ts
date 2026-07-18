@@ -1,5 +1,33 @@
 const API_BASE_URL = 'http://localhost:8000';
 
+export interface SafeEvidence { page: number; quote: string; matched_keywords: string[] }
+export interface SafeCriterion {
+  name: string; maximum_points: number; status: string;
+  automated_points: number | null; final_points: number | null;
+  human_review_required: boolean; evidence: SafeEvidence[];
+  draft_strength: string | null; draft_weakness: string | null;
+}
+export interface SafeReview {
+  review_id: string; application_file: string; page_count: number; word_count: number;
+  review_status: string; final_score: number | null; certification: string;
+  criteria: SafeCriterion[];
+}
+
+export interface ReviewPackage { application: File; nofo: File; rubric: File; worksheet: File }
+export const runSafeReviews = async (packages: ReviewPackage[]): Promise<SafeReview[]> => {
+  const formData = new FormData();
+  packages.forEach(item => {
+    formData.append('applications', item.application);
+    formData.append('nofos', item.nofo);
+    formData.append('rubrics', item.rubric);
+    formData.append('worksheets', item.worksheet);
+  });
+  const response = await fetch(`${API_BASE_URL}/safe-reviews/run`, { method: 'POST', body: formData });
+  const body = await response.json();
+  if (!response.ok) throw new Error(body.detail || 'Review processing failed');
+  return body.reviews;
+};
+
 export interface UploadResponse {
   success: boolean;
   file_id: string;
