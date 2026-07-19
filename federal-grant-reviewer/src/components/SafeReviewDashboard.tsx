@@ -59,6 +59,40 @@ const SafeReviewDashboard: React.FC = () => {
   const step = reviews.length ? 'results' : rubric ? 'rubric' : 'upload';
 
   // ---------------------------------------------------------------------------
+  // Resume/recovery: check localStorage for an in-progress review on mount
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    const saved = localStorage.getItem('grant_reviewer_active_review');
+    if (!saved) return;
+    try {
+      const { reviewId, jobIds, agency: savedAgency } = JSON.parse(saved);
+      if (!reviewId) return;
+      setCurrentReviewId(reviewId);
+      setAgency(savedAgency || 'HRSA');
+      // Try to fetch completed results first
+      getReviewResults(reviewId)
+        .then(fetched => {
+          if (fetched.reviews?.length > 0) {
+            setReviews(fetched.reviews);
+            setSelected(0);
+            localStorage.removeItem('grant_reviewer_active_review');
+          } else if (jobIds?.length > 0) {
+            // Results not ready — resume polling
+            setAppProgress(jobIds.map((id: string, i: number) => ({
+              jobId: id, applicationName: 'Application ' + (i + 1),
+              status: 'queued' as const, progress: 0, message: 'Resuming...',
+            })));
+            setPolling(true);
+          }
+        })
+        .catch(() => {
+          // API unreachable — show recovery message
+          setError('Previous review ' + reviewId.slice(0, 8) + '… is still processing. Refresh to check again.');
+        });
+    } catch { /* ignore corrupt localStorage */ }
+  }, []);
+
+  // ---------------------------------------------------------------------------
   // Step 1 — extract rubric
   // ---------------------------------------------------------------------------
   const process = async () => {
@@ -85,6 +119,10 @@ const SafeReviewDashboard: React.FC = () => {
       const item: ReviewPackage = { agency, nofo, applications, rubric: supportRubric, worksheet };
       const result = await runSafeReviews(item, rubric);
       setCurrentReviewId(result.review_id);
+      // Persist for resume/recovery
+      localStorage.setItem('grant_reviewer_active_review', JSON.stringify({
+        reviewId: result.review_id, jobIds: result.job_ids, agency,
+      }));
 
       if (result.job_ids.length > 0) {
         // Async path — poll for progress
@@ -104,7 +142,12 @@ const SafeReviewDashboard: React.FC = () => {
         setSelected(0);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Review failed');
+      const msg = e instanceof Error ? e.message : 'Review failed';
+      if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+        setError('Connection lost during submission. The review may still be processing on the server. Refresh the page to check.');
+      } else {
+        setError(msg);
+      }
     } finally {
       setBusy(false);
     }
@@ -197,7 +240,7 @@ const SafeReviewDashboard: React.FC = () => {
       stopPolling();
       if (currentReviewId) {
         getReviewResults(currentReviewId)
-          .then(fetched => { setReviews(fetched.reviews); setSelected(0); })
+          .then(fetched => { setReviews(fetched.reviews); setSelected(0); localStorage.removeItem('grant_reviewer_active_review'); })
           .catch(e => setError(e instanceof Error ? e.message : 'Failed to fetch results'));
       }
     }
@@ -228,6 +271,7 @@ const SafeReviewDashboard: React.FC = () => {
     setAppProgress([]);
     setCurrentReviewId(null);
     setError('');
+    localStorage.removeItem('grant_reviewer_active_review');
   };
 
   const exportReview = () => {
