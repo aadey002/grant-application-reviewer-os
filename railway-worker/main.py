@@ -199,6 +199,555 @@ async def extract_rubric(
 
 
 # ---------------------------------------------------------------------------
+# POST /nofo-brief/generate
+# ---------------------------------------------------------------------------
+
+NOFO_BRIEF_TOOL_SCHEMA = {
+    "name": "submit_nofo_brief",
+    "description": "Submit a structured NOFO brief extracted from the funding opportunity document.",
+    "input_schema": {
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "funding_opportunity", "program_purpose", "eligibility", "funding",
+            "important_dates", "required_components", "program_requirements",
+            "scoring_criteria", "budget_requirements", "special_priorities",
+            "compliance_risks", "reviewer_checklist", "executive_summary",
+        ],
+        "properties": {
+            "funding_opportunity": {
+                "type": "object", "additionalProperties": False,
+                "required": ["title", "number", "agency", "bureau"],
+                "properties": {
+                    "title": {"type": "string"},
+                    "number": {"type": "string"},
+                    "agency": {"type": "string"},
+                    "bureau": {"type": "string"},
+                },
+            },
+            "program_purpose": {
+                "type": "object", "additionalProperties": False,
+                "required": ["text", "citations"],
+                "properties": {
+                    "text": {"type": "string"},
+                    "citations": {"type": "array", "items": {
+                        "type": "object", "additionalProperties": False,
+                        "required": ["page", "text"],
+                        "properties": {"page": {"type": "integer", "minimum": 1}, "text": {"type": "string"}},
+                    }},
+                },
+            },
+            "eligibility": {
+                "type": "object", "additionalProperties": False,
+                "required": ["eligible_applicants", "target_populations", "geographic_requirements"],
+                "properties": {
+                    "eligible_applicants": {
+                        "type": "object", "additionalProperties": False,
+                        "required": ["text", "citations"],
+                        "properties": {
+                            "text": {"type": "string"},
+                            "citations": {"type": "array", "items": {
+                                "type": "object", "additionalProperties": False,
+                                "required": ["page", "text"],
+                                "properties": {"page": {"type": "integer", "minimum": 1}, "text": {"type": "string"}},
+                            }},
+                        },
+                    },
+                    "target_populations": {
+                        "type": "object", "additionalProperties": False,
+                        "required": ["text", "citations"],
+                        "properties": {
+                            "text": {"type": "string"},
+                            "citations": {"type": "array", "items": {
+                                "type": "object", "additionalProperties": False,
+                                "required": ["page", "text"],
+                                "properties": {"page": {"type": "integer", "minimum": 1}, "text": {"type": "string"}},
+                            }},
+                        },
+                    },
+                    "geographic_requirements": {
+                        "type": "object", "additionalProperties": False,
+                        "required": ["text", "citations"],
+                        "properties": {
+                            "text": {"type": "string"},
+                            "citations": {"type": "array", "items": {
+                                "type": "object", "additionalProperties": False,
+                                "required": ["page", "text"],
+                                "properties": {"page": {"type": "integer", "minimum": 1}, "text": {"type": "string"}},
+                            }},
+                        },
+                    },
+                },
+            },
+            "funding": {
+                "type": "object", "additionalProperties": False,
+                "required": ["amounts", "award_range", "project_period"],
+                "properties": {
+                    "amounts": {
+                        "type": "object", "additionalProperties": False,
+                        "required": ["text", "citations"],
+                        "properties": {
+                            "text": {"type": "string"},
+                            "citations": {"type": "array", "items": {
+                                "type": "object", "additionalProperties": False,
+                                "required": ["page", "text"],
+                                "properties": {"page": {"type": "integer", "minimum": 1}, "text": {"type": "string"}},
+                            }},
+                        },
+                    },
+                    "award_range": {
+                        "type": "object", "additionalProperties": False,
+                        "required": ["text", "citations"],
+                        "properties": {
+                            "text": {"type": "string"},
+                            "citations": {"type": "array", "items": {
+                                "type": "object", "additionalProperties": False,
+                                "required": ["page", "text"],
+                                "properties": {"page": {"type": "integer", "minimum": 1}, "text": {"type": "string"}},
+                            }},
+                        },
+                    },
+                    "project_period": {
+                        "type": "object", "additionalProperties": False,
+                        "required": ["text", "citations"],
+                        "properties": {
+                            "text": {"type": "string"},
+                            "citations": {"type": "array", "items": {
+                                "type": "object", "additionalProperties": False,
+                                "required": ["page", "text"],
+                                "properties": {"page": {"type": "integer", "minimum": 1}, "text": {"type": "string"}},
+                            }},
+                        },
+                    },
+                },
+            },
+            "important_dates": {
+                "type": "array",
+                "items": {
+                    "type": "object", "additionalProperties": False,
+                    "required": ["date", "description", "nofo_page"],
+                    "properties": {
+                        "date": {"type": "string"},
+                        "description": {"type": "string"},
+                        "nofo_page": {"type": "integer", "minimum": 1},
+                    },
+                },
+            },
+            "required_components": {
+                "type": "array",
+                "items": {
+                    "type": "object", "additionalProperties": False,
+                    "required": ["component", "page_limit", "nofo_page"],
+                    "properties": {
+                        "component": {"type": "string"},
+                        "page_limit": {"type": "string"},
+                        "nofo_page": {"type": "integer", "minimum": 1},
+                    },
+                },
+            },
+            "program_requirements": {
+                "type": "array",
+                "items": {
+                    "type": "object", "additionalProperties": False,
+                    "required": ["requirement", "nofo_page"],
+                    "properties": {
+                        "requirement": {"type": "string"},
+                        "nofo_page": {"type": "integer", "minimum": 1},
+                    },
+                },
+            },
+            "scoring_criteria": {
+                "type": "array",
+                "items": {
+                    "type": "object", "additionalProperties": False,
+                    "required": ["name", "points", "subcriteria", "nofo_page"],
+                    "properties": {
+                        "name": {"type": "string"},
+                        "points": {"type": "integer", "minimum": 0},
+                        "subcriteria": {
+                            "type": "array",
+                            "items": {
+                                "type": "object", "additionalProperties": False,
+                                "required": ["name", "points"],
+                                "properties": {
+                                    "name": {"type": "string"},
+                                    "points": {"type": "integer", "minimum": 0},
+                                },
+                            },
+                        },
+                        "nofo_page": {"type": "integer", "minimum": 1},
+                    },
+                },
+            },
+            "budget_requirements": {
+                "type": "array",
+                "items": {
+                    "type": "object", "additionalProperties": False,
+                    "required": ["requirement", "nofo_page"],
+                    "properties": {
+                        "requirement": {"type": "string"},
+                        "nofo_page": {"type": "integer", "minimum": 1},
+                    },
+                },
+            },
+            "special_priorities": {
+                "type": "array",
+                "items": {
+                    "type": "object", "additionalProperties": False,
+                    "required": ["priority", "nofo_page"],
+                    "properties": {
+                        "priority": {"type": "string"},
+                        "nofo_page": {"type": "integer", "minimum": 1},
+                    },
+                },
+            },
+            "compliance_risks": {
+                "type": "array",
+                "items": {
+                    "type": "object", "additionalProperties": False,
+                    "required": ["risk", "nofo_page"],
+                    "properties": {
+                        "risk": {"type": "string"},
+                        "nofo_page": {"type": "integer", "minimum": 1},
+                    },
+                },
+            },
+            "reviewer_checklist": {
+                "type": "array",
+                "items": {
+                    "type": "object", "additionalProperties": False,
+                    "required": ["item", "nofo_page"],
+                    "properties": {
+                        "item": {"type": "string"},
+                        "nofo_page": {"type": "integer", "minimum": 1},
+                    },
+                },
+            },
+            "executive_summary": {"type": "string"},
+        },
+    },
+}
+
+NOFO_BRIEF_SYSTEM_PROMPT = """You are an expert federal grant analyst preparing a concise but comprehensive Reviewer NOFO Brief. Your job is to extract and organize all information a reviewer needs to evaluate applications against this NOFO. Cite every statement with the exact NOFO page number (e.g., "NOFO p. 12"). Be precise, exhaustive on requirements, and err on the side of inclusion for compliance risks and reviewer checklist items. Do not paraphrase requirements in ways that change their meaning. Identify all explicit and implicit requirements, important dates, page/budget limits, and scoring criteria exactly as stated."""
+
+
+def _extract_nofo_text_for_brief(nofo_bytes: bytes) -> tuple[list[str], str]:
+    """Extract text from NOFO PDF using PyMuPDF, returning (pages, full_text)."""
+    import fitz  # PyMuPDF
+    import io as _io
+    doc = fitz.open(stream=nofo_bytes, filetype="pdf")
+    pages: list[str] = []
+    blocks: list[str] = []
+    for i, page in enumerate(doc, 1):
+        text = page.get_text()
+        pages.append(text)
+        blocks.append(f"\n--- NOFO PAGE {i} ---\n{text.strip()}")
+    doc.close()
+    return pages, "".join(blocks)
+
+
+def _generate_nofo_brief_docx(brief: dict[str, Any]) -> bytes:
+    """Generate a DOCX from the structured NOFO brief and return bytes."""
+    from docx import Document
+    from docx.shared import Pt, RGBColor
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+    doc = Document()
+
+    # Title
+    fo = brief.get("funding_opportunity", {})
+    title_para = doc.add_heading(fo.get("title", "NOFO Reviewer Brief"), level=0)
+
+    meta_lines = [
+        f"Number: {fo.get('number', 'N/A')}",
+        f"Agency: {fo.get('agency', 'N/A')}",
+        f"Bureau: {fo.get('bureau', 'N/A')}",
+    ]
+    for line in meta_lines:
+        doc.add_paragraph(line)
+
+    doc.add_paragraph()
+
+    # Executive Summary
+    doc.add_heading("Executive Summary", level=1)
+    doc.add_paragraph(brief.get("executive_summary", ""))
+
+    # Program Purpose
+    doc.add_heading("Program Purpose", level=1)
+    pp = brief.get("program_purpose", {})
+    doc.add_paragraph(pp.get("text", ""))
+    for c in pp.get("citations", []):
+        p = doc.add_paragraph(style="List Bullet")
+        p.add_run(f"NOFO p. {c.get('page', '?')}: ").bold = True
+        p.add_run(c.get("text", ""))
+
+    # Eligibility
+    doc.add_heading("Eligibility", level=1)
+    elig = brief.get("eligibility", {})
+    for field_key, field_label in [
+        ("eligible_applicants", "Eligible Applicants"),
+        ("target_populations", "Target Populations"),
+        ("geographic_requirements", "Geographic Requirements"),
+    ]:
+        doc.add_heading(field_label, level=2)
+        field = elig.get(field_key, {})
+        doc.add_paragraph(field.get("text", ""))
+        for c in field.get("citations", []):
+            p = doc.add_paragraph(style="List Bullet")
+            p.add_run(f"NOFO p. {c.get('page', '?')}: ").bold = True
+            p.add_run(c.get("text", ""))
+
+    # Funding
+    doc.add_heading("Funding", level=1)
+    funding = brief.get("funding", {})
+    for field_key, field_label in [
+        ("amounts", "Total Funding Available"),
+        ("award_range", "Award Range"),
+        ("project_period", "Project Period"),
+    ]:
+        doc.add_heading(field_label, level=2)
+        field = funding.get(field_key, {})
+        doc.add_paragraph(field.get("text", ""))
+        for c in field.get("citations", []):
+            p = doc.add_paragraph(style="List Bullet")
+            p.add_run(f"NOFO p. {c.get('page', '?')}: ").bold = True
+            p.add_run(c.get("text", ""))
+
+    # Important Dates
+    doc.add_heading("Important Dates", level=1)
+    for item in brief.get("important_dates", []):
+        p = doc.add_paragraph(style="List Bullet")
+        p.add_run(f"{item.get('date', 'TBD')} — {item.get('description', '')} ").bold = False
+        p.add_run(f"(NOFO p. {item.get('nofo_page', '?')})").italic = True
+
+    # Required Components
+    doc.add_heading("Required Application Components", level=1)
+    for item in brief.get("required_components", []):
+        p = doc.add_paragraph(style="List Bullet")
+        p.add_run(f"{item.get('component', '')}").bold = True
+        limit = item.get("page_limit", "")
+        if limit:
+            p.add_run(f" — {limit}")
+        p.add_run(f" (NOFO p. {item.get('nofo_page', '?')})").italic = True
+
+    # Scoring Criteria
+    doc.add_heading("Scoring Criteria", level=1)
+    for crit in brief.get("scoring_criteria", []):
+        doc.add_heading(f"{crit.get('name', '')} — {crit.get('points', 0)} pts (NOFO p. {crit.get('nofo_page', '?')})", level=2)
+        for sub in crit.get("subcriteria", []):
+            p = doc.add_paragraph(style="List Bullet")
+            p.add_run(f"{sub.get('name', '')}: {sub.get('points', 0)} pts")
+
+    # Program Requirements
+    doc.add_heading("Program Requirements", level=1)
+    for item in brief.get("program_requirements", []):
+        p = doc.add_paragraph(style="List Bullet")
+        p.add_run(item.get("requirement", ""))
+        p.add_run(f" (NOFO p. {item.get('nofo_page', '?')})").italic = True
+
+    # Budget Requirements
+    doc.add_heading("Budget Requirements", level=1)
+    for item in brief.get("budget_requirements", []):
+        p = doc.add_paragraph(style="List Bullet")
+        p.add_run(item.get("requirement", ""))
+        p.add_run(f" (NOFO p. {item.get('nofo_page', '?')})").italic = True
+
+    # Special Priorities
+    if brief.get("special_priorities"):
+        doc.add_heading("Special Priorities", level=1)
+        for item in brief.get("special_priorities", []):
+            p = doc.add_paragraph(style="List Bullet")
+            p.add_run(item.get("priority", ""))
+            p.add_run(f" (NOFO p. {item.get('nofo_page', '?')})").italic = True
+
+    # Compliance Risks
+    doc.add_heading("Compliance Risks", level=1)
+    for item in brief.get("compliance_risks", []):
+        p = doc.add_paragraph(style="List Bullet")
+        p.add_run(item.get("risk", ""))
+        p.add_run(f" (NOFO p. {item.get('nofo_page', '?')})").italic = True
+
+    # Reviewer Checklist
+    doc.add_heading("Reviewer Checklist", level=1)
+    for item in brief.get("reviewer_checklist", []):
+        p = doc.add_paragraph(style="List Bullet")
+        p.add_run("[ ] ")
+        p.add_run(item.get("item", ""))
+        p.add_run(f" (NOFO p. {item.get('nofo_page', '?')})").italic = True
+
+    buf = io.BytesIO()
+    doc.save(buf)
+    return buf.getvalue()
+
+
+async def _run_nofo_brief(brief_id: str, review_id: str, nofo_storage_path: str, agency: str, criteria_json: str) -> None:
+    """Background task: generate NOFO brief with Claude, store result."""
+    sb = get_supabase()
+    logger.info("NOFO brief %s starting", brief_id)
+    try:
+        # Download NOFO from storage
+        nofo_bytes = _download_bytes(sb, BUCKET_NOFO, nofo_storage_path)
+
+        # Extract text using PyMuPDF
+        pages, nofo_text = _extract_nofo_text_for_brief(nofo_bytes)
+        logger.info("NOFO brief %s: extracted %d pages", brief_id, len(pages))
+
+        # Build prompt
+        criteria = json.loads(criteria_json) if criteria_json else []
+        rubric_hint = ""
+        if criteria:
+            rubric_hint = "\n\nThe approved scoring rubric is:\n" + "\n".join(
+                f"- {c.get('name', '')}: {c.get('points', 0)} pts" for c in criteria
+            )
+
+        prompt = (
+            f"Agency: {agency}\n\n"
+            "You are preparing a Reviewer NOFO Brief. Every statement must be cited with 'NOFO p. X' "
+            "where X is the exact page number from the NOFO text below.\n"
+            f"{rubric_hint}\n\n"
+            "NOFO TEXT:\n"
+            f"{nofo_text[:120000]}\n\n"
+            "Extract all information needed to complete the brief. Be thorough and precise. "
+            "For every field that includes citations, cite the exact NOFO page numbers."
+        )
+
+        import anthropic
+        client = anthropic.Anthropic(
+            api_key=os.getenv("ANTHROPIC_API_KEY", "").strip(),
+            timeout=600.0,
+        )
+        response = client.messages.create(
+            model=os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5"),
+            max_tokens=16000,
+            temperature=0,
+            system=NOFO_BRIEF_SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": prompt}],
+            tools=[NOFO_BRIEF_TOOL_SCHEMA],
+            tool_choice={"type": "tool", "name": "submit_nofo_brief"},
+        )
+
+        tool_use = next(
+            (b for b in response.content if b.type == "tool_use" and b.name == "submit_nofo_brief"),
+            None,
+        )
+        if not tool_use:
+            raise RuntimeError("Claude did not return a structured NOFO brief")
+
+        brief_data = tool_use.input
+        if isinstance(brief_data, str):
+            brief_data = json.loads(brief_data)
+
+        # Generate DOCX
+        docx_bytes = _generate_nofo_brief_docx(brief_data)
+        docx_filename = f"nofo_brief_{brief_id}.docx"
+        docx_storage_path = f"{review_id}/{docx_filename}"
+        _upload_bytes(
+            sb, BUCKET_COMPLETED, docx_storage_path, docx_bytes,
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
+
+        # Update DB row to ready
+        _update(sb, "nofo_briefs", {"id": brief_id}, {
+            "status": "ready",
+            "brief_json": json.dumps(brief_data),
+            "docx_storage_path": docx_storage_path,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+        })
+        logger.info("NOFO brief %s ready", brief_id)
+
+    except Exception as exc:
+        logger.exception("NOFO brief %s failed: %s", brief_id, exc)
+        _update(sb, "nofo_briefs", {"id": brief_id}, {
+            "status": "failed",
+            "error_message": str(exc)[:2000],
+        })
+
+
+@app.post("/nofo-brief/generate", status_code=202)
+async def generate_nofo_brief(
+    background_tasks: BackgroundTasks,
+    review_id: str = Form(...),
+    nofo_storage_path: str = Form(...),
+    agency: str = Form("HRSA"),
+    criteria_json: str = Form(...),
+):
+    """Generate a Reviewer NOFO Brief from the stored NOFO PDF using Claude."""
+    sb = get_supabase()
+    brief_id = str(uuid.uuid4())
+
+    _insert(sb, "nofo_briefs", {
+        "id": brief_id,
+        "review_id": review_id,
+        "nofo_storage_path": nofo_storage_path,
+        "agency": agency,
+        "status": "generating",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+
+    background_tasks.add_task(
+        _run_nofo_brief, brief_id, review_id, nofo_storage_path, agency, criteria_json,
+    )
+
+    return JSONResponse(status_code=202, content={
+        "brief_id": brief_id,
+        "review_id": review_id,
+        "status": "generating",
+        "message": "NOFO brief generation started.",
+    })
+
+
+@app.get("/nofo-brief/{brief_id}")
+def get_nofo_brief(brief_id: str):
+    """Return the NOFO brief JSON and download URL."""
+    sb = get_supabase()
+    rows = _select(sb, "nofo_briefs", {"id": brief_id})
+    if not rows:
+        raise HTTPException(status_code=404, detail="NOFO brief not found")
+    row = rows[0]
+
+    result: dict[str, Any] = {
+        "brief_id": brief_id,
+        "review_id": row.get("review_id"),
+        "status": row.get("status"),
+        "agency": row.get("agency"),
+        "created_at": row.get("created_at"),
+        "generated_at": row.get("generated_at"),
+        "error_message": row.get("error_message"),
+        "brief_json": json.loads(row["brief_json"]) if row.get("brief_json") else None,
+        "docx_download_url": None,
+    }
+
+    if row.get("docx_storage_path") and row.get("status") == "ready":
+        try:
+            result["docx_download_url"] = _signed_url(sb, BUCKET_COMPLETED, row["docx_storage_path"], expires_in=3600)
+        except Exception as exc:
+            logger.warning("Could not generate signed URL for brief %s: %s", brief_id, exc)
+
+    return result
+
+
+@app.get("/nofo-brief/{brief_id}/download")
+def download_nofo_brief(brief_id: str):
+    """Return a signed download URL for the NOFO brief DOCX."""
+    sb = get_supabase()
+    rows = _select(sb, "nofo_briefs", {"id": brief_id})
+    if not rows:
+        raise HTTPException(status_code=404, detail="NOFO brief not found")
+    row = rows[0]
+    if row.get("status") != "ready" or not row.get("docx_storage_path"):
+        raise HTTPException(status_code=404, detail=f"NOFO brief not ready (status: {row.get('status', 'unknown')})")
+    try:
+        signed = _signed_url(sb, BUCKET_COMPLETED, row["docx_storage_path"], expires_in=3600)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Could not generate download URL: {exc}")
+    return {
+        "brief_id": brief_id,
+        "download_url": signed,
+        "expires_in_seconds": 3600,
+    }
+
+
+# ---------------------------------------------------------------------------
 # POST /safe-reviews/enqueue — lightweight, accepts Supabase Storage paths only
 # ---------------------------------------------------------------------------
 
@@ -526,7 +1075,9 @@ async def _process_job(
         for crit in review_result.get("criteria", []):
             for finding_type in ("strengths", "mets", "weaknesses"):
                 for finding in crit.get(finding_type, []):
-                    _insert(sb, "review_findings", {
+                    # Support both old "pages" and new "application_pages" field names
+                    app_pages = finding.get("application_pages", finding.get("pages", []))
+                    row: dict[str, Any] = {
                         "id": str(uuid.uuid4()),
                         "review_id": review_id,
                         "application_id": application_id,
@@ -534,9 +1085,14 @@ async def _process_job(
                         "criterion_name": crit["name"],
                         "finding_type": finding_type,
                         "comment": finding.get("comment", ""),
-                        "pages": json.dumps(finding.get("pages", [])),
+                        "pages": json.dumps(app_pages),
                         "created_at": datetime.now(timezone.utc).isoformat(),
-                    })
+                    }
+                    if finding_type == "weaknesses":
+                        row["nofo_requirement"] = finding.get("nofo_requirement", "")
+                        row["nofo_pages"] = json.dumps(finding.get("nofo_pages", []))
+                        row["impact"] = finding.get("impact", "")
+                    _insert(sb, "review_findings", row)
 
         # -- Populate reviewer worksheet (if template provided) --
         worksheet_doc_id: Optional[str] = None

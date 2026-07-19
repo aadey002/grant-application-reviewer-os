@@ -18,10 +18,24 @@ def _insert_after(paragraph: Paragraph, text: str) -> None:
     run.font.name = "Arial"
 
 
-def _findings(items: list[dict[str, Any]]) -> str:
+def _findings(items: list[dict[str, Any]], finding_type: str = "strength") -> str:
     if not items:
         return "None identified."
-    return "\n".join(f"{i + 1}. {item['comment']} (Application pp. {', '.join(map(str, item['pages']))})" for i, item in enumerate(items))
+    lines = []
+    for item in items:
+        comment = item.get("comment", "")
+        app_pages = item.get("application_pages", item.get("pages", []))
+        page_ref = f"(Application p. {', '.join(str(p) for p in app_pages)})" if app_pages else ""
+        if finding_type == "weaknesses" and item.get("nofo_requirement"):
+            nofo_pages = item.get("nofo_pages", [])
+            nofo_ref = f"(NOFO p. {', '.join(str(p) for p in nofo_pages)})" if nofo_pages else ""
+            lines.append(f"• {comment} {page_ref}")
+            lines.append(f"  NOFO requirement: {item['nofo_requirement']} {nofo_ref}")
+            if item.get("impact"):
+                lines.append(f"  Impact: {item['impact']}")
+        else:
+            lines.append(f"• {comment} {page_ref}")
+    return "\n".join(lines)
 
 
 def _normalized(value: str) -> str:
@@ -45,11 +59,11 @@ def populate_reviewer_worksheet(template: Path, output: Path, review: dict[str, 
             heading = match.group(1).strip().lower()
             current = next((c for c in criteria if c["name"].lower() in heading or heading in c["name"].lower()), None)
         if current and text.startswith("Strengths (Please enter"):
-            _insert_after(paragraph, _findings(current.get("strengths", [])))
+            _insert_after(paragraph, _findings(current.get("strengths", []), "strengths"))
         elif current and text.startswith("Mets (Please enter"):
-            _insert_after(paragraph, _findings(current.get("mets", [])))
+            _insert_after(paragraph, _findings(current.get("mets", []), "mets"))
         elif current and text.startswith("Weaknesses (Please enter"):
-            _insert_after(paragraph, _findings(current.get("weaknesses", [])))
+            _insert_after(paragraph, _findings(current.get("weaknesses", []), "weaknesses"))
     if len(document.tables) >= 7:
         identity = document.tables[3]
         identity.rows[7].cells[-1].text = review.get("application_number", "")

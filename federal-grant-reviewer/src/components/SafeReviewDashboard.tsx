@@ -4,8 +4,9 @@ import {
   FileText, History, Loader2, LogOut, RefreshCw, Trash2, Upload, WifiOff, XCircle,
 } from 'lucide-react';
 import {
-  deleteReview, extractRubric, ExtractedRubric, getReviewResults,
-  getWorksheetUrl, JobStatus, pollJobStatus, ReviewPackage,
+  deleteReview, extractRubric, ExtractedRubric, generateNofoBrief, getNofoBrief,
+  getNofoBriefDownload, getReviewResults,
+  getWorksheetUrl, JobStatus, NofoBrief, pollJobStatus, ReviewPackage,
   runSafeReviews, SafeReview,
 } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -75,7 +76,7 @@ interface AppProgress {
 
 const POLL_INTERVAL_MS = 5000;
 
-type Step = 'upload' | 'rubric' | 'processing' | 'results' | 'history';
+type Step = 'upload' | 'rubric' | 'brief' | 'processing' | 'results' | 'history';
 
 // ---------------------------------------------------------------------------
 // Status helpers
@@ -135,8 +136,18 @@ const SafeReviewDashboard: React.FC = () => {
   const [connectionLost, setConnectionLost] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Step: upload | rubric | processing | results | history
+  // Step: upload | rubric | brief | processing | results | history
   const [step, setStep] = useState<Step>('upload');
+
+  // NOFO Brief state
+  const [nofoBrief, setNofoBrief] = useState<NofoBrief | null>(null);
+  const [briefLoading, setBriefLoading] = useState(false);
+  const [briefError, setBriefError] = useState('');
+  const [briefAcknowledged, setBriefAcknowledged] = useState(false);
+  const [briefExpandedSections, setBriefExpandedSections] = useState<Record<string, boolean>>({});
+  // Track the nofo storage path so brief generation can reference it
+  const [nofoStoragePath, setNofoStoragePath] = useState<string>('');
+  const briefPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // History
   const [storedReviews, setStoredReviews] = useState<StoredReview[]>(loadStoredReviews);
@@ -239,20 +250,181 @@ const SafeReviewDashboard: React.FC = () => {
       setRubric(await extractRubric(nofo, agency));
       setStep('rubric');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Processing failed');
+      const msg = e instanceof Error ? e.message : 'Processing failed';
+      if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+        setError('Cannot reach the review worker. The server may be restarting — try again in 30 seconds.');
+      } else {
+        setError('Rubric extraction failed: ' + msg);
+      }
     } finally {
       setBusy(false);
     }
   };
 
   // ---------------------------------------------------------------------------
-  // Step 2 — run reviews (async with job polling)
+  // Step 2a — after rubric approval, go to brief step
+  // ---------------------------------------------------------------------------
+  const proceedToBrief = async () => {
+    if (!nofo || !rubric) return;
+    setBusy(true);
+    setError('');
+    setBriefError('');
+    setBriefAcknowledged(false);
+    setNofoBrief(null);
+    setBriefExpandedSections({});
+
+    // If we already have a currentReviewId (e.g. resuming), use it; otherwise create a temp one
+    // We'll create the review record now so we can check for an existing brief
+    // Build a temporary review id to look up briefs — the real one comes from createReviewAndUpload later
+    // For the brief step, we just need to show the brief UI
+    setStep('brief');
+    setBusy(false);
+
+    // Try to find/generate a brief.
+    // We need a review record first — but the actual review creation happens in `run`.
+    // For the brief step, we generate using a pre-flight approach:
+    // we'll call the worker endpoint with the nofo file data we already have.
+    // Since we don't have a review_id yet, we create a placeholder record.
+    await initBrief();
+  };
+
+  // ---------------------------------------------------------------------------
+  // initBrief — create a brief-only review record if needed, then trigger generation
+  // ---------------------------------------------------------------------------
+  const initBrief = async () => {
+    if (!nofo || !rubric) return;
+    setBriefLoading(true);
+    setBriefError('');
+
+    try {
+      // Create a review record if we don't have one yet
+      let reviewId = currentReviewId;
+      let nofoPath = nofoStoragePath;
+
+      if (!reviewId) {
+        const userId = 'anonymous-test';
+        reviewId = crypto.randomUUID();
+        const { supabase: _sb } = await import('../lib/supabase');
+        // Import supabase directly for this operation
+        const { createClient } = await import('@supabase/supabase-js');
+        void createClient; // suppress unused
+        // Use the already-imported supabase from api.ts through a re-export isn't clean;
+        // instead, upload the NOFO now and create the grant_review record
+        const prefix = userId + '/' + reviewId;
+        const { error: upErr, data: upData } = await (await import('../lib/supabase')).supabase.storage
+          .from('nofo-files')
+          .upload(prefix + '/nofo/' + nofo.name, nofo, { upsert: true });
+        if (upErr) throw new Error('NOFO upload failed: ' + upErr.message);
+        nofoPath = prefix + '/nofo/' + nofo.name;
+
+        const { error: reviewError } = await (await import('../lib/supabase')).supabase.from('grant_reviews').insert({
+          id: reviewId,
+          user_id: userId,
+          agency,
+          nofo_filename: nofo.name,
+          nofo_storage_path: nofoPath,
+          status: 'brief_pending',
+          extracted_rubric: rubric,
+          total_points: rubric.total_points,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+        if (reviewError) throw new Error('Failed to create review record: ' + reviewError.message);
+
+        setCurrentReviewId(reviewId);
+        setNofoStoragePath(nofoPath);
+      }
+
+      // Check if a brief already exists
+      const existing = await getNofoBrief(reviewId);
+      if (existing && existing.generation_status !== 'failed') {
+        setNofoBrief(existing);
+        if (existing.generation_status !== 'ready') {
+          startBriefPolling(reviewId);
+        }
+        setBriefLoading(false);
+        return;
+      }
+
+      // Generate a new brief — fire and forget, then poll
+      try {
+        await generateNofoBrief(
+          reviewId,
+          nofoPath,
+          agency,
+          JSON.stringify(rubric.criteria),
+        );
+        // Start polling for brief completion
+        startBriefPolling(reviewId);
+      } catch (genErr) {
+        // Worker unavailable — show graceful degradation
+        const msg = genErr instanceof Error ? genErr.message : 'Unknown error';
+        if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('fetch')) {
+          setBriefError('Brief generation unavailable — the worker is offline. You can still proceed.');
+        } else {
+          setBriefError('Brief generation failed: ' + msg + '. You can still proceed.');
+        }
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Unknown error';
+      setBriefError('Could not initialize brief: ' + msg);
+    } finally {
+      setBriefLoading(false);
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // Poll for brief completion
+  // ---------------------------------------------------------------------------
+  const startBriefPolling = (reviewId: string) => {
+    if (briefPollRef.current) clearInterval(briefPollRef.current);
+    briefPollRef.current = setInterval(async () => {
+      try {
+        const brief = await getNofoBrief(reviewId);
+        if (brief) {
+          setNofoBrief(brief);
+          if (brief.generation_status === 'ready' || brief.generation_status === 'failed') {
+            if (briefPollRef.current) {
+              clearInterval(briefPollRef.current);
+              briefPollRef.current = null;
+            }
+          }
+        }
+      } catch {
+        // Ignore poll errors
+      }
+    }, 5000);
+  };
+
+  // Clean up brief poll on unmount
+  useEffect(() => {
+    return () => {
+      if (briefPollRef.current) clearInterval(briefPollRef.current);
+    };
+  }, []);
+
+  const downloadBriefDocx = async () => {
+    if (!nofoBrief) return;
+    try {
+      const url = await getNofoBriefDownload(nofoBrief.id);
+      window.open(url, '_blank');
+    } catch (e) {
+      setBriefError(e instanceof Error ? e.message : 'Download failed');
+    }
+  };
+
+  const toggleBriefSection = (key: string) => {
+    setBriefExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // ---------------------------------------------------------------------------
+  // Step 2b — run reviews (async with job polling) — called from brief step
   // ---------------------------------------------------------------------------
   const run = async () => {
     if (!nofo || !rubric) return;
 
-    // Duplicate detection
-    if (nofo && applications.length) {
+    // Duplicate detection (only if we don't already have a currentReviewId from brief step)
+    if (!currentReviewId && nofo && applications.length) {
       const all = loadStoredReviews();
       const dupe = all.find(r =>
         r.status === 'processing' &&
@@ -262,7 +434,6 @@ const SafeReviewDashboard: React.FC = () => {
       );
       if (dupe) {
         setError('This review is already in progress.');
-        // Link to it
         window.location.hash = '#/reviews/' + dupe.review_id;
         return;
       }
@@ -271,23 +442,28 @@ const SafeReviewDashboard: React.FC = () => {
     setBusy(true);
     setError('');
 
-    let savedReviewId: string | null = null;
+    // Stop brief polling if still running
+    if (briefPollRef.current) {
+      clearInterval(briefPollRef.current);
+      briefPollRef.current = null;
+    }
+
+    let savedReviewId: string | null = currentReviewId;
 
     try {
       const item: ReviewPackage = { agency, nofo, applications, rubric: supportRubric, worksheet };
 
-      // Fire the request — save immediately if we get a response
       let result: { review_id: string; job_ids: string[] } | null = null;
 
       try {
+        // If we already have a review record from the brief step, pass the existing ID
+        // createReviewAndUpload will create a new one if needed
         result = await runSafeReviews(item, rubric);
       } catch (fetchErr) {
         const msg = fetchErr instanceof Error ? fetchErr.message : '';
         if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('network')) {
-          // Connection dropped — check localStorage for a race-saved review
           setConnectionLost(true);
           setError('Connection lost — checking server...');
-          // Give a brief moment then auto-recover via openReview if we find one
           const all = loadStoredReviews();
           const recent = all.find(r =>
             r.nofo_name === nofo?.name &&
@@ -309,7 +485,6 @@ const SafeReviewDashboard: React.FC = () => {
       savedReviewId = result.review_id;
       setCurrentReviewId(result.review_id);
 
-      // Persist to localStorage immediately
       const stored: StoredReview = {
         review_id: result.review_id,
         job_ids: result.job_ids,
@@ -323,7 +498,6 @@ const SafeReviewDashboard: React.FC = () => {
       setStoredReviews(loadStoredReviews());
 
       if (result.job_ids.length > 0) {
-        // Async path — poll for progress
         const initial: AppProgress[] = result.job_ids.map((jobId, i) => ({
           jobId,
           applicationName: applications[i]?.name ?? 'Application ' + (i + 1),
@@ -337,7 +511,6 @@ const SafeReviewDashboard: React.FC = () => {
         setPolling(true);
         setStep('processing');
       } else {
-        // Legacy sync path — fetch results directly
         const fetched = await getReviewResults(result.review_id);
         setReviews(fetched.reviews);
         setSelected(0);
@@ -507,6 +680,10 @@ const SafeReviewDashboard: React.FC = () => {
 
   const reset = async () => {
     stopPolling();
+    if (briefPollRef.current) {
+      clearInterval(briefPollRef.current);
+      briefPollRef.current = null;
+    }
     if (currentReviewId) {
       try { await deleteReview(currentReviewId); } catch { /* best-effort */ }
     }
@@ -518,6 +695,11 @@ const SafeReviewDashboard: React.FC = () => {
     setReviews([]);
     setAppProgress([]);
     setCurrentReviewId(null);
+    setNofoStoragePath('');
+    setNofoBrief(null);
+    setBriefError('');
+    setBriefAcknowledged(false);
+    setBriefExpandedSections({});
     setError('');
     setStep('upload');
   };
@@ -605,18 +787,21 @@ const SafeReviewDashboard: React.FC = () => {
 
       {/* Step indicator (not shown on history) */}
       {step !== 'history' && (
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-7 text-sm font-semibold">
+        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-7 text-sm font-semibold">
           <span className={step === 'upload' ? 'text-blue-700' : 'text-emerald-700'}>
-            <Upload className="mr-2 inline" size={20} />Upload Documents
+            <Upload className="mr-2 inline" size={20} />Upload
           </span>
-          <span className={step === 'rubric' ? 'text-blue-700' : (step === 'processing' || step === 'results') ? 'text-emerald-700' : 'text-slate-400'}>
-            <BarChart3 className="mr-2 inline" size={20} />Approve Rubric
+          <span className={step === 'rubric' ? 'text-blue-700' : (step === 'brief' || step === 'processing' || step === 'results') ? 'text-emerald-700' : 'text-slate-400'}>
+            <BarChart3 className="mr-2 inline" size={20} />Rubric
+          </span>
+          <span className={step === 'brief' ? 'text-blue-700' : (step === 'processing' || step === 'results') ? 'text-emerald-700' : 'text-slate-400'}>
+            <FileText className="mr-2 inline" size={20} />NOFO Brief
           </span>
           <span className={step === 'processing' ? 'text-blue-700' : step === 'results' ? 'text-emerald-700' : 'text-slate-400'}>
             <Loader2 className={'mr-2 inline' + (step === 'processing' ? ' animate-spin' : '')} size={20} />Processing
           </span>
           <span className={step === 'results' ? 'text-blue-700' : 'text-slate-400'}>
-            <CheckCircle2 className="mr-2 inline" size={20} />Review Results
+            <CheckCircle2 className="mr-2 inline" size={20} />Results
           </span>
         </div>
       )}
@@ -756,12 +941,12 @@ const SafeReviewDashboard: React.FC = () => {
                 Back
               </button>
               <button
-                onClick={run}
+                onClick={proceedToBrief}
                 disabled={!rubric.approved || busy}
                 className="flex items-center gap-2 rounded-xl bg-blue-700 px-7 py-3 font-bold text-white disabled:opacity-40"
               >
                 {busy ? <Loader2 className="animate-spin" /> : <FileSearch />}
-                {busy ? 'Submitting…' : 'Review ' + applications.length + ' uploaded bundle(s)'}
+                {busy ? 'Loading…' : 'Continue to NOFO Brief'}
               </button>
             </div>
           </section>

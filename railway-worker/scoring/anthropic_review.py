@@ -10,7 +10,7 @@ from typing import Any
 
 from .safe_review import extract_pdf_pages
 
-SYSTEM_PROMPT = """You are an independent federal grant merit reviewer. Score only against the approved review criteria supplied by the user. Use only application evidence; never invent facts, page numbers, findings, or budget amounts. Apply HRSA comment conventions: third person, present tense, criterion-specific findings, and constructive language. A strength exceeds a criterion, a met finding satisfies it, and a weakness materially falls short. Do not use outside knowledge. Every substantive finding must cite application page numbers. Scores must be integers within each criterion maximum and reflect the significance of findings. This is a draft for human reviewer validation, not an award decision."""
+SYSTEM_PROMPT = """You are an independent federal grant merit reviewer. Score only against the approved review criteria supplied by the user. Use only application evidence; never invent facts, page numbers, findings, or budget amounts. Apply HRSA comment conventions: third person, present tense, criterion-specific findings, and constructive language. A strength exceeds a criterion, a met finding satisfies it, and a weakness materially falls short. Do not use outside knowledge. Every substantive finding must cite application page numbers. Scores must be integers within each criterion maximum and reflect the significance of findings. This is a draft for human reviewer validation, not an award decision. Every weakness MUST cite the specific NOFO requirement the application falls short of, with the exact NOFO page number(s). Include application page(s) showing the shortfall and explain the material impact. Do not identify weaknesses based on reviewer preference or outside knowledge — only against explicitly stated NOFO requirements. If a weakness cannot be supported by a specific NOFO requirement, omit it rather than lowering the score."""
 
 
 def _application_text(path: Path, max_chars: int = 175_000) -> tuple[list[str], str]:
@@ -29,10 +29,28 @@ def _application_text(path: Path, max_chars: int = 175_000) -> tuple[list[str], 
 
 
 def _tool(criteria: list[dict[str, Any]]) -> dict[str, Any]:
-    finding = {"type": "object", "additionalProperties": False, "required": ["comment", "pages"], "properties": {"comment": {"type": "string"}, "pages": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}}}}
+    strength_met_finding = {
+        "type": "object", "additionalProperties": False,
+        "required": ["comment", "application_pages"],
+        "properties": {
+            "comment": {"type": "string"},
+            "application_pages": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}}
+        }
+    }
+    weakness_finding = {
+        "type": "object", "additionalProperties": False,
+        "required": ["comment", "application_pages", "nofo_requirement", "nofo_pages", "impact"],
+        "properties": {
+            "comment": {"type": "string"},
+            "application_pages": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}},
+            "nofo_requirement": {"type": "string", "description": "Exact or faithful paraphrase of the NOFO requirement the application falls short of"},
+            "nofo_pages": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}},
+            "impact": {"type": "string", "description": "Why the shortfall matters to this review criterion"}
+        }
+    }
     criterion = {"type": "object", "additionalProperties": False, "required": ["name", "score", "maximum_points", "score_rationale", "strengths", "mets", "weaknesses", "subcriteria"], "properties": {
         "name": {"type": "string"}, "score": {"type": "integer", "minimum": 0}, "maximum_points": {"type": "integer", "minimum": 0}, "score_rationale": {"type": "string"},
-        "strengths": {"type": "array", "items": finding}, "mets": {"type": "array", "items": finding}, "weaknesses": {"type": "array", "items": finding},
+        "strengths": {"type": "array", "items": strength_met_finding}, "mets": {"type": "array", "items": strength_met_finding}, "weaknesses": {"type": "array", "items": weakness_finding},
         "subcriteria": {"type": "array", "items": {"type": "object", "additionalProperties": False, "required": ["name", "score", "maximum_points"], "properties": {"name": {"type": "string"}, "score": {"type": "integer", "minimum": 0}, "maximum_points": {"type": "integer", "minimum": 0}}}}}}
     overview_keys = ["applicant_information", "target_population", "project_description", "goals_objectives", "significant_findings", "other_information"]
     return {"name": "submit_grant_review", "description": "Submit the complete evidence-grounded grant review.", "input_schema": {"type": "object", "additionalProperties": False,
@@ -90,11 +108,20 @@ def _validate(review: dict[str, Any], criteria: list[dict[str, Any]], page_count
         if not 0 <= score <= maximum:
             raise ValueError(f"Invalid score for {source['name']}: {score}/{maximum}")
         item["name"], item["maximum_points"] = source["name"], maximum
-        for group in ("strengths", "mets", "weaknesses"):
+        for group in ("strengths", "mets"):
             for finding in item.get(group, []):
-                pages = finding.get("pages", [])
+                pages = finding.get("application_pages", finding.get("pages", []))
                 if not pages or any(not isinstance(p, int) or p < 1 or p > page_count for p in pages):
                     raise ValueError(f"Invalid evidence citation in {source['name']}")
+        for finding in item.get("weaknesses", []):
+            app_pages = finding.get("application_pages", finding.get("pages", []))
+            if not app_pages or any(not isinstance(p, int) or p < 1 or p > page_count for p in app_pages):
+                raise ValueError(f"Invalid application evidence citation in weakness for {source['name']}")
+            if not finding.get("nofo_requirement"):
+                raise ValueError(f"Weakness missing nofo_requirement in {source['name']}")
+            nofo_pages = finding.get("nofo_pages", [])
+            if not nofo_pages or not all(isinstance(p, int) and p >= 1 for p in nofo_pages):
+                raise ValueError(f"Weakness missing valid nofo_pages in {source['name']}")
         subs = item.get("subcriteria", [])
         if subs and (sum(int(s["maximum_points"]) for s in subs) != maximum or sum(int(s["score"]) for s in subs) != score):
             raise ValueError(f"Subcriterion totals do not reconcile for {source['name']}")
@@ -112,7 +139,8 @@ def score_application_with_claude(application: Path, criteria: list[dict[str, An
         raise RuntimeError("ANTHROPIC_API_KEY is not configured.")
     pages, application_text = _application_text(application)
     rubric = "\n".join(f"- {c['name']}: {int(c['points'])} points" for c in criteria)
-    prompt = f"Agency: {agency}\nAPPROVED RUBRIC:\n{rubric}\n\nNOFO/WORKSHEET GUIDANCE:\n{guidance[:30000]}\n\nAPPLICATION:\n{application_text}\n\nReturn one complete review. Criterion names and maximum points must exactly match the approved rubric. If guidance explicitly provides scored subcriteria, include them and ensure their scores and maximums sum to the parent criterion. Use an empty finding list when no support exists; do not fabricate evidence."
+    nofo_section = f"\n\nNOFO TEXT (use for weakness citations — cite exact page numbers):\n{guidance[:30000]}" if guidance else ""
+    prompt = f"Agency: {agency}\nAPPROVED RUBRIC:\n{rubric}\n\nNOFO/WORKSHEET GUIDANCE:\n{guidance[:30000]}\n\nAPPLICATION:\n{application_text}{nofo_section}\n\nReturn one complete review. Criterion names and maximum points must exactly match the approved rubric. If guidance explicitly provides scored subcriteria, include them and ensure their scores and maximums sum to the parent criterion. Use an empty finding list when no support exists; do not fabricate evidence. For every weakness, you MUST provide the exact NOFO requirement text (nofo_requirement), the NOFO page number(s) where it appears (nofo_pages), and explain the material impact (impact). Only cite NOFO requirements that appear in the NOFO TEXT above."
     payload = {"model": os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5"), "max_tokens": 16000, "temperature": 0, "system": SYSTEM_PROMPT,
         "messages": [{"role": "user", "content": prompt}], "tools": [_tool(criteria)], "tool_choice": {"type": "tool", "name": "submit_grant_review"}}
     import anthropic

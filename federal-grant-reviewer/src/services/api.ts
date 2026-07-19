@@ -347,3 +347,54 @@ export const checkWorkerHealth = async (): Promise<boolean> => {
     return false;
   }
 };
+
+// ---------------------------------------------------------------------------
+// NOFO Brief
+// ---------------------------------------------------------------------------
+
+export interface NofoBrief {
+  id: string;
+  review_id: string;
+  generation_status: 'queued' | 'generating' | 'ready' | 'failed' | 'outdated';
+  brief_json: any;
+  docx_storage_path: string | null;
+  generated_at: string | null;
+  approved_at: string | null;
+  error_message: string | null;
+}
+
+export const generateNofoBrief = async (reviewId: string, nofoStoragePath: string, agency: string, criteriaJson: string): Promise<string> => {
+  const formData = new FormData();
+  formData.append('review_id', reviewId);
+  formData.append('nofo_storage_path', nofoStoragePath);
+  formData.append('agency', agency);
+  formData.append('criteria_json', criteriaJson);
+  const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
+  const response = await fetch(API_BASE + '/nofo-brief/generate', { method: 'POST', body: formData });
+  const body = await response.json();
+  if (!response.ok) throw new Error(body.detail || 'Brief generation failed');
+  return body.brief_id;
+};
+
+export const getNofoBrief = async (reviewId: string): Promise<NofoBrief | null> => {
+  const { data } = await supabase
+    .from('nofo_briefs')
+    .select('*')
+    .eq('review_id', reviewId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data;
+};
+
+export const getNofoBriefDownload = async (briefId: string): Promise<string> => {
+  const { data } = await supabase
+    .from('nofo_briefs')
+    .select('docx_storage_path')
+    .eq('id', briefId)
+    .single();
+  if (!data?.docx_storage_path) throw new Error('No document available');
+  const { data: urlData, error } = await supabase.storage.from('completed-worksheets').createSignedUrl(data.docx_storage_path, 3600);
+  if (error) throw new Error('Download URL failed');
+  return urlData.signedUrl;
+};
