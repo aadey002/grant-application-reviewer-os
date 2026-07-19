@@ -82,8 +82,8 @@ app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 
 @app.post("/safe-reviews/extract-rubrics")
 async def extract_safe_rubrics(nofos: list[UploadFile] = File(...)):
-    if len(nofos) != 3:
-        raise HTTPException(status_code=400, detail="Exactly three NOFO files are required")
+    if not 1 <= len(nofos) <= 3:
+        raise HTTPException(status_code=400, detail="Upload between one and three NOFO files")
     rubrics = []
     for index, upload in enumerate(nofos, start=1):
         extension = Path(upload.filename or "").suffix.lower()
@@ -114,22 +114,23 @@ async def run_safe_reviews(
         counts = json_mod.loads(application_counts)
     except (json_mod.JSONDecodeError, TypeError):
         raise HTTPException(status_code=400, detail="Invalid application counts")
-    if len(counts) != 3 or any(not isinstance(count, int) or count < 1 for count in counts):
-        raise HTTPException(status_code=400, detail="Each of the three grants requires at least one application")
+    grant_count = len(counts)
+    if not 1 <= grant_count <= 3 or any(not isinstance(count, int) or count < 1 for count in counts):
+        raise HTTPException(status_code=400, detail="Provide one to three grants, each with at least one application")
     rubrics = rubrics or []
     worksheets = worksheets or []
-    if len(applications) != sum(counts) or len(nofos) != 3 or len(rubrics) not in {0, 3} or len(worksheets) not in {0, 3}:
-        raise HTTPException(status_code=400, detail="The uploaded files do not match the three grant packages")
+    if len(applications) != sum(counts) or len(nofos) != grant_count or len(rubrics) not in {0, grant_count} or len(worksheets) not in {0, grant_count}:
+        raise HTTPException(status_code=400, detail="The uploaded files do not match the active grant packages")
     try:
         criteria_sets = json_mod.loads(approved_criteria)
     except (json_mod.JSONDecodeError, TypeError):
         raise HTTPException(status_code=400, detail="Invalid approved criteria")
-    if len(criteria_sets) != 3 or any(not item.get("approved") or not item.get("criteria") for item in criteria_sets):
-        raise HTTPException(status_code=400, detail="All three NOFO rubrics must be approved before review")
+    if len(criteria_sets) != grant_count or any(not item.get("approved") or not item.get("criteria") for item in criteria_sets):
+        raise HTTPException(status_code=400, detail="Every active grant rubric must be approved before review")
     results = []
     allowed = {".pdf", ".doc", ".docx", ".txt"}
     application_offset = 0
-    for grant_index in range(1, 4):
+    for grant_index in range(1, grant_count + 1):
         grant_dir = UPLOADS_DIR / f"grant-{grant_index}"
         grant_dir.mkdir(exist_ok=True)
         package_files = {}

@@ -13,7 +13,10 @@ const SafeReviewDashboard: React.FC = () => {
   const [scores, setScores] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const ready = packages.every(item => item.applications.length > 0 && item.nofo);
+  const started = (item: PackageDraft) => item.applications.length > 0 || !!item.nofo || !!item.rubric || !!item.worksheet;
+  const complete = (item: PackageDraft) => item.applications.length > 0 && !!item.nofo;
+  const activePackages = packages.filter(complete);
+  const ready = activePackages.length > 0 && packages.every(item => !started(item) || complete(item));
   const current = reviews[selected];
   const scoreTotal = useMemo(() => current?.criteria.reduce((sum, c) => sum + Number(scores[`${current.review_id}:${c.name}`] || 0), 0) || 0, [current, scores]);
 
@@ -26,13 +29,13 @@ const SafeReviewDashboard: React.FC = () => {
   };
   const run = async () => {
     setBusy(true); setError('');
-    try { setReviews(await runSafeReviews(packages as ReviewPackage[], rubrics)); setSelected(0); }
+    try { setReviews(await runSafeReviews(activePackages as ReviewPackage[], rubrics)); setSelected(0); }
     catch (e) { setError(e instanceof Error ? e.message : 'Review failed'); }
     finally { setBusy(false); }
   };
   const extract = async () => {
     setBusy(true); setError('');
-    try { setRubrics(await extractRubrics(packages.map(item => item.nofo as File))); }
+    try { setRubrics(await extractRubrics(activePackages.map(item => item.nofo as File))); }
     catch (e) { setError(e instanceof Error ? e.message : 'Rubric extraction failed'); }
     finally { setBusy(false); }
   };
@@ -90,8 +93,11 @@ const SafeReviewDashboard: React.FC = () => {
           <label className="mt-4 flex items-center gap-2 font-semibold"><input type="checkbox" checked={!!rubric.approved} disabled={!rubric.criteria.length} onChange={e=>setRubricApproval(ri,e.target.checked)}/>I verified these criteria and point values against the NOFO.</label>
         </div>)}</div>}
         {error && <div className="mt-5 flex gap-2 rounded-xl bg-red-50 p-4 text-red-800"><AlertTriangle/>{error}</div>}
-        {!rubrics.length ? <button onClick={extract} disabled={!ready||busy} className="mt-7 flex items-center gap-2 rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white disabled:opacity-40">{busy?<Loader2 className="animate-spin"/>:<FileSearch/>}{busy?'Extracting criteria…':'Extract NOFO scoring criteria'}</button>
-        : <button onClick={run} disabled={busy||!rubrics.every(r=>r.approved)} className="mt-7 flex items-center gap-2 rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white disabled:opacity-40">{busy?<Loader2 className="animate-spin"/>:<FileSearch/>}{busy?'Building evidence maps…':'Run all application reviews'}</button>}
+        <div className="sticky bottom-4 mt-7 rounded-2xl border border-blue-200 bg-white/95 p-4 shadow-xl backdrop-blur"><div className="flex flex-wrap items-center justify-between gap-3">
+          <div><p className="font-bold">{activePackages.length} grant workspace(s) ready</p><p className="text-sm text-slate-500">{!ready?'Add an application and NOFO. Complete or clear any partially filled grant.':!rubrics.length?'Ready to extract the NOFO scoring criteria.':'Approve every rubric, then run the application reviews.'}</p></div>
+          {!rubrics.length ? <button onClick={extract} disabled={!ready||busy} className="flex items-center gap-2 rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white disabled:opacity-40">{busy?<Loader2 className="animate-spin"/>:<FileSearch/>}{busy?'Extracting criteria…':'Process uploaded documents'}</button>
+          : <button onClick={run} disabled={busy||!rubrics.every(r=>r.approved)} className="flex items-center gap-2 rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white disabled:opacity-40">{busy?<Loader2 className="animate-spin"/>:<FileSearch/>}{busy?'Building evidence maps…':'Run application reviews'}</button>}
+        </div></div>
       </section>}
       {!!reviews.length && <section>
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><h2 className="text-3xl font-bold">Review dashboard</h2><p className="mt-1 text-slate-600">Validate citations, enter reviewer scores, then export.</p></div><button onClick={()=>{setReviews([]);setRubrics([]);setScores({})}} className="rounded-lg border bg-white px-4 py-2 font-semibold">New review set</button></div>
