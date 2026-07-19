@@ -47,10 +47,42 @@ def _tool(criteria: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def _validate(review: dict[str, Any], criteria: list[dict[str, Any]], page_count: int) -> dict[str, Any]:
+    import logging
+    logger = logging.getLogger("grant_worker")
     expected = {str(c["name"]).strip().lower(): int(c["points"]) for c in criteria}
     returned = {str(c.get("name", "")).strip().lower(): c for c in review.get("criteria", [])}
     if set(returned) != set(expected):
-        raise ValueError("Claude returned criteria that do not exactly match the approved rubric")
+        # Try best-effort matching: map returned names to expected by substring containment
+        logger.warning("Exact criterion name mismatch. Expected: %s — Got: %s", list(expected.keys()), list(returned.keys()))
+        mapped: dict[str, Any] = {}
+        unmatched_returned = dict(returned)
+        for exp_name in expected:
+            # Try exact match first
+            if exp_name in unmatched_returned:
+                mapped[exp_name] = unmatched_returned.pop(exp_name)
+                continue
+            # Try substring match (expected name contained in returned, or vice versa)
+            match = None
+            for ret_name in list(unmatched_returned):
+                if exp_name in ret_name or ret_name in exp_name:
+                    match = ret_name
+                    break
+            if match:
+                mapped[exp_name] = unmatched_returned.pop(match)
+                mapped[exp_name]["name"] = next(c["name"] for c in criteria if c["name"].strip().lower() == exp_name)
+                continue
+            # No match found — accept by position if counts align
+        if len(mapped) == len(expected):
+            returned = mapped
+        elif len(review.get("criteria", [])) == len(criteria):
+            logger.warning("Falling back to positional criterion matching")
+            returned = {}
+            for i, source in enumerate(criteria):
+                item = review["criteria"][i]
+                item["name"] = source["name"]
+                returned[source["name"].strip().lower()] = item
+        else:
+            raise ValueError(f"Claude returned {len(review.get('criteria',[]))} criteria but rubric has {len(criteria)}: expected {list(expected.keys())}, got {[c.get('name','?') for c in review.get('criteria',[])]}")
     total, ordered = 0, []
     for source in criteria:
         item = returned[str(source["name"]).strip().lower()]
