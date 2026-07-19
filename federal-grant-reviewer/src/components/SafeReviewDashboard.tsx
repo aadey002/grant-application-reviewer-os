@@ -10,6 +10,7 @@ import {
   runSafeReviews, SafeReview,
 } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 const agencies = ['HRSA', 'SAMHSA', 'NIH', 'CDC'];
 const agencyText: Record<string, string> = {
@@ -304,20 +305,17 @@ const SafeReviewDashboard: React.FC = () => {
       if (!reviewId) {
         const userId = 'anonymous-test';
         reviewId = crypto.randomUUID();
-        const { supabase: _sb } = await import('../lib/supabase');
-        // Import supabase directly for this operation
-        const { createClient } = await import('@supabase/supabase-js');
-        void createClient; // suppress unused
-        // Use the already-imported supabase from api.ts through a re-export isn't clean;
-        // instead, upload the NOFO now and create the grant_review record
         const prefix = userId + '/' + reviewId;
-        const { error: upErr, data: upData } = await (await import('../lib/supabase')).supabase.storage
+
+        // Upload NOFO to storage
+        const { error: upErr } = await supabase.storage
           .from('nofo-files')
           .upload(prefix + '/nofo/' + nofo.name, nofo, { upsert: true });
         if (upErr) throw new Error('NOFO upload failed: ' + upErr.message);
         nofoPath = prefix + '/nofo/' + nofo.name;
 
-        const { error: reviewError } = await (await import('../lib/supabase')).supabase.from('grant_reviews').insert({
+        // Create grant_review record
+        const { error: reviewError } = await supabase.from('grant_reviews').insert({
           id: reviewId,
           user_id: userId,
           agency,
@@ -769,8 +767,14 @@ const SafeReviewDashboard: React.FC = () => {
             >
               <History size={16} /> My Reviews
             </button>
-            <span className="flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-800">
-              <CheckCircle2 size={16} /> AI System Ready
+            <span className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${
+              connectionLost ? 'bg-red-100 text-red-800' :
+              busy ? 'bg-blue-100 text-blue-800 animate-pulse' :
+              'bg-emerald-100 text-emerald-800'
+            }`}>
+              {connectionLost ? <><WifiOff size={16} /> Connection Lost</> :
+               busy ? <><Loader2 size={16} className="animate-spin" /> Processing...</> :
+               <><CheckCircle2 size={16} /> Ready</>}
             </span>
             {user && (
               <button
@@ -784,6 +788,49 @@ const SafeReviewDashboard: React.FC = () => {
           </div>
         </div>
       </header>
+
+      {/* Global status/error bar */}
+      {(error || connectionLost) && (
+        <div className={`border-b px-6 py-3 ${connectionLost ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'}`}>
+          <div className="mx-auto flex max-w-7xl items-center justify-between">
+            <div className="flex items-center gap-3">
+              {connectionLost ? <WifiOff className="text-red-600 shrink-0" size={20} /> : <AlertTriangle className="text-amber-600 shrink-0" size={20} />}
+              <div>
+                <p className={`text-sm font-semibold ${connectionLost ? 'text-red-800' : 'text-amber-800'}`}>
+                  {connectionLost ? 'Connection to review worker lost' : 'Attention'}
+                </p>
+                <p className={`text-sm ${connectionLost ? 'text-red-700' : 'text-amber-700'}`}>{error}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {connectionLost && (
+                <button
+                  onClick={() => { setConnectionLost(false); setError(''); window.location.reload(); }}
+                  className="flex items-center gap-1 rounded-lg bg-white border px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  <RefreshCw size={14} /> Retry
+                </button>
+              )}
+              <button onClick={() => { setError(''); setConnectionLost(false); }} className="text-sm font-semibold underline text-slate-600">Dismiss</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Processing status bar */}
+      {busy && step !== 'processing' && (
+        <div className="border-b bg-blue-50 border-blue-200 px-6 py-2">
+          <div className="mx-auto flex max-w-7xl items-center gap-3">
+            <Loader2 className="animate-spin text-blue-600" size={16} />
+            <p className="text-sm font-medium text-blue-800">
+              {step === 'upload' ? 'Extracting NOFO scoring criteria...' :
+               step === 'rubric' ? 'Preparing review...' :
+               step === 'brief' ? 'Generating NOFO brief...' :
+               'Processing...'}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Step indicator (not shown on history) */}
       {step !== 'history' && (
@@ -953,6 +1000,273 @@ const SafeReviewDashboard: React.FC = () => {
         )}
 
         {/* ------------------------------------------------------------------ */}
+        {/* STEP: NOFO BRIEF                                                    */}
+        {/* ------------------------------------------------------------------ */}
+        {step === 'brief' && (
+          <section className="rounded-2xl border bg-white p-8 shadow-lg">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold">NOFO Brief</h2>
+                <p className="mt-2 text-slate-600">
+                  Review the AI-generated NOFO brief before scoring applications. This summary helps ensure reviewers apply criteria consistently.
+                </p>
+              </div>
+              {nofoBrief?.generation_status === 'ready' && nofoBrief.docx_storage_path && (
+                <button
+                  onClick={downloadBriefDocx}
+                  className="flex shrink-0 items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-700"
+                >
+                  <Download size={16} /> Download DOCX
+                </button>
+              )}
+            </div>
+
+            {/* Loading state */}
+            {briefLoading && (
+              <div className="mt-8 flex flex-col items-center gap-3 py-10 text-slate-500">
+                <Loader2 size={36} className="animate-spin text-blue-600" />
+                <p className="font-semibold">Generating NOFO brief…</p>
+                <p className="text-sm">This takes about 30–60 seconds</p>
+              </div>
+            )}
+
+            {/* Error / unavailable state */}
+            {!briefLoading && briefError && (
+              <div className="mt-6 flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+                <AlertTriangle className="mt-0.5 shrink-0 text-amber-600" size={20} />
+                <div>
+                  <p className="font-semibold text-amber-800">Brief generation unavailable</p>
+                  <p className="mt-1 text-sm text-amber-700">{briefError}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Generating (worker accepted, now polling) */}
+            {!briefLoading && !briefError && nofoBrief && nofoBrief.generation_status === 'generating' && (
+              <div className="mt-8 flex flex-col items-center gap-3 py-10 text-slate-500">
+                <Loader2 size={36} className="animate-spin text-blue-600" />
+                <p className="font-semibold">Brief is being generated…</p>
+                <p className="text-sm">Checking status every 5 seconds</p>
+              </div>
+            )}
+
+            {/* Queued */}
+            {!briefLoading && !briefError && nofoBrief && nofoBrief.generation_status === 'queued' && (
+              <div className="mt-8 flex flex-col items-center gap-3 py-10 text-slate-500">
+                <Clock size={36} className="text-blue-400" />
+                <p className="font-semibold">Brief is queued for generation…</p>
+              </div>
+            )}
+
+            {/* Failed */}
+            {!briefLoading && !briefError && nofoBrief && nofoBrief.generation_status === 'failed' && (
+              <div className="mt-6 flex gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+                <XCircle className="mt-0.5 shrink-0 text-red-600" size={20} />
+                <div>
+                  <p className="font-semibold text-red-800">Brief generation failed</p>
+                  <p className="mt-1 text-sm text-red-700">{nofoBrief.error_message || 'Unknown error'}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Ready — show brief content */}
+            {!briefLoading && nofoBrief && nofoBrief.generation_status === 'ready' && nofoBrief.brief_json && (
+              <div className="mt-6 space-y-3">
+                {/* Executive Summary — always expanded */}
+                {nofoBrief.brief_json.executive_summary && (
+                  <div className="rounded-xl border border-blue-100 bg-blue-50">
+                    <div className="px-5 py-4">
+                      <p className="text-xs font-bold uppercase tracking-wide text-blue-700">Executive Summary</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-800">{nofoBrief.brief_json.executive_summary}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Scoring Criteria table */}
+                {nofoBrief.brief_json.scoring_criteria && (
+                  <div className="rounded-xl border">
+                    <button
+                      onClick={() => toggleBriefSection('scoring_criteria')}
+                      className="flex w-full items-center justify-between px-5 py-4 text-left font-semibold hover:bg-slate-50"
+                    >
+                      <span>Scoring Criteria</span>
+                      <span className="text-slate-400">{briefExpandedSections['scoring_criteria'] ? '▲' : '▼'}</span>
+                    </button>
+                    {briefExpandedSections['scoring_criteria'] && (
+                      <div className="border-t px-5 pb-4">
+                        {Array.isArray(nofoBrief.brief_json.scoring_criteria) ? (
+                          <table className="mt-3 w-full text-sm">
+                            <thead>
+                              <tr className="border-b text-left text-xs font-bold uppercase text-slate-500">
+                                <th className="pb-2 pr-4">Criterion</th>
+                                <th className="pb-2 pr-4">Points</th>
+                                <th className="pb-2">Notes</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {nofoBrief.brief_json.scoring_criteria.map((row: any, i: number) => (
+                                <tr key={i} className="border-b last:border-0">
+                                  <td className="py-2 pr-4 font-medium">{row.name || row.criterion}</td>
+                                  <td className="py-2 pr-4">{row.points}</td>
+                                  <td className="py-2 text-slate-600">{row.notes || row.description || ''}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <p className="mt-3 text-sm text-slate-700">{JSON.stringify(nofoBrief.brief_json.scoring_criteria)}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Program Requirements */}
+                {nofoBrief.brief_json.program_requirements && (
+                  <div className="rounded-xl border">
+                    <button
+                      onClick={() => toggleBriefSection('program_requirements')}
+                      className="flex w-full items-center justify-between px-5 py-4 text-left font-semibold hover:bg-slate-50"
+                    >
+                      <span>Program Requirements</span>
+                      <span className="text-slate-400">{briefExpandedSections['program_requirements'] ? '▲' : '▼'}</span>
+                    </button>
+                    {briefExpandedSections['program_requirements'] && (
+                      <div className="border-t px-5 py-4">
+                        {Array.isArray(nofoBrief.brief_json.program_requirements) ? (
+                          <ul className="mt-1 space-y-1 text-sm text-slate-700">
+                            {nofoBrief.brief_json.program_requirements.map((req: string, i: number) => (
+                              <li key={i} className="flex gap-2"><span className="text-slate-400">•</span>{req}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-sm text-slate-700">{nofoBrief.brief_json.program_requirements}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Budget Requirements */}
+                {nofoBrief.brief_json.budget_requirements && (
+                  <div className="rounded-xl border">
+                    <button
+                      onClick={() => toggleBriefSection('budget_requirements')}
+                      className="flex w-full items-center justify-between px-5 py-4 text-left font-semibold hover:bg-slate-50"
+                    >
+                      <span>Budget Requirements</span>
+                      <span className="text-slate-400">{briefExpandedSections['budget_requirements'] ? '▲' : '▼'}</span>
+                    </button>
+                    {briefExpandedSections['budget_requirements'] && (
+                      <div className="border-t px-5 py-4">
+                        {Array.isArray(nofoBrief.brief_json.budget_requirements) ? (
+                          <ul className="mt-1 space-y-1 text-sm text-slate-700">
+                            {nofoBrief.brief_json.budget_requirements.map((req: string, i: number) => (
+                              <li key={i} className="flex gap-2"><span className="text-slate-400">•</span>{req}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-sm text-slate-700">{nofoBrief.brief_json.budget_requirements}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Reviewer Checklist */}
+                {nofoBrief.brief_json.reviewer_checklist && (
+                  <div className="rounded-xl border">
+                    <button
+                      onClick={() => toggleBriefSection('reviewer_checklist')}
+                      className="flex w-full items-center justify-between px-5 py-4 text-left font-semibold hover:bg-slate-50"
+                    >
+                      <span>Reviewer Checklist</span>
+                      <span className="text-slate-400">{briefExpandedSections['reviewer_checklist'] ? '▲' : '▼'}</span>
+                    </button>
+                    {briefExpandedSections['reviewer_checklist'] && (
+                      <div className="border-t px-5 py-4">
+                        {Array.isArray(nofoBrief.brief_json.reviewer_checklist) ? (
+                          <ul className="mt-1 space-y-2 text-sm text-slate-700">
+                            {nofoBrief.brief_json.reviewer_checklist.map((item: string, i: number) => (
+                              <li key={i} className="flex gap-2"><CheckCircle2 size={14} className="mt-0.5 shrink-0 text-emerald-600" />{item}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-sm text-slate-700">{nofoBrief.brief_json.reviewer_checklist}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Other sections — any keys not already rendered */}
+                {Object.entries(nofoBrief.brief_json)
+                  .filter(([key]) => !['executive_summary', 'scoring_criteria', 'program_requirements', 'budget_requirements', 'reviewer_checklist'].includes(key))
+                  .map(([key, value]) => (
+                    <div key={key} className="rounded-xl border">
+                      <button
+                        onClick={() => toggleBriefSection(key)}
+                        className="flex w-full items-center justify-between px-5 py-4 text-left font-semibold hover:bg-slate-50"
+                      >
+                        <span>{key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                        <span className="text-slate-400">{briefExpandedSections[key] ? '▲' : '▼'}</span>
+                      </button>
+                      {briefExpandedSections[key] && (
+                        <div className="border-t px-5 py-4">
+                          {Array.isArray(value) ? (
+                            <ul className="mt-1 space-y-1 text-sm text-slate-700">
+                              {(value as any[]).map((item: any, i: number) => (
+                                <li key={i} className="flex gap-2"><span className="text-slate-400">•</span>{typeof item === 'string' ? item : JSON.stringify(item)}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-sm text-slate-700">{typeof value === 'string' ? value : JSON.stringify(value)}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                }
+              </div>
+            )}
+
+            {/* Acknowledgment checkbox */}
+            <div className="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-5">
+              <label className="flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={briefAcknowledged}
+                  onChange={e => setBriefAcknowledged(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-blue-600"
+                />
+                <span className="text-sm font-semibold leading-5">
+                  I reviewed the NOFO brief and verified the scoring rubric
+                  {(!nofoBrief || nofoBrief.generation_status !== 'ready') && !briefError && (
+                    <span className="ml-1 font-normal text-slate-500">(or acknowledge the brief is not yet available)</span>
+                  )}
+                </span>
+              </label>
+            </div>
+
+            {error && <div className="mt-4 rounded-lg bg-red-50 p-4 text-red-800">{error}</div>}
+
+            <div className="mt-6 flex justify-between">
+              <button onClick={() => setStep('rubric')} className="rounded-lg border px-5 py-3 font-semibold">
+                Back
+              </button>
+              <button
+                onClick={run}
+                disabled={!briefAcknowledged || busy}
+                className="flex items-center gap-2 rounded-xl bg-blue-700 px-7 py-3 font-bold text-white disabled:opacity-40"
+              >
+                {busy ? <Loader2 className="animate-spin" /> : <FileSearch />}
+                {busy ? 'Submitting…' : 'Run Application Reviews (' + applications.length + ')'}
+              </button>
+            </div>
+          </section>
+        )}
+
+        {/* ------------------------------------------------------------------ */}
         {/* STEP: PROCESSING (async job status screen)                          */}
         {/* ------------------------------------------------------------------ */}
         {step === 'processing' && (
@@ -1116,12 +1430,34 @@ const SafeReviewDashboard: React.FC = () => {
                         <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{group}</p>
                         <div className="mt-2 space-y-2">
                           {(c[group] || []).length ? (
-                            (c[group] || []).map((finding, fi) => (
+                            (c[group] || []).map((finding: any, fi: number) => (
                               <div key={fi} className="rounded-lg bg-slate-50 p-4">
                                 <p className="text-sm leading-6">{finding.comment}</p>
-                                <p className="mt-1 text-xs font-bold text-blue-700">
-                                  Application page(s): {finding.pages.join(', ')}
-                                </p>
+                                {group === 'weaknesses' ? (
+                                  <>
+                                    {finding.nofo_requirement && (
+                                      <div className="mt-2 rounded-lg border-l-4 border-amber-400 bg-amber-50 p-3">
+                                        <p className="text-xs font-bold uppercase text-amber-700">NOFO Requirement</p>
+                                        <p className="text-sm">{finding.nofo_requirement}</p>
+                                        <p className="text-xs font-bold text-amber-600 mt-1">NOFO p. {(finding.nofo_pages || []).join(', ')}</p>
+                                      </div>
+                                    )}
+                                    <div className="mt-1">
+                                      <p className="text-xs font-bold text-blue-700">
+                                        Application p. {(finding.application_pages || finding.pages || []).join(', ')}
+                                      </p>
+                                    </div>
+                                    {finding.impact && (
+                                      <div className="mt-2 text-sm text-slate-600 italic">
+                                        <span className="font-semibold not-italic">Impact: </span>{finding.impact}
+                                      </div>
+                                    )}
+                                  </>
+                                ) : (
+                                  <p className="mt-1 text-xs font-bold text-blue-700">
+                                    Application p. {(finding.application_pages || finding.pages || []).join(', ')}
+                                  </p>
+                                )}
                               </div>
                             ))
                           ) : (
