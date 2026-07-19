@@ -273,26 +273,9 @@ const SafeReviewDashboard: React.FC = () => {
   // ---------------------------------------------------------------------------
   const proceedToBrief = async () => {
     if (!nofo || !rubric) return;
-    setBusy(true);
-    setError('');
-    setBriefError('');
-    setBriefAcknowledged(false);
-    setNofoBrief(null);
-    setBriefExpandedSections({});
-
-    // If we already have a currentReviewId (e.g. resuming), use it; otherwise create a temp one
-    // We'll create the review record now so we can check for an existing brief
-    // Build a temporary review id to look up briefs — the real one comes from createReviewAndUpload later
-    // For the brief step, we just need to show the brief UI
-    setStep('brief');
-    setBusy(false);
-
-    // Try to find/generate a brief.
-    // We need a review record first — but the actual review creation happens in `run`.
-    // For the brief step, we generate using a pre-flight approach:
-    // we'll call the worker endpoint with the nofo file data we already have.
-    // Since we don't have a review_id yet, we create a placeholder record.
-    await initBrief();
+    // Skip brief step — go directly to scoring
+    // Brief generation runs in background and can be viewed later
+    await run();
   };
 
   // ---------------------------------------------------------------------------
