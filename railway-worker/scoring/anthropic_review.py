@@ -137,50 +137,123 @@ def _validate(review: dict[str, Any], criteria: list[dict[str, Any]], page_count
     return review
 
 
+def _score_single_criterion(client, model: str, application_text: str, criterion: dict, agency: str, nofo_text: str, page_count: int) -> dict[str, Any]:
+    """Score one criterion in isolation. Called in parallel."""
+    import logging
+    logger = logging.getLogger("grant_worker")
+    name = criterion["name"]
+    points = int(criterion["points"])
+
+    strength_met = {"type": "object", "additionalProperties": False, "required": ["comment", "application_pages"], "properties": {"comment": {"type": "string"}, "application_pages": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}}}}
+    weakness = {"type": "object", "additionalProperties": False, "required": ["comment", "application_pages", "nofo_requirement", "nofo_pages", "impact"], "properties": {"comment": {"type": "string"}, "application_pages": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}}, "nofo_requirement": {"type": "string"}, "nofo_pages": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}}, "impact": {"type": "string"}}}
+    sub = {"type": "object", "additionalProperties": False, "required": ["name", "score", "maximum_points"], "properties": {"name": {"type": "string"}, "score": {"type": "integer", "minimum": 0}, "maximum_points": {"type": "integer", "minimum": 0}}}
+
+    tool = {"name": "score_criterion", "description": f"Submit score for '{name}' ({points} points).", "input_schema": {"type": "object", "additionalProperties": False,
+        "required": ["name", "score", "maximum_points", "score_rationale", "strengths", "mets", "weaknesses", "subcriteria"],
+        "properties": {"name": {"type": "string", "enum": [name]}, "score": {"type": "integer", "minimum": 0, "maximum": points}, "maximum_points": {"type": "integer", "enum": [points]},
+            "score_rationale": {"type": "string"}, "strengths": {"type": "array", "items": strength_met}, "mets": {"type": "array", "items": strength_met},
+            "weaknesses": {"type": "array", "items": weakness}, "subcriteria": {"type": "array", "items": sub}}}}
+
+    prompt = f"Score this single criterion:\n\nCRITERION: {name}\nMAXIMUM POINTS: {points}\nAGENCY: {agency}\n\nNOFO TEXT:\n{nofo_text[:20000]}\n\nAPPLICATION:\n{application_text}\n\nScore ONLY this criterion. Each finding comment must be one concise sentence with application page citations. Every weakness must cite the NOFO requirement and page."
+
+    response = client.messages.create(model=model, max_tokens=4000, temperature=0, system=SYSTEM_PROMPT,
+        messages=[{"role": "user", "content": prompt}], tools=[tool], tool_choice={"type": "tool", "name": "score_criterion"})
+
+    tool_use = next((b for b in response.content if b.type == "tool_use"), None)
+    if not tool_use:
+        raise RuntimeError(f"Claude did not score criterion '{name}'")
+    result = tool_use.input
+    if isinstance(result, str):
+        result = json.loads(result)
+    result["name"] = name
+    result["maximum_points"] = points
+    logger.info("  Criterion '%s': %s/%s", name, result.get("score"), points)
+    return result
+
+
 def score_application_with_claude(application: Path, criteria: list[dict[str, Any]], agency: str, guidance: str = "") -> dict[str, Any]:
     api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
     if not api_key:
         raise RuntimeError("ANTHROPIC_API_KEY is not configured.")
-    pages, application_text = _application_text(application)
-    rubric = "\n".join(f"- {c['name']}: {int(c['points'])} points" for c in criteria)
-    nofo_section = f"\n\nNOFO TEXT (use for weakness citations — cite exact page numbers):\n{guidance[:30000]}" if guidance else ""
-    prompt = f"Agency: {agency}\nAPPROVED RUBRIC:\n{rubric}\n\nNOFO/WORKSHEET GUIDANCE:\n{guidance[:30000]}\n\nAPPLICATION:\n{application_text}{nofo_section}\n\nReturn one complete review. Criterion names and maximum points must exactly match the approved rubric. If guidance explicitly provides scored subcriteria, include them and ensure their scores and maximums sum to the parent criterion. Use an empty finding list when no support exists; do not fabricate evidence. For every weakness, you MUST provide the exact NOFO requirement text (nofo_requirement), the NOFO page number(s) where it appears (nofo_pages), and explain the material impact (impact). Only cite NOFO requirements that appear in the NOFO TEXT above."
-    payload = {"model": os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5"), "max_tokens": 16000, "temperature": 0, "system": SYSTEM_PROMPT,
-        "messages": [{"role": "user", "content": prompt}], "tools": [_tool(criteria)], "tool_choice": {"type": "tool", "name": "submit_grant_review"}}
-    import anthropic
-    client = anthropic.Anthropic(api_key=api_key, timeout=600.0)
-    try:
-        response = client.messages.create(**payload)
-    except anthropic.APITimeoutError as exc:
-        raise RuntimeError(f"Anthropic API timeout after 600s: {exc}") from exc
-    except anthropic.APIError as exc:
-        raise RuntimeError(f"Anthropic API error ({exc.status_code}): {exc.message}") from exc
-    import logging
+    import anthropic, logging
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     logger = logging.getLogger("grant_worker")
-    logger.info("Claude response: stop_reason=%s, content_types=%s", response.stop_reason, [b.type for b in response.content])
-    tool_use = next((block for block in response.content if block.type == "tool_use" and block.name == "submit_grant_review"), None)
-    if not tool_use:
-        # Log what Claude returned instead
-        text_blocks = [b.text for b in response.content if hasattr(b, 'text')]
-        logger.error("Claude did not return tool use. Text response: %s", text_blocks[:500] if text_blocks else "none")
-        raise RuntimeError("Claude did not return a structured grant review")
-    review = tool_use.input
-    if isinstance(review, str):
-        review = json.loads(review)
-    logger.info("Claude returned %d criteria, applicant=%s", len(review.get("criteria", [])), review.get("applicant_name", "?"))
-    if not review.get("criteria"):
-        logger.error("Empty criteria in tool_use.input keys: %s", list(review.keys()))
-        # Retry: send tool_result rejecting the empty submission, then ask again
-        payload["messages"].append({"role": "assistant", "content": [{"type": "tool_use", "id": tool_use.id, "name": "submit_grant_review", "input": review}]})
-        payload["messages"].append({"role": "user", "content": [{"type": "tool_result", "tool_use_id": tool_use.id, "is_error": True, "content": f"REJECTED: The criteria array was empty. You must score all {len(criteria)} criteria from the approved rubric. Return the complete review with all criteria scored."}]})
-        if "tool_choice" in payload:
-            del payload["tool_choice"]
-        logger.info("Retrying Claude with correction prompt")
-        retry_response = client.messages.create(**payload)
-        tool_use_retry = next((b for b in retry_response.content if b.type == "tool_use" and b.name == "submit_grant_review"), None)
-        if tool_use_retry and tool_use_retry.input.get("criteria"):
-            review = tool_use_retry.input
-            logger.info("Retry returned %d criteria", len(review.get("criteria", [])))
-        else:
-            raise RuntimeError(f"Claude retry also returned empty criteria")
-    return _validate(review, criteria, len(pages))
+
+    pages, application_text = _application_text(application)
+    model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5")
+    client = anthropic.Anthropic(api_key=api_key, timeout=300.0)
+    nofo_text = guidance or ""
+
+    # --- All 7 calls in parallel: 6 criteria + 1 overview ---
+    logger.info("Scoring %d criteria + overview in parallel with %s", len(criteria), model)
+    scored_criteria = [None] * len(criteria)
+    overview_data = {}
+    errors = []
+
+    def _get_overview():
+        overview_keys = ["applicant_information", "target_population", "project_description", "goals_objectives", "significant_findings", "other_information"]
+        overview_tool = {"name": "submit_overview", "description": "Submit applicant overview and budget.", "input_schema": {"type": "object", "additionalProperties": False,
+            "required": ["applicant_name", "application_number", "overview", "budget", "overall_summary"],
+            "properties": {
+                "applicant_name": {"type": "string"}, "application_number": {"type": "string"},
+                "overview": {"type": "object", "additionalProperties": False, "required": overview_keys, "properties": {k: {"type": "string"} for k in overview_keys}},
+                "budget": {"type": "object", "additionalProperties": False, "required": ["recommendation", "annual_recommended_funding", "reduction_rationale"], "properties": {
+                    "recommendation": {"type": "string", "enum": ["as_requested", "as_reduced", "unable_to_determine"]},
+                    "annual_recommended_funding": {"type": "array", "items": {"type": ["number", "null"]}, "maxItems": 5},
+                    "reduction_rationale": {"type": "string"}}},
+                "overall_summary": {"type": "string"}}}}
+        rubric_list = "\n".join(f"- {c['name']}: {int(c['points'])} points" for c in criteria)
+        prompt = f"Agency: {agency}\n\nRUBRIC:\n{rubric_list}\n\nAPPLICATION:\n{application_text[:40000]}\n\nProvide: applicant name, application number, overview sections, budget recommendation, and a 2-3 sentence overall summary. Be concise."
+        resp = client.messages.create(model=model, max_tokens=3000, temperature=0, system="Extract applicant information and budget from the application. Be concise and factual.",
+            messages=[{"role": "user", "content": prompt}], tools=[overview_tool], tool_choice={"type": "tool", "name": "submit_overview"})
+        tu = next((b for b in resp.content if b.type == "tool_use"), None)
+        result = tu.input if tu else {}
+        if isinstance(result, str):
+            result = json.loads(result)
+        return result
+
+    with ThreadPoolExecutor(max_workers=7) as pool:
+        # Submit all 6 criteria + 1 overview
+        criterion_futures = {
+            pool.submit(_score_single_criterion, client, model, application_text, crit, agency, nofo_text, len(pages)): i
+            for i, crit in enumerate(criteria)
+        }
+        overview_future = pool.submit(_get_overview)
+
+        for future in as_completed(list(criterion_futures.keys()) + [overview_future]):
+            if future == overview_future:
+                try:
+                    overview_data = future.result()
+                    logger.info("  Overview extracted: %s", overview_data.get("applicant_name", "?"))
+                except Exception as exc:
+                    logger.error("Overview failed: %s", exc)
+                    errors.append(f"Overview: {exc}")
+            else:
+                idx = criterion_futures[future]
+                try:
+                    scored_criteria[idx] = future.result()
+                except Exception as exc:
+                    logger.error("Criterion %d failed: %s", idx, exc)
+                    errors.append(f"{criteria[idx]['name']}: {exc}")
+
+    if errors:
+        raise RuntimeError("Scoring failed: " + "; ".join(errors))
+
+    # --- Assemble final review ---
+    total = sum(c.get("score", 0) for c in scored_criteria)
+    max_total = sum(int(c["points"]) for c in criteria)
+
+    review = {
+        "applicant_name": overview_data.get("applicant_name", ""),
+        "application_number": overview_data.get("application_number", ""),
+        "overview": overview_data.get("overview", {}),
+        "criteria": scored_criteria,
+        "budget": overview_data.get("budget", {}),
+        "overall_summary": overview_data.get("overall_summary", ""),
+        "final_score": total,
+        "maximum_score": max_total,
+        "review_status": "ai_draft_human_validation_required",
+        "certification": "Claude-generated draft. A human reviewer must verify every finding, citation, score, and budget recommendation.",
+    }
+    logger.info("Review complete: %d/%d", total, max_total)
+    return review
