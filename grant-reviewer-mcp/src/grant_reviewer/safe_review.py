@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import re
+import zipfile
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable
@@ -26,6 +27,41 @@ DEFAULT_HRSA_CRITERIA = [
     {"name": "Organizational Capacity", "points": 10, "keywords": ["capacity", "experience", "staff", "qualification"]},
     {"name": "Budget and Budget Justification", "points": 5, "keywords": ["budget", "cost", "justification", "funds"]},
 ]
+
+def safe_extract_application_zip(
+    archive: Path, destination: Path, max_files: int = 100,
+    max_uncompressed_bytes: int = 500 * 1024 * 1024,
+) -> list[Path]:
+    """Extract PDF applications while preventing zip-slip and zip bombs."""
+    destination.mkdir(parents=True, exist_ok=True)
+    extracted = []
+    total_size = 0
+    with zipfile.ZipFile(archive) as bundle:
+        members = [item for item in bundle.infolist() if not item.is_dir()]
+        pdf_members = [item for item in members if Path(item.filename).suffix.lower() == ".pdf"]
+        if not pdf_members:
+            raise ValueError("ZIP contains no PDF applications")
+        if len(pdf_members) > max_files:
+            raise ValueError(f"ZIP contains more than {max_files} PDF applications")
+        for index, member in enumerate(pdf_members, start=1):
+            if member.flag_bits & 0x1:
+                raise ValueError("Encrypted ZIP files are not supported")
+            total_size += member.file_size
+            if total_size > max_uncompressed_bytes:
+                raise ValueError("ZIP uncompressed contents exceed the safety limit")
+            safe_name = Path(member.filename).name
+            if not safe_name or safe_name in {".", ".."}:
+                raise ValueError("ZIP contains an unsafe filename")
+            target = destination / f"{index:03d}_{safe_name}"
+            with bundle.open(member) as source, open(target, "wb") as output:
+                while chunk := source.read(1024 * 1024):
+                    output.write(chunk)
+            with open(target, "rb") as candidate:
+                if candidate.read(5) != b"%PDF-":
+                    target.unlink()
+                    raise ValueError(f"{safe_name} is not a valid PDF file")
+            extracted.append(target)
+    return extracted
 
 @dataclass
 class Evidence:

@@ -65,8 +65,8 @@ const SafeReviewDashboard: React.FC = () => {
           <div className="mb-4 flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-wider text-blue-700">Grant {i+1}</p><h3 className="text-xl font-bold">Grant package</h3></div><span className={`rounded-full px-3 py-1 text-xs font-bold ${item.applications.length>0&&item.nofo?'bg-emerald-50 text-emerald-700':'bg-amber-50 text-amber-700'}`}>{(item.applications.length>0?1:0)+(item.nofo?1:0)+(item.rubric?1:0)+(item.worksheet?1:0)} files</span></div>
           <div className="grid gap-3 md:grid-cols-4">
             <label className="cursor-pointer rounded-xl border-2 border-dashed border-slate-200 p-4 hover:border-blue-500">
-              <input className="hidden" type="file" accept=".pdf" multiple onChange={e=>chooseApplications(i,e.target.files)}/>
-              <Upload className="mb-3 text-blue-700" size={20}/><p className="text-sm font-bold">Application(s) PDF</p><p className="mt-1 truncate text-xs text-slate-500">{item.applications.length?`${item.applications.length} file(s)`:'Choose file(s)'}</p>
+              <input className="hidden" type="file" accept=".pdf,.zip" multiple onChange={e=>chooseApplications(i,e.target.files)}/>
+              <Upload className="mb-3 text-blue-700" size={20}/><p className="text-sm font-bold">Applications</p><p className="mt-1 truncate text-xs text-slate-500">{item.applications.length?`${item.applications.length} file bundle(s) selected`:'Choose PDFs or ZIP files'}</p>
             </label>
             <label className="cursor-pointer rounded-xl border-2 border-dashed border-slate-200 p-4 hover:border-blue-500">
               <input className="hidden" type="file" accept=".pdf,.doc,.docx" onChange={e=>chooseFile(i,'nofo',e.target.files?.[0])}/>

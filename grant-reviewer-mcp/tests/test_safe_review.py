@@ -1,8 +1,9 @@
 import json
 import unittest
+import zipfile
 from pathlib import Path
 from unittest.mock import patch
-from grant_reviewer.safe_review import extract_nofo_criteria, find_evidence, review_application, run_manifest
+from grant_reviewer.safe_review import extract_nofo_criteria, find_evidence, review_application, run_manifest, safe_extract_application_zip
 
 class SafeReviewTests(unittest.TestCase):
     def test_page_citations_are_actual(self):
@@ -37,6 +38,19 @@ class SafeReviewTests(unittest.TestCase):
         self.assertEqual(result["total_points"], 100)
         self.assertEqual([item["source_page"] for item in result["criteria"]], [1, 1, 2])
         self.assertTrue(result["human_approval_required"])
+
+    def test_zip_extracts_only_pdf_applications(self):
+        from tempfile import TemporaryDirectory
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive = root / "applications.zip"
+            with zipfile.ZipFile(archive, "w") as bundle:
+                bundle.writestr("Applicant A.pdf", b"%PDF-sample")
+                bundle.writestr("folder/Applicant B.PDF", b"%PDF-sample")
+                bundle.writestr("notes.txt", b"ignore")
+            extracted = safe_extract_application_zip(archive, root / "out")
+            self.assertEqual(len(extracted), 2)
+            self.assertTrue(all(path.suffix.lower() == ".pdf" for path in extracted))
 
 if __name__ == "__main__":
     unittest.main()

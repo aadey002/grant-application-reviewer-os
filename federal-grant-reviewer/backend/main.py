@@ -35,7 +35,7 @@ try:
     from grant_reviewer.scoring_engine import ScoringEngine
     from grant_reviewer.comment_generator import CommentGenerator
     from grant_reviewer.report_generator import ReportGenerator
-    from grant_reviewer.safe_review import extract_nofo_criteria, review_application
+    from grant_reviewer.safe_review import extract_nofo_criteria, review_application, safe_extract_application_zip
     MCP_AVAILABLE = True
     logger.info("MCP Agent components loaded successfully")
 except ImportError as e:
@@ -147,28 +147,41 @@ async def run_safe_reviews(
                 handle.write(content)
             package_files[kind[:-1]] = {"filename": document.filename, "path": str(path)}
         count = counts[grant_index - 1]
-        for application_index in range(1, count + 1):
-            upload = applications[application_offset + application_index - 1]
+        grant_application_paths = []
+        for upload_index in range(1, count + 1):
+            upload = applications[application_offset]
+            application_offset += 1
             extension = Path(upload.filename or "").suffix.lower()
-            if extension != ".pdf":
-                raise HTTPException(status_code=400, detail=f"{upload.filename}: application must be PDF")
+            if extension not in {".pdf", ".zip"}:
+                raise HTTPException(status_code=400, detail=f"{upload.filename}: application must be PDF or ZIP")
             content = await upload.read()
-            if not content or len(content) > 75 * 1024 * 1024:
+            if not content or len(content) > 250 * 1024 * 1024:
                 raise HTTPException(status_code=400, detail=f"{upload.filename}: invalid file size")
+            incoming = grant_dir / f"incoming-{upload_index}{extension}"
+            with open(incoming, "wb") as handle:
+                handle.write(content)
+            if extension == ".zip":
+                try:
+                    grant_application_paths.extend(safe_extract_application_zip(incoming, grant_dir / f"zip-{upload_index}"))
+                except (ValueError, OSError) as exc:
+                    raise HTTPException(status_code=400, detail=f"{upload.filename}: {exc}")
+            else:
+                grant_application_paths.append(incoming)
+        for application_index, source_path in enumerate(grant_application_paths, start=1):
             application_dir = grant_dir / f"application-{application_index}"
             application_dir.mkdir(exist_ok=True)
             path = application_dir / "application.pdf"
-            with open(path, "wb") as handle:
-                handle.write(content)
+            with open(source_path, "rb") as source, open(path, "wb") as handle:
+                while chunk := source.read(1024 * 1024):
+                    handle.write(chunk)
             criteria = [{"name": item["name"], "points": item["points"], "keywords": item.get("keywords", [])}
                         for item in criteria_sets[grant_index - 1]["criteria"]]
             result = review_application(f"grant-{grant_index}-application-{application_index}", path, criteria)
-            result["application_file"] = upload.filename
+            result["application_file"] = source_path.name
             result["grant_id"] = f"grant-{grant_index}"
             result["grant_index"] = grant_index
             result["application_index"] = application_index
             results.append(result)
-        application_offset += count
     return {"success": True, "reviews": results}
 
 async def perform_full_analysis(file_path: str, agency: str, document_id: int) -> Dict[str, Any]:
