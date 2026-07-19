@@ -6,11 +6,18 @@ export interface SafeCriterion {
   automated_points: number | null; final_points: number | null;
   human_review_required: boolean; evidence: SafeEvidence[];
   draft_strength: string | null; draft_weakness: string | null;
+  score?: number; score_rationale?: string;
+  strengths?: Array<{comment:string;pages:number[]}>;
+  mets?: Array<{comment:string;pages:number[]}>;
+  weaknesses?: Array<{comment:string;pages:number[]}>;
+  subcriteria?: Array<{name:string;score:number;maximum_points:number}>;
 }
 export interface SafeReview {
   review_id: string; application_file: string; page_count: number; word_count: number;
   agency: string; application_index: number;
   review_status: string; final_score: number | null; certification: string;
+  maximum_score?: number; applicant_name?: string; application_number?: string;
+  completed_worksheet_url?: string | null;
   criteria: SafeCriterion[];
 }
 

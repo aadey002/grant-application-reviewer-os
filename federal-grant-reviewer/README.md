@@ -1,4 +1,16 @@
-# React + TypeScript + Vite
+# Federal Grant Reviewer AI
+
+## Claude scoring setup
+
+1. Copy `backend/.env.example` to `backend/.env`.
+2. Set `ANTHROPIC_API_KEY` in `backend/.env` (never commit this file).
+3. Install backend dependencies with `pip install -r backend/requirements.txt`.
+4. Restart the backend, upload one NOFO, one or more application PDFs (or a ZIP), and the reviewer worksheet DOCX.
+5. Verify the extracted rubric, then select **Review applications**. Each application receives an independent draft score and completed worksheet.
+
+`ANTHROPIC_MODEL` is configurable in `.env`. All generated findings, citations, scores, and budget recommendations remain subject to human reviewer validation.
+
+## Frontend development
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
