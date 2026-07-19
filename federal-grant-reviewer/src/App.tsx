@@ -8,13 +8,15 @@ import DemoMode from './components/DemoMode';
 // ---------------------------------------------------------------------------
 // Simple hash-based router — no react-router dependency needed
 // ---------------------------------------------------------------------------
-type Route = '/' | '/login' | '/app' | '/demo';
+type Route = '/' | '/login' | '/app' | '/demo' | '/reviews' | `/reviews/${string}`;
 
 function getRoute(): Route {
   const hash = window.location.hash.replace(/^#/, '');
   if (hash === '/login') return '/login';
-  if (hash === '/app') return '/app';
   if (hash === '/demo') return '/demo';
+  if (hash === '/reviews') return '/reviews';
+  if (hash.startsWith('/reviews/')) return hash as `/reviews/${string}`;
+  if (hash === '/app') return '/app';
   return '/';
 }
 
@@ -48,12 +50,8 @@ const AppRoutes: React.FC = () => {
   if (route === '/demo') return <DemoMode />;
   if (route === '/login') return <LoginPage />;
 
-  // Protected route — /app
-  if (route === '/app') {
-    if (!user) {
-      window.location.hash = '/login';
-      return null;
-    }
+  // Review routes — SafeReviewDashboard reads hash internally to set its step
+  if (route === '/app' || route === '/reviews' || route.startsWith('/reviews/')) {
     return <SafeReviewDashboard />;
   }
 

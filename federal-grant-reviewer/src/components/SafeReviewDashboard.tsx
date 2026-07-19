@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  AlertTriangle, BarChart3, Brain, CheckCircle2, Download, FileSearch,
-  FileText, Loader2, LogOut, Trash2, Upload,
+  AlertTriangle, BarChart3, Brain, CheckCircle2, Clock, Download, FileSearch,
+  FileText, History, Loader2, LogOut, RefreshCw, Trash2, Upload, WifiOff, XCircle,
 } from 'lucide-react';
 import {
   deleteReview, extractRubric, ExtractedRubric, getReviewResults,
@@ -19,6 +19,48 @@ const agencyText: Record<string, string> = {
 };
 
 // ---------------------------------------------------------------------------
+// localStorage schema
+// ---------------------------------------------------------------------------
+interface StoredReview {
+  review_id: string;
+  job_ids: string[];
+  agency: string;
+  timestamp: string;       // ISO string
+  nofo_name: string;
+  app_names: string[];     // application file names for duplicate detection
+  status: 'processing' | 'completed' | 'failed';
+  scores?: Record<string, number | null>; // jobId -> score
+}
+
+const LS_KEY = 'active_reviews';
+
+function loadStoredReviews(): StoredReview[] {
+  try {
+    return JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function saveStoredReviews(reviews: StoredReview[]) {
+  localStorage.setItem(LS_KEY, JSON.stringify(reviews));
+}
+
+function upsertStoredReview(r: StoredReview) {
+  const all = loadStoredReviews();
+  const idx = all.findIndex(x => x.review_id === r.review_id);
+  if (idx >= 0) all[idx] = r;
+  else all.unshift(r);
+  saveStoredReviews(all);
+}
+
+function updateStoredReviewStatus(reviewId: string, status: StoredReview['status']) {
+  const all = loadStoredReviews();
+  const idx = all.findIndex(x => x.review_id === reviewId);
+  if (idx >= 0) { all[idx].status = status; saveStoredReviews(all); }
+}
+
+// ---------------------------------------------------------------------------
 // Per-application polling state
 // ---------------------------------------------------------------------------
 interface AppProgress {
@@ -27,10 +69,48 @@ interface AppProgress {
   status: JobStatus['status'] | 'uploaded';
   progress: number;
   message: string;
+  score: number | null;
+  errorMessage: string | null;
 }
 
-const POLL_INTERVAL_MS = 3000;
+const POLL_INTERVAL_MS = 5000;
 
+type Step = 'upload' | 'rubric' | 'processing' | 'results' | 'history';
+
+// ---------------------------------------------------------------------------
+// Status helpers
+// ---------------------------------------------------------------------------
+const statusLabel: Record<AppProgress['status'], string> = {
+  uploaded: 'Uploaded',
+  queued: 'Queued',
+  processing: 'Processing',
+  completed: 'Completed',
+  failed: 'Failed',
+};
+
+function statusBadgeClass(status: AppProgress['status']): string {
+  switch (status) {
+    case 'queued':    return 'bg-slate-100 text-slate-600';
+    case 'processing': return 'bg-blue-100 text-blue-800 animate-pulse';
+    case 'completed': return 'bg-emerald-100 text-emerald-800';
+    case 'failed':    return 'bg-red-100 text-red-800';
+    default:          return 'bg-slate-100 text-slate-600';
+  }
+}
+
+function statusSummary(reviews: StoredReview[]): string {
+  const counts = { processing: 0, completed: 0, failed: 0 };
+  for (const r of reviews) counts[r.status] = (counts[r.status] ?? 0) + 1;
+  const parts: string[] = [];
+  if (counts.completed) parts.push(counts.completed + ' completed');
+  if (counts.processing) parts.push(counts.processing + ' processing');
+  if (counts.failed) parts.push(counts.failed + ' failed');
+  return parts.join(', ') || 'none';
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 const SafeReviewDashboard: React.FC = () => {
   const { user, signOut } = useAuth();
 
@@ -52,44 +132,100 @@ const SafeReviewDashboard: React.FC = () => {
   const [currentReviewId, setCurrentReviewId] = useState<string | null>(null);
   const [appProgress, setAppProgress] = useState<AppProgress[]>([]);
   const [polling, setPolling] = useState(false);
+  const [connectionLost, setConnectionLost] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Step: upload | rubric | processing | results | history
+  const [step, setStep] = useState<Step>('upload');
+
+  // History
+  const [storedReviews, setStoredReviews] = useState<StoredReview[]>(loadStoredReviews);
+
   const current = reviews[selected];
-  const scoreTotal = useMemo(() => current?.final_score ?? 0, [current]);
-  const step = reviews.length ? 'results' : rubric ? 'rubric' : 'upload';
+  const scoreTotal = useMemo(() => current?.final_score ?? null, [current]);
 
   // ---------------------------------------------------------------------------
-  // Resume/recovery: check localStorage for an in-progress review on mount
+  // Route handling — respond to #/reviews/{id} on mount and hash changes
   // ---------------------------------------------------------------------------
   useEffect(() => {
-    const saved = localStorage.getItem('grant_reviewer_active_review');
-    if (!saved) return;
+    const handleHash = () => {
+      const hash = window.location.hash;
+      const match = hash.match(/^#\/reviews\/([a-z0-9-]+)$/);
+      if (match) {
+        openReview(match[1]);
+      } else if (hash === '#/reviews') {
+        setStep('history');
+        setStoredReviews(loadStoredReviews());
+      }
+    };
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ---------------------------------------------------------------------------
+  // On mount: check localStorage for in-progress reviews
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    const hash = window.location.hash;
+    // If hash already handled above, skip
+    if (hash.startsWith('#/reviews')) return;
+
+    const all = loadStoredReviews();
+    const inProgress = all.filter(r => r.status === 'processing');
+    if (inProgress.length > 0) {
+      // Auto-resume the most recent in-progress review
+      const latest = inProgress[0];
+      openReview(latest.review_id);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ---------------------------------------------------------------------------
+  // openReview — load a stored review by ID (resume polling or show results)
+  // ---------------------------------------------------------------------------
+  const openReview = useCallback(async (reviewId: string) => {
+    const all = loadStoredReviews();
+    const stored = all.find(r => r.review_id === reviewId);
+    if (!stored) {
+      setError('Review not found in history.');
+      return;
+    }
+    setCurrentReviewId(reviewId);
+    setAgency(stored.agency);
+    setError('');
+
+    // Try to get results first (may already be done)
     try {
-      const { reviewId, jobIds, agency: savedAgency } = JSON.parse(saved);
-      if (!reviewId) return;
-      setCurrentReviewId(reviewId);
-      setAgency(savedAgency || 'HRSA');
-      // Try to fetch completed results first
-      getReviewResults(reviewId)
-        .then(fetched => {
-          if (fetched.reviews?.length > 0) {
-            setReviews(fetched.reviews);
-            setSelected(0);
-            localStorage.removeItem('grant_reviewer_active_review');
-          } else if (jobIds?.length > 0) {
-            // Results not ready — resume polling
-            setAppProgress(jobIds.map((id: string, i: number) => ({
-              jobId: id, applicationName: 'Application ' + (i + 1),
-              status: 'queued' as const, progress: 0, message: 'Resuming...',
-            })));
-            setPolling(true);
-          }
-        })
-        .catch(() => {
-          // API unreachable — show recovery message
-          setError('Previous review ' + reviewId.slice(0, 8) + '… is still processing. Refresh to check again.');
-        });
-    } catch { /* ignore corrupt localStorage */ }
+      const fetched = await getReviewResults(reviewId);
+      if (fetched.reviews?.length > 0) {
+        setReviews(fetched.reviews);
+        setSelected(0);
+        setStep('results');
+        updateStoredReviewStatus(reviewId, 'completed');
+        setStoredReviews(loadStoredReviews());
+        return;
+      }
+    } catch {
+      // Results not ready or API unreachable — fall through to polling
+    }
+
+    // Resume polling
+    if (stored.job_ids.length > 0) {
+      const initial: AppProgress[] = stored.job_ids.map((id, i) => ({
+        jobId: id,
+        applicationName: stored.app_names[i] ?? 'Application ' + (i + 1),
+        status: 'queued' as const,
+        progress: 0,
+        message: 'Resuming check...',
+        score: null,
+        errorMessage: null,
+      }));
+      setAppProgress(initial);
+      setPolling(true);
+      setStep('processing');
+    }
   }, []);
 
   // ---------------------------------------------------------------------------
@@ -101,6 +237,7 @@ const SafeReviewDashboard: React.FC = () => {
     setError('');
     try {
       setRubric(await extractRubric(nofo, agency));
+      setStep('rubric');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Processing failed');
     } finally {
@@ -109,47 +246,145 @@ const SafeReviewDashboard: React.FC = () => {
   };
 
   // ---------------------------------------------------------------------------
-  // Step 2 — run reviews (now async with job polling)
+  // Step 2 — run reviews (async with job polling)
   // ---------------------------------------------------------------------------
   const run = async () => {
     if (!nofo || !rubric) return;
+
+    // Duplicate detection
+    if (nofo && applications.length) {
+      const all = loadStoredReviews();
+      const dupe = all.find(r =>
+        r.status === 'processing' &&
+        r.nofo_name === nofo.name &&
+        r.app_names.length === applications.length &&
+        r.app_names.every((n, i) => n === applications[i]?.name)
+      );
+      if (dupe) {
+        setError('This review is already in progress.');
+        // Link to it
+        window.location.hash = '#/reviews/' + dupe.review_id;
+        return;
+      }
+    }
+
     setBusy(true);
     setError('');
+
+    let savedReviewId: string | null = null;
+
     try {
       const item: ReviewPackage = { agency, nofo, applications, rubric: supportRubric, worksheet };
-      const result = await runSafeReviews(item, rubric);
+
+      // Fire the request — save immediately if we get a response
+      let result: { review_id: string; job_ids: string[] } | null = null;
+
+      try {
+        result = await runSafeReviews(item, rubric);
+      } catch (fetchErr) {
+        const msg = fetchErr instanceof Error ? fetchErr.message : '';
+        if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('network')) {
+          // Connection dropped — check localStorage for a race-saved review
+          setConnectionLost(true);
+          setError('Connection lost — checking server...');
+          // Give a brief moment then auto-recover via openReview if we find one
+          const all = loadStoredReviews();
+          const recent = all.find(r =>
+            r.nofo_name === nofo?.name &&
+            r.app_names.length === applications.length &&
+            r.app_names.every((n, i) => n === applications[i]?.name)
+          );
+          if (recent) {
+            setConnectionLost(false);
+            openReview(recent.review_id);
+          } else {
+            setError('Connection lost. The review may still be processing. Check "My Reviews" or refresh.');
+          }
+          setBusy(false);
+          return;
+        }
+        throw fetchErr;
+      }
+
+      savedReviewId = result.review_id;
       setCurrentReviewId(result.review_id);
-      // Persist for resume/recovery
-      localStorage.setItem('grant_reviewer_active_review', JSON.stringify({
-        reviewId: result.review_id, jobIds: result.job_ids, agency,
-      }));
+
+      // Persist to localStorage immediately
+      const stored: StoredReview = {
+        review_id: result.review_id,
+        job_ids: result.job_ids,
+        agency,
+        timestamp: new Date().toISOString(),
+        nofo_name: nofo?.name ?? '',
+        app_names: applications.map(f => f.name),
+        status: 'processing',
+      };
+      upsertStoredReview(stored);
+      setStoredReviews(loadStoredReviews());
 
       if (result.job_ids.length > 0) {
         // Async path — poll for progress
         const initial: AppProgress[] = result.job_ids.map((jobId, i) => ({
           jobId,
           applicationName: applications[i]?.name ?? 'Application ' + (i + 1),
-          status: 'uploaded',
+          status: 'queued' as const,
           progress: 0,
-          message: 'Uploaded',
+          message: 'Queued',
+          score: null,
+          errorMessage: null,
         }));
         setAppProgress(initial);
         setPolling(true);
+        setStep('processing');
       } else {
-        // Legacy sync path — API returned reviews directly, fetch them
+        // Legacy sync path — fetch results directly
         const fetched = await getReviewResults(result.review_id);
         setReviews(fetched.reviews);
         setSelected(0);
+        setStep('results');
+        updateStoredReviewStatus(result.review_id, 'completed');
+        setStoredReviews(loadStoredReviews());
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Review failed';
       if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
-        setError('Connection lost during submission. The review may still be processing on the server. Refresh the page to check.');
+        setConnectionLost(true);
+        setError('Connection lost — checking server...');
+        if (savedReviewId) {
+          setTimeout(() => openReview(savedReviewId!), 2000);
+        } else {
+          setError('Connection lost. The review may still be processing. Check "My Reviews" or refresh.');
+        }
       } else {
         setError(msg);
       }
     } finally {
       setBusy(false);
+      setConnectionLost(false);
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // Retry a failed job
+  // ---------------------------------------------------------------------------
+  const retryJob = async (jobId: string) => {
+    try {
+      const authHeader: Record<string, string> = {};
+      await fetch(
+        (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000') + '/jobs/' + jobId + '/process',
+        { method: 'POST', headers: authHeader }
+      );
+      // Reset status in UI
+      setAppProgress(prev =>
+        prev.map(p =>
+          p.jobId === jobId
+            ? { ...p, status: 'queued', progress: 0, message: 'Retrying...', errorMessage: null }
+            : p
+        )
+      );
+      if (!polling) setPolling(true);
+    } catch (e) {
+      setError('Retry failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
     }
   };
 
@@ -168,36 +403,27 @@ const SafeReviewDashboard: React.FC = () => {
     if (!polling || !currentReviewId) return;
 
     const tick = async () => {
+      let currentProgress: AppProgress[] = [];
       setAppProgress(prev => {
-        const pending = prev.filter(p => p.status !== 'completed' && p.status !== 'failed');
-        if (pending.length === 0) return prev;
+        currentProgress = prev;
         return prev;
       });
 
-      // Poll all non-terminal jobs
-      setAppProgress(prev => {
-        const pending = prev.filter(p => p.status !== 'completed' && p.status !== 'failed');
-        if (pending.length === 0) return prev;
-        return prev; // actual update happens in the async block below
-      });
-
-      let updatedProgress: AppProgress[] = [];
-      setAppProgress(prev => {
-        updatedProgress = prev;
-        return prev;
-      });
-
-      const pending = updatedProgress.filter(
+      const pending = currentProgress.filter(
         p => p.status !== 'completed' && p.status !== 'failed'
       );
+
       if (pending.length === 0) {
         stopPolling();
-        // All done — fetch full results
-        if (currentReviewId) {
+        const allDone = currentProgress.every(p => p.status === 'completed' || p.status === 'failed');
+        if (allDone && currentReviewId) {
           try {
             const fetched = await getReviewResults(currentReviewId);
             setReviews(fetched.reviews);
             setSelected(0);
+            setStep('results');
+            updateStoredReviewStatus(currentReviewId, 'completed');
+            setStoredReviews(loadStoredReviews());
           } catch (e) {
             setError(e instanceof Error ? e.message : 'Failed to fetch results');
           }
@@ -209,38 +435,56 @@ const SafeReviewDashboard: React.FC = () => {
         pending.map(p => pollJobStatus(p.jobId))
       );
 
+      setConnectionLost(false);
+
       setAppProgress(prev =>
         prev.map(p => {
           const idx = pending.findIndex(x => x.jobId === p.jobId);
           if (idx === -1) return p;
           const result = updates[idx];
           if (result.status === 'fulfilled') {
+            const val = result.value;
             return {
               ...p,
-              status: result.value.status,
-              progress: result.value.progress ?? p.progress,
-              message: result.value.message ?? p.message,
+              status: val.status,
+              progress: val.progress ?? p.progress,
+              message: val.message ?? p.message,
+              // Extract score from message if present (e.g. "Score: 89")
+              score: val.status === 'completed'
+                ? extractScoreFromMessage(val.message ?? '') ?? p.score
+                : p.score,
+              errorMessage: val.status === 'failed'
+                ? (val.message ?? 'Processing failed')
+                : p.errorMessage,
             };
+          } else {
+            // Network error during poll — don't kill status, just show warning
+            setConnectionLost(true);
+            return p;
           }
-          return p;
         })
       );
     };
 
     pollRef.current = setInterval(tick, POLL_INTERVAL_MS);
-    return () => stopPolling();
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [polling, currentReviewId, stopPolling]);
 
-  // When all jobs complete, fetch results
+  // When all jobs reach terminal state, fetch results
   useEffect(() => {
-    if (!polling) return;
-    const allDone = appProgress.length > 0 &&
-      appProgress.every(p => p.status === 'completed' || p.status === 'failed');
+    if (!polling || appProgress.length === 0) return;
+    const allDone = appProgress.every(p => p.status === 'completed' || p.status === 'failed');
     if (allDone) {
       stopPolling();
       if (currentReviewId) {
         getReviewResults(currentReviewId)
-          .then(fetched => { setReviews(fetched.reviews); setSelected(0); localStorage.removeItem('grant_reviewer_active_review'); })
+          .then(fetched => {
+            setReviews(fetched.reviews);
+            setSelected(0);
+            setStep('results');
+            updateStoredReviewStatus(currentReviewId, 'completed');
+            setStoredReviews(loadStoredReviews());
+          })
           .catch(e => setError(e instanceof Error ? e.message : 'Failed to fetch results'));
       }
     }
@@ -249,6 +493,11 @@ const SafeReviewDashboard: React.FC = () => {
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
+  function extractScoreFromMessage(msg: string): number | null {
+    const m = msg.match(/\b(\d{1,3})\s*\/\s*\d{1,3}\b/) ?? msg.match(/Score[:\s]+(\d{1,3})/i);
+    return m ? parseInt(m[1], 10) : null;
+  }
+
   const updatePoints = (index: number, points: number) => {
     if (!rubric) return;
     const criteria = [...rubric.criteria];
@@ -258,7 +507,6 @@ const SafeReviewDashboard: React.FC = () => {
 
   const reset = async () => {
     stopPolling();
-    // Delete the review from backend if we have an ID
     if (currentReviewId) {
       try { await deleteReview(currentReviewId); } catch { /* best-effort */ }
     }
@@ -271,7 +519,7 @@ const SafeReviewDashboard: React.FC = () => {
     setAppProgress([]);
     setCurrentReviewId(null);
     setError('');
-    localStorage.removeItem('grant_reviewer_active_review');
+    setStep('upload');
   };
 
   const exportReview = () => {
@@ -300,41 +548,45 @@ const SafeReviewDashboard: React.FC = () => {
     await reset();
   };
 
-  // ---------------------------------------------------------------------------
-  // Progress status label
-  // ---------------------------------------------------------------------------
-  const statusLabel: Record<AppProgress['status'], string> = {
-    uploaded: 'Uploaded',
-    queued: 'Queued',
-    processing: 'Processing',
-    completed: 'Completed',
-    failed: 'Failed',
+  const clearCompleted = () => {
+    const remaining = loadStoredReviews().filter(r => r.status !== 'completed');
+    saveStoredReviews(remaining);
+    setStoredReviews(remaining);
   };
-  const statusColor: Record<AppProgress['status'], string> = {
-    uploaded: 'bg-slate-200 text-slate-700',
-    queued: 'bg-amber-100 text-amber-800',
-    processing: 'bg-blue-100 text-blue-800',
-    completed: 'bg-emerald-100 text-emerald-800',
-    failed: 'bg-red-100 text-red-800',
-  };
+
+  // Progress derived values
+  const totalJobs = appProgress.length;
+  const completedJobs = appProgress.filter(p => p.status === 'completed').length;
+  const failedJobs = appProgress.filter(p => p.status === 'failed').length;
+  const processingPct = totalJobs > 0 ? Math.round(((completedJobs + failedJobs) / totalJobs) * 100) : 0;
 
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
   return (
     <div className="min-h-screen bg-[#f4f7fc] text-slate-900">
+      {/* Header */}
       <header className="border-b bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white">
+            <button
+              onClick={() => { setStep('upload'); window.location.hash = '#/app'; }}
+              className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white"
+            >
               <Brain />
-            </div>
+            </button>
             <div>
               <h1 className="text-xl font-bold">Federal Grant Reviewer AI</h1>
               <p className="text-sm text-slate-500">Evidence-grounded analysis for federal grant applications</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => { setStep('history'); setStoredReviews(loadStoredReviews()); window.location.hash = '#/reviews'; }}
+              className="flex items-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+            >
+              <History size={16} /> My Reviews
+            </button>
             <span className="flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-800">
               <CheckCircle2 size={16} /> AI System Ready
             </span>
@@ -351,20 +603,26 @@ const SafeReviewDashboard: React.FC = () => {
         </div>
       </header>
 
-      {/* Step indicator */}
-      <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-7 text-sm font-semibold">
-        <span className={step === 'upload' ? 'text-blue-700' : 'text-emerald-700'}>
-          <Upload className="mr-2 inline" size={20} />Upload Documents
-        </span>
-        <span className={step === 'rubric' ? 'text-blue-700' : 'text-slate-400'}>
-          <BarChart3 className="mr-2 inline" size={20} />Approve Rubric
-        </span>
-        <span className={step === 'results' ? 'text-blue-700' : 'text-slate-400'}>
-          <CheckCircle2 className="mr-2 inline" size={20} />Review Results
-        </span>
-      </div>
+      {/* Step indicator (not shown on history) */}
+      {step !== 'history' && (
+        <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-7 text-sm font-semibold">
+          <span className={step === 'upload' ? 'text-blue-700' : 'text-emerald-700'}>
+            <Upload className="mr-2 inline" size={20} />Upload Documents
+          </span>
+          <span className={step === 'rubric' ? 'text-blue-700' : (step === 'processing' || step === 'results') ? 'text-emerald-700' : 'text-slate-400'}>
+            <BarChart3 className="mr-2 inline" size={20} />Approve Rubric
+          </span>
+          <span className={step === 'processing' ? 'text-blue-700' : step === 'results' ? 'text-emerald-700' : 'text-slate-400'}>
+            <Loader2 className={'mr-2 inline' + (step === 'processing' ? ' animate-spin' : '')} size={20} />Processing
+          </span>
+          <span className={step === 'results' ? 'text-blue-700' : 'text-slate-400'}>
+            <CheckCircle2 className="mr-2 inline" size={20} />Review Results
+          </span>
+        </div>
+      )}
 
       <main className="mx-auto max-w-6xl px-6 pb-12">
+
         {/* ------------------------------------------------------------------ */}
         {/* STEP: UPLOAD                                                        */}
         {/* ------------------------------------------------------------------ */}
@@ -427,7 +685,7 @@ const SafeReviewDashboard: React.FC = () => {
 
             {error && (
               <div className="mt-5 flex gap-2 rounded-lg bg-red-50 p-4 text-red-800">
-                <AlertTriangle />{error}
+                <AlertTriangle className="shrink-0 mt-0.5" size={18} />{error}
               </div>
             )}
 
@@ -491,44 +749,129 @@ const SafeReviewDashboard: React.FC = () => {
               </label>
             </div>
 
-            {/* Progress cards (shown while polling) */}
-            {polling && appProgress.length > 0 && (
-              <div className="mt-6 space-y-3">
-                <p className="font-bold text-slate-700">Processing applications…</p>
-                {appProgress.map(p => (
-                  <div key={p.jobId} className="rounded-lg border bg-white p-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold truncate max-w-xs">{p.applicationName}</span>
-                      <span className={'text-xs font-bold rounded-full px-3 py-1 ' + statusColor[p.status]}>
-                        {statusLabel[p.status]}
-                      </span>
-                    </div>
-                    <div className="mt-2 h-2 rounded-full bg-slate-100">
-                      <div
-                        className="h-2 rounded-full bg-blue-600 transition-all duration-500"
-                        style={{ width: p.progress + '%' }}
-                      />
-                    </div>
-                    {p.message && <p className="mt-1 text-xs text-slate-500">{p.message}</p>}
-                  </div>
-                ))}
-              </div>
-            )}
-
             {error && <div className="mt-5 rounded-lg bg-red-50 p-4 text-red-800">{error}</div>}
 
             <div className="mt-6 flex justify-between">
-              <button onClick={() => setRubric(null)} className="rounded-lg border px-5 py-3 font-semibold">
+              <button onClick={() => setStep('upload')} className="rounded-lg border px-5 py-3 font-semibold">
                 Back
               </button>
               <button
                 onClick={run}
-                disabled={!rubric.approved || busy || polling}
+                disabled={!rubric.approved || busy}
                 className="flex items-center gap-2 rounded-xl bg-blue-700 px-7 py-3 font-bold text-white disabled:opacity-40"
               >
-                {busy || polling ? <Loader2 className="animate-spin" /> : <FileSearch />}
-                {busy || polling ? 'Reviewing applications…' : 'Review ' + applications.length + ' uploaded bundle(s)'}
+                {busy ? <Loader2 className="animate-spin" /> : <FileSearch />}
+                {busy ? 'Submitting…' : 'Review ' + applications.length + ' uploaded bundle(s)'}
               </button>
+            </div>
+          </section>
+        )}
+
+        {/* ------------------------------------------------------------------ */}
+        {/* STEP: PROCESSING (async job status screen)                          */}
+        {/* ------------------------------------------------------------------ */}
+        {step === 'processing' && (
+          <section className="rounded-2xl border bg-white p-8 shadow-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">Applications being reviewed</h2>
+                <p className="mt-1 text-slate-500">
+                  {agency} · {totalJobs} application(s) · Review ID: <code className="text-xs bg-slate-100 px-1 rounded">{currentReviewId?.slice(0, 8)}…</code>
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-3xl font-bold text-blue-700">{processingPct}%</p>
+                <p className="text-xs text-slate-500">{completedJobs + failedJobs} of {totalJobs} done</p>
+              </div>
+            </div>
+
+            {/* Overall progress bar */}
+            <div className="mt-5 h-3 rounded-full bg-slate-100">
+              <div
+                className="h-3 rounded-full bg-blue-600 transition-all duration-700"
+                style={{ width: processingPct + '%' }}
+              />
+            </div>
+
+            {/* Connection lost banner */}
+            {connectionLost && (
+              <div className="mt-4 flex items-center gap-2 rounded-lg bg-amber-50 p-3 text-amber-800 text-sm">
+                <WifiOff size={16} className="shrink-0" />
+                Connection lost — checking server... Results will appear when reconnected.
+              </div>
+            )}
+
+            {error && (
+              <div className="mt-4 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-red-800 text-sm">
+                <AlertTriangle size={16} className="shrink-0" />{error}
+              </div>
+            )}
+
+            {/* Per-application cards */}
+            <div className="mt-6 space-y-3">
+              {appProgress.map(p => (
+                <div
+                  key={p.jobId}
+                  className={'rounded-xl border p-4 ' + (p.status === 'failed' ? 'border-red-200 bg-red-50' : 'bg-white')}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-semibold text-sm truncate max-w-sm">{p.applicationName}</span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {p.status === 'completed' && p.score !== null && (
+                        <span className="text-sm font-bold text-emerald-700">{p.score}/100</span>
+                      )}
+                      {p.status === 'processing' && (
+                        <span className="text-sm text-slate-500">—</span>
+                      )}
+                      <span className={'text-xs font-bold rounded-full px-3 py-1 ' + statusBadgeClass(p.status)}>
+                        {statusLabel[p.status]}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Progress bar */}
+                  {p.status !== 'failed' && (
+                    <div className="mt-2 h-1.5 rounded-full bg-slate-100">
+                      <div
+                        className={'h-1.5 rounded-full transition-all duration-500 ' + (p.status === 'completed' ? 'bg-emerald-500' : 'bg-blue-500')}
+                        style={{ width: (p.status === 'completed' ? 100 : p.progress) + '%' }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Status message */}
+                  {p.message && p.status !== 'failed' && (
+                    <p className="mt-1 text-xs text-slate-500">{p.message}</p>
+                  )}
+
+                  {/* Error message + retry */}
+                  {p.status === 'failed' && (
+                    <div className="mt-2 flex items-start justify-between gap-2">
+                      <p className="text-xs text-red-700">{p.errorMessage ?? 'Processing failed'}</p>
+                      <button
+                        onClick={() => retryJob(p.jobId)}
+                        className="flex items-center gap-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700 shrink-0"
+                      >
+                        <RefreshCw size={12} /> Retry
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 flex items-center justify-between">
+              <button
+                onClick={reset}
+                className="flex items-center gap-2 rounded-lg border bg-white px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
+              >
+                <XCircle size={16} /> Cancel Review
+              </button>
+              {polling && (
+                <span className="flex items-center gap-2 text-sm text-slate-500">
+                  <Loader2 size={14} className="animate-spin" /> Polling every 5s…
+                </span>
+              )}
             </div>
           </section>
         )}
@@ -580,7 +923,7 @@ const SafeReviewDashboard: React.FC = () => {
                         <p className="mt-1 text-sm text-slate-600">{c.score_rationale}</p>
                       </div>
                       <div className="shrink-0 rounded-lg bg-blue-50 px-4 py-2 font-bold text-blue-800">
-                        {c.score} / {c.maximum_points}
+                        {c.score !== undefined && c.score !== null ? c.score : '—'} / {c.maximum_points}
                       </div>
                     </div>
                     {(['strengths', 'mets', 'weaknesses'] as const).map(group => (
@@ -609,14 +952,13 @@ const SafeReviewDashboard: React.FC = () => {
               <aside className="h-fit rounded-xl bg-slate-900 p-6 text-white lg:sticky lg:top-5">
                 <p className="text-slate-300">Claude draft score</p>
                 <p className="mt-2 text-4xl font-bold">
-                  {scoreTotal}
+                  {scoreTotal !== null ? scoreTotal : '—'}
                   <span className="text-lg text-slate-400">
                     {' / ' + (current.maximum_score || current.criteria.reduce((s, c) => s + c.maximum_points, 0))}
                   </span>
                 </p>
                 <p className="mt-4 text-xs leading-5 text-slate-300">{current.certification}</p>
 
-                {/* Worksheet download via signed URL */}
                 {(current.completed_worksheet_url || currentReviewId) && (
                   <button
                     onClick={downloadWorksheet}
@@ -636,6 +978,90 @@ const SafeReviewDashboard: React.FC = () => {
             </div>
           </section>
         )}
+
+        {/* ------------------------------------------------------------------ */}
+        {/* STEP: HISTORY (My Reviews)                                          */}
+        {/* ------------------------------------------------------------------ */}
+        {step === 'history' && (
+          <section>
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-3xl font-bold">My Reviews</h2>
+                <p className="text-slate-500 mt-1">All reviews saved in this browser · {statusSummary(storedReviews)}</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={clearCompleted}
+                  className="rounded-lg border bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                >
+                  Clear completed
+                </button>
+                <button
+                  onClick={() => { setStep('upload'); window.location.hash = '#/app'; }}
+                  className="flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-2 text-sm font-bold text-white"
+                >
+                  <Upload size={16} /> New Review
+                </button>
+              </div>
+            </div>
+
+            {storedReviews.length === 0 && (
+              <div className="rounded-2xl border bg-white p-12 text-center shadow">
+                <History size={40} className="mx-auto text-slate-300 mb-4" />
+                <p className="text-slate-500">No reviews yet. Upload a NOFO and applications to get started.</p>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {storedReviews.map(r => {
+                const date = new Date(r.timestamp);
+                const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+                const timeStr = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+                return (
+                  <div
+                    key={r.review_id}
+                    className="rounded-xl border bg-white p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => { window.location.hash = '#/reviews/' + r.review_id; }}
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-bold truncate">{r.nofo_name || 'Unnamed NOFO'}</span>
+                          <span className={'text-xs font-bold rounded-full px-2.5 py-0.5 ' + (
+                            r.status === 'completed' ? 'bg-emerald-100 text-emerald-800' :
+                            r.status === 'processing' ? 'bg-blue-100 text-blue-800' :
+                            'bg-red-100 text-red-800'
+                          )}>
+                            {r.status === 'processing' ? 'In progress' : r.status}
+                          </span>
+                        </div>
+                        <p className="text-sm text-slate-500">
+                          {r.agency} · {r.app_names.length} application(s)
+                        </p>
+                        <p className="text-xs text-slate-400 mt-0.5">{dateStr} at {timeStr}</p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <div className="flex flex-col gap-1">
+                          {r.app_names.slice(0, 3).map((n, i) => (
+                            <span key={i} className="text-xs text-slate-400 truncate max-w-[200px]">{n}</span>
+                          ))}
+                          {r.app_names.length > 3 && (
+                            <span className="text-xs text-slate-400">+{r.app_names.length - 3} more</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center gap-1">
+                      <Clock size={12} className="text-slate-400" />
+                      <span className="text-xs text-slate-400">ID: {r.review_id.slice(0, 8)}…</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
       </main>
     </div>
   );
