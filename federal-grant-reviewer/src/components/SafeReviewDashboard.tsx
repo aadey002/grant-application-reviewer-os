@@ -1278,26 +1278,78 @@ const SafeReviewDashboard: React.FC = () => {
         {/* ------------------------------------------------------------------ */}
         {step === 'processing' && (
           <section className="rounded-2xl border bg-white p-8 shadow-lg">
+            {/* Pipeline status bar — always visible */}
+            <div className="mb-6 flex items-center gap-1">
+              {['Uploading', 'Queued', 'Scoring', 'Worksheet', 'Complete'].map((label, i) => {
+                const stages = appProgress.map(p => p.status);
+                const hasCompleted = stages.includes('completed');
+                const hasProcessing = stages.some(s => s === 'processing' || s === 'scoring');
+                const hasQueued = stages.includes('queued');
+                const isUploading = stages.includes('uploaded') || (busy && !hasQueued && !hasProcessing && !hasCompleted);
+                let active = false;
+                if (i === 0) active = isUploading;
+                else if (i === 1) active = hasQueued && !hasProcessing;
+                else if (i === 2) active = hasProcessing;
+                else if (i === 3) active = stages.includes('generating_worksheet' as any);
+                else if (i === 4) active = hasCompleted;
+                const past = (i === 0 && !isUploading && (hasQueued || hasProcessing || hasCompleted))
+                  || (i === 1 && (hasProcessing || hasCompleted))
+                  || (i === 2 && hasCompleted)
+                  || (i === 3 && hasCompleted);
+                return (
+                  <div key={label} className="flex-1">
+                    <div className={`h-2 rounded-full transition-all duration-500 ${
+                      active ? 'bg-blue-600 animate-pulse' :
+                      past ? 'bg-emerald-500' :
+                      'bg-slate-200'
+                    }`} />
+                    <p className={`mt-1 text-xs font-semibold text-center ${
+                      active ? 'text-blue-700' : past ? 'text-emerald-700' : 'text-slate-400'
+                    }`}>{label}</p>
+                  </div>
+                );
+              })}
+            </div>
+
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold">Applications being reviewed</h2>
+                <h2 className="text-2xl font-bold">
+                  {busy && completedJobs === 0 && failedJobs === 0 ? 'Submitting review...' :
+                   completedJobs === totalJobs && totalJobs > 0 ? 'Review complete' :
+                   'Applications being reviewed'}
+                </h2>
                 <p className="mt-1 text-slate-500">
-                  {agency} · {totalJobs} application(s) · Review ID: <code className="text-xs bg-slate-100 px-1 rounded">{currentReviewId?.slice(0, 8)}…</code>
+                  {currentReviewId
+                    ? <>{agency} · {totalJobs} application(s) · <code className="text-xs bg-slate-100 px-1 rounded">{currentReviewId.slice(0, 8)}…</code></>
+                    : <>{agency} · Preparing submission...</>
+                  }
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-3xl font-bold text-blue-700">{processingPct}%</p>
-                <p className="text-xs text-slate-500">{completedJobs + failedJobs} of {totalJobs} done</p>
+                <p className="text-xs text-slate-500">
+                  {totalJobs === 0 ? 'Uploading files...' : `${completedJobs + failedJobs} of ${totalJobs} done`}
+                </p>
               </div>
             </div>
 
             {/* Overall progress bar */}
             <div className="mt-5 h-3 rounded-full bg-slate-100">
               <div
-                className="h-3 rounded-full bg-blue-600 transition-all duration-700"
-                style={{ width: processingPct + '%' }}
+                className={`h-3 rounded-full transition-all duration-700 ${
+                  totalJobs === 0 ? 'bg-blue-400 animate-pulse w-1/3' : 'bg-blue-600'
+                }`}
+                style={totalJobs > 0 ? { width: processingPct + '%' } : undefined}
               />
             </div>
+
+            {/* Estimated time */}
+            {totalJobs > 0 && completedJobs < totalJobs && (
+              <p className="mt-2 text-xs text-slate-400">
+                Estimated: ~{(totalJobs - completedJobs - failedJobs) * 5} minutes remaining
+                · Claude is scoring each application independently
+              </p>
+            )}
 
             {/* Connection lost banner */}
             {connectionLost && (
