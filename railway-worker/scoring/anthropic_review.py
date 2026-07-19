@@ -83,16 +83,15 @@ def score_application_with_claude(application: Path, criteria: list[dict[str, An
     prompt = f"Agency: {agency}\nAPPROVED RUBRIC:\n{rubric}\n\nNOFO/WORKSHEET GUIDANCE:\n{guidance[:30000]}\n\nAPPLICATION:\n{application_text}\n\nReturn one complete review. Criterion names and maximum points must exactly match the approved rubric. If guidance explicitly provides scored subcriteria, include them and ensure their scores and maximums sum to the parent criterion. Use an empty finding list when no support exists; do not fabricate evidence."
     payload = {"model": os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5"), "max_tokens": 12000, "temperature": 0, "system": SYSTEM_PROMPT,
         "messages": [{"role": "user", "content": prompt}], "tools": [_tool(criteria)], "tool_choice": {"type": "tool", "name": "submit_grant_review"}}
-    request = urllib.request.Request("https://api.anthropic.com/v1/messages", data=json.dumps(payload).encode("utf-8"), headers={"x-api-key": api_key, "anthropic-version": "2023-06-01", "content-type": "application/json"}, method="POST")
+    import anthropic
+    client = anthropic.Anthropic(api_key=api_key, timeout=600.0)
     try:
-        with urllib.request.urlopen(request, timeout=300) as response:
-            body = json.loads(response.read().decode("utf-8"))
-    except urllib.error.HTTPError as exc:
-        raw = exc.read().decode("utf-8", errors="replace")
-        try: detail = json.loads(raw).get("error", {}).get("message", raw[:500])
-        except ValueError: detail = raw[:500]
-        raise RuntimeError(f"Anthropic API error ({exc.code}): {detail}") from exc
-    tool_use = next((block for block in body.get("content", []) if block.get("type") == "tool_use" and block.get("name") == "submit_grant_review"), None)
+        response = client.messages.create(**payload)
+    except anthropic.APITimeoutError as exc:
+        raise RuntimeError(f"Anthropic API timeout after 600s: {exc}") from exc
+    except anthropic.APIError as exc:
+        raise RuntimeError(f"Anthropic API error ({exc.status_code}): {exc.message}") from exc
+    tool_use = next((block for block in response.content if block.type == "tool_use" and block.name == "submit_grant_review"), None)
     if not tool_use:
         raise RuntimeError("Claude did not return a structured grant review")
-    return _validate(tool_use["input"], criteria, len(pages))
+    return _validate(tool_use.input, criteria, len(pages))
