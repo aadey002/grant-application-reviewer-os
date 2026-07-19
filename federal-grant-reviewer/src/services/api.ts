@@ -196,8 +196,9 @@ export const pollJobStatus = async (jobId: string): Promise<JobStatus> => {
     .from('processing_jobs')
     .select('id, application_id, review_id, status, error_message, started_at, completed_at')
     .eq('id', jobId)
-    .single();
-  if (error || !data) throw new Error('Job not found');
+    .maybeSingle();
+  if (error) throw new Error('Poll error: ' + error.message);
+  if (!data) return { job_id: jobId, application_id: '', status: 'failed', error_message: 'Job not found in database', review_id: '' };
   return {
     job_id: data.id,
     application_id: data.application_id,
