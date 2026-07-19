@@ -9,6 +9,7 @@ import sys
 import uuid
 import asyncio
 import logging
+import urllib.error
 from pathlib import Path
 from typing import Dict, Any, Optional
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form, BackgroundTasks
@@ -16,6 +17,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).parent / ".env")
+except ImportError:
+    pass
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -35,6 +41,9 @@ try:
     from grant_reviewer.scoring_engine import ScoringEngine
     from grant_reviewer.comment_generator import CommentGenerator
     from grant_reviewer.report_generator import ReportGenerator
+    from grant_reviewer.safe_review import extract_nofo_criteria, extract_pdf_pages, review_application, safe_extract_application_zip
+    from grant_reviewer.anthropic_review import score_application_with_claude
+    from grant_reviewer.worksheet_writer import populate_reviewer_worksheet
     MCP_AVAILABLE = True
     logger.info("MCP Agent components loaded successfully")
 except ImportError as e:
@@ -78,6 +87,122 @@ except Exception as e:
 
 # Serve uploaded files
 app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
+
+@app.post("/safe-reviews/extract-rubric")
+async def extract_safe_rubric(nofo: UploadFile = File(...), agency: str = Form("HRSA")):
+    extension = Path(nofo.filename or "").suffix.lower()
+    if extension not in {".pdf", ".docx"}:
+        raise HTTPException(status_code=400, detail=f"{nofo.filename}: NOFO must be PDF or DOCX")
+    directory = UPLOADS_DIR / "current-grant"
+    directory.mkdir(exist_ok=True)
+    path = directory / f"nofo{extension}"
+    with open(path, "wb") as handle:
+        handle.write(await nofo.read())
+    rubric = extract_nofo_criteria(path)
+    rubric["agency"] = agency
+    return {"success": True, "rubric": rubric}
+
+@app.post("/safe-reviews/run")
+async def run_safe_reviews(
+    applications: list[UploadFile] = File(...),
+    nofo: UploadFile = File(...),
+    rubric: UploadFile | None = File(None),
+    worksheet: UploadFile | None = File(None),
+    approved_criteria: str = Form(...),
+    agency: str = Form("HRSA"),
+):
+    """Review multiple applications against one approved grant NOFO rubric."""
+    import json
+    try:
+        criteria_set = json.loads(approved_criteria)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid approved criteria")
+    if not criteria_set.get("approved") or not criteria_set.get("criteria"):
+        raise HTTPException(status_code=400, detail="The extracted NOFO rubric must be approved before review")
+    if not applications:
+        raise HTTPException(status_code=400, detail="At least one application PDF or ZIP is required")
+    allowed = {".pdf", ".doc", ".docx", ".txt"}
+    grant_dir = UPLOADS_DIR / "current-grant"
+    grant_dir.mkdir(exist_ok=True)
+    package_files = {}
+    for kind, document in {"nofo": nofo, "rubric": rubric, "worksheet": worksheet}.items():
+        if not document:
+            continue
+        extension = Path(document.filename or "").suffix.lower()
+        if extension not in allowed:
+            raise HTTPException(status_code=400, detail=f"{document.filename}: unsupported file type")
+        content = await document.read()
+        path = grant_dir / f"{kind}{extension}"
+        with open(path, "wb") as handle:
+            handle.write(content)
+        package_files[kind] = {"filename": document.filename, "path": str(path)}
+    application_paths = []
+    for upload_index, upload in enumerate(applications, start=1):
+        extension = Path(upload.filename or "").suffix.lower()
+        if extension not in {".pdf", ".zip"}:
+            raise HTTPException(status_code=400, detail=f"{upload.filename}: application must be PDF or ZIP")
+        content = await upload.read()
+        if not content or len(content) > 250 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail=f"{upload.filename}: invalid file size")
+        incoming = grant_dir / f"incoming-{upload_index}{extension}"
+        with open(incoming, "wb") as handle:
+            handle.write(content)
+        if extension == ".zip":
+            try:
+                application_paths.extend(safe_extract_application_zip(incoming, grant_dir / f"zip-{upload_index}"))
+            except (ValueError, OSError) as exc:
+                raise HTTPException(status_code=400, detail=f"{upload.filename}: {exc}")
+        else:
+            application_paths.append(incoming)
+    criteria = [{"name": item["name"], "points": item["points"], "keywords": item.get("keywords", [])}
+                for item in criteria_set["criteria"]]
+    # Criterion descriptions in the uploaded worksheet are useful scoring guidance.
+    guidance_parts = []
+    for key in ("nofo", "worksheet"):
+        item = package_files.get(key)
+        if not item:
+            continue
+        try:
+            content = document_processor.process_document(item["path"])
+            sections = content.get("sections", {})
+            if isinstance(sections, dict):
+                guidance_parts.extend(str(value.get("content", "")) if isinstance(value, dict) else str(value) for value in sections.values())
+            else:
+                guidance_parts.append(str(content))
+        except Exception as exc:
+            logger.warning("Could not extract %s guidance: %s", key, exc)
+    guidance = "\n".join(guidance_parts)
+    results = []
+    for application_index, source_path in enumerate(application_paths, start=1):
+        application_dir = grant_dir / f"application-{application_index}"
+        application_dir.mkdir(exist_ok=True)
+        path = application_dir / "application.pdf"
+        with open(source_path, "rb") as source, open(path, "wb") as handle:
+            while chunk := source.read(1024 * 1024):
+                handle.write(chunk)
+        try:
+            result = await asyncio.to_thread(score_application_with_claude, path, criteria, agency, guidance)
+        except (RuntimeError, ValueError, urllib.error.URLError) as exc:
+            logger.error("Claude scoring failed for %s: %s", source_path.name, exc)
+            raise HTTPException(status_code=502, detail=f"Claude could not score {source_path.name}: {exc}")
+        review_id = f"{agency.lower()}-application-{application_index}"
+        extracted_pages = extract_pdf_pages(path)
+        result.update({"schema_version": "2.0", "review_id": review_id, "page_count": len(extracted_pages),
+                       "word_count": sum(len(page.split()) for page in extracted_pages)})
+        worksheet_url = None
+        if worksheet and package_files.get("worksheet", {}).get("path", "").lower().endswith(".docx"):
+            output = application_dir / f"{review_id}-completed-worksheet.docx"
+            try:
+                populate_reviewer_worksheet(Path(package_files["worksheet"]["path"]), output, result)
+                worksheet_url = f"/uploads/current-grant/application-{application_index}/{output.name}"
+            except Exception as exc:
+                logger.exception("Worksheet generation failed")
+                raise HTTPException(status_code=500, detail=f"Scoring completed, but worksheet generation failed for {source_path.name}: {exc}")
+        result.update({"application_file": source_path.name, "agency": agency,
+                       "application_index": application_index, "package_files": package_files,
+                       "completed_worksheet_url": worksheet_url})
+        results.append(result)
+    return {"success": True, "reviews": results}
 
 async def perform_full_analysis(file_path: str, agency: str, document_id: int) -> Dict[str, Any]:
     """Perform complete grant analysis using MCP agent components."""

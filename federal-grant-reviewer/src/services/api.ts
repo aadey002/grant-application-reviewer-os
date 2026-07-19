@@ -1,5 +1,53 @@
 const API_BASE_URL = 'http://localhost:8000';
 
+export interface SafeEvidence { page: number; quote: string; matched_keywords: string[] }
+export interface SafeCriterion {
+  name: string; maximum_points: number; status: string;
+  automated_points: number | null; final_points: number | null;
+  human_review_required: boolean; evidence: SafeEvidence[];
+  draft_strength: string | null; draft_weakness: string | null;
+  score?: number; score_rationale?: string;
+  strengths?: Array<{comment:string;pages:number[]}>;
+  mets?: Array<{comment:string;pages:number[]}>;
+  weaknesses?: Array<{comment:string;pages:number[]}>;
+  subcriteria?: Array<{name:string;score:number;maximum_points:number}>;
+}
+export interface SafeReview {
+  review_id: string; application_file: string; page_count: number; word_count: number;
+  agency: string; application_index: number;
+  review_status: string; final_score: number | null; certification: string;
+  maximum_score?: number; applicant_name?: string; application_number?: string;
+  completed_worksheet_url?: string | null;
+  criteria: SafeCriterion[];
+}
+
+export interface ReviewPackage { applications: File[]; nofo: File; rubric: File | null; worksheet: File | null; agency:string }
+export interface ExtractedCriterion { number:number; name:string; points:number; keywords:string[]; source_page:number; source_heading:string }
+export interface ExtractedRubric { agency:string; criteria:ExtractedCriterion[]; total_points:number; status:string; warnings:string[]; approved?:boolean }
+
+export const extractRubric = async (nofo: File, agency:string): Promise<ExtractedRubric> => {
+  const formData = new FormData();
+  formData.append('nofo', nofo); formData.append('agency', agency);
+  const response = await fetch(`${API_BASE_URL}/safe-reviews/extract-rubric`, {method:'POST', body:formData});
+  const body = await response.json();
+  if (!response.ok) throw new Error(body.detail || 'Rubric extraction failed');
+  return body.rubric;
+};
+
+export const runSafeReviews = async (item: ReviewPackage, criteria: ExtractedRubric): Promise<SafeReview[]> => {
+  const formData = new FormData();
+  item.applications.forEach(application => formData.append('applications', application));
+  formData.append('nofo', item.nofo);
+  if (item.rubric) formData.append('rubric', item.rubric);
+  if (item.worksheet) formData.append('worksheet', item.worksheet);
+  formData.append('agency', item.agency);
+  formData.append('approved_criteria', JSON.stringify(criteria));
+  const response = await fetch(`${API_BASE_URL}/safe-reviews/run`, { method: 'POST', body: formData });
+  const body = await response.json();
+  if (!response.ok) throw new Error(body.detail || 'Review processing failed');
+  return body.reviews;
+};
+
 export interface UploadResponse {
   success: boolean;
   file_id: string;
