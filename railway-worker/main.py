@@ -23,22 +23,39 @@ except ImportError:
     pass
 
 # ---------------------------------------------------------------------------
-# Scoring module path — injected before any local import
+# Scoring module path — added to sys.path but NOT imported at startup
 # ---------------------------------------------------------------------------
 sys.path.insert(0, str(Path(__file__).parent / "scoring"))
 
-from scoring.safe_review import extract_nofo_criteria, safe_extract_application_zip
-from scoring.anthropic_review import score_application_with_claude
-from scoring.worksheet_writer import populate_reviewer_worksheet
-try:
-    from scoring.document_processor import DocumentProcessor
-except ImportError:
-    DocumentProcessor = None
+# Heavy imports (PyMuPDF, anthropic, python-docx) are loaded lazily in job handlers
+# to keep startup fast and prevent container crash if a native dep is missing.
 
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from supabase import create_client, Client
+
+# ---------------------------------------------------------------------------
+# Lazy imports for heavy dependencies (PyMuPDF, anthropic, python-docx)
+# ---------------------------------------------------------------------------
+def _lazy_scoring():
+    from scoring.safe_review import extract_nofo_criteria, safe_extract_application_zip
+    from scoring.anthropic_review import score_application_with_claude
+    from scoring.worksheet_writer import populate_reviewer_worksheet
+    return extract_nofo_criteria, safe_extract_application_zip, score_application_with_claude, populate_reviewer_worksheet
+
+# Supabase client — only imported when needed
+_supabase_client: Any = None
+
+def get_supabase():
+    global _supabase_client
+    if _supabase_client is None:
+        from supabase import create_client
+        url = os.environ.get("SUPABASE_URL", "")
+        key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+        if not url or not key:
+            raise RuntimeError("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set")
+        _supabase_client = create_client(url, key)
+    return _supabase_client
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -49,8 +66,8 @@ logger = logging.getLogger("grant_worker")
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
-SUPABASE_URL = os.environ["SUPABASE_URL"]
-SUPABASE_SERVICE_ROLE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 ALLOWED_ORIGINS_RAW = os.getenv("ALLOWED_ORIGINS", "")
 ALLOWED_ORIGINS: list[str] = [o.strip() for o in ALLOWED_ORIGINS_RAW.split(",") if o.strip()] or ["*"]
 
@@ -73,11 +90,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ---------------------------------------------------------------------------
-# Supabase client (module-level singleton)
-# ---------------------------------------------------------------------------
-def get_supabase() -> Client:
-    return create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+# Supabase client defined above as lazy singleton
 
 # ---------------------------------------------------------------------------
 # Storage helpers
@@ -145,6 +158,16 @@ def _select(sb: Client, table: str, match: dict[str, Any]) -> list[dict[str, Any
 def health():
     return {"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()}
 
+@app.get("/ready")
+def ready():
+    checks = {
+        "supabase_configured": bool(SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY),
+        "anthropic_configured": bool(os.environ.get("ANTHROPIC_API_KEY")),
+        "scoring_mode": "claude",
+    }
+    ready = all([checks["supabase_configured"], checks["anthropic_configured"]])
+    return {"ready": ready, **checks}
+
 
 # ---------------------------------------------------------------------------
 # POST /safe-reviews/extract-rubric
@@ -164,6 +187,7 @@ async def extract_rubric(
         tmp_path = Path(tmp.name)
 
     try:
+        extract_nofo_criteria, *_ = _lazy_scoring()
         rubric = extract_nofo_criteria(tmp_path)
     except Exception as exc:
         logger.exception("extract_nofo_criteria failed")
@@ -296,6 +320,7 @@ async def run_review(
                 zip_path.write_bytes(app_bytes)
                 extract_dir = Path(tmpdir) / "extracted"
                 try:
+                    _, safe_extract_application_zip, *_ = _lazy_scoring()
                     pdf_paths = safe_extract_application_zip(zip_path, extract_dir)
                 except ValueError as exc:
                     raise HTTPException(status_code=422, detail=f"ZIP error in {original_name}: {exc}")
@@ -443,7 +468,15 @@ async def _process_job(
         guidance_text = ""
         try:
             nofo_bytes = _download_bytes(sb, BUCKET_NOFO, nofo_storage_path)
-            proc = DocumentProcessor()
+            try:
+                from scoring.document_processor import DocumentProcessor
+                proc = DocumentProcessor()
+            except ImportError:
+                proc = None
+            if proc is None:
+                pass  # skip guidance extraction
+            else:
+                proc = DocumentProcessor()
             with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as ntmp:
                 ntmp.write(nofo_bytes)
                 ntmp_path = Path(ntmp.name)
@@ -461,6 +494,7 @@ async def _process_job(
             app_tmp_path = Path(atmp.name)
 
         try:
+            _, _, score_application_with_claude, _ = _lazy_scoring()
             review_result = score_application_with_claude(
                 application=app_tmp_path,
                 criteria=criteria,
@@ -520,6 +554,7 @@ async def _process_job(
                     out_tmp_path = Path(outtmp.name)
 
                 try:
+                    _, _, _, populate_reviewer_worksheet = _lazy_scoring()
                     populated_path = populate_reviewer_worksheet(
                         template=ws_tmp_path,
                         output=out_tmp_path,
