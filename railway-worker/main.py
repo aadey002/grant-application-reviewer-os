@@ -30,7 +30,10 @@ sys.path.insert(0, str(Path(__file__).parent / "scoring"))
 from scoring.safe_review import extract_nofo_criteria, safe_extract_application_zip
 from scoring.anthropic_review import score_application_with_claude
 from scoring.worksheet_writer import populate_reviewer_worksheet
-from scoring.document_processor import DocumentProcessor
+try:
+    from scoring.document_processor import DocumentProcessor
+except ImportError:
+    DocumentProcessor = None
 
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
