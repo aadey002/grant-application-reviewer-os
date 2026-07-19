@@ -166,7 +166,7 @@ async def extract_rubric(
     finally:
         tmp_path.unlink(missing_ok=True)
 
-    return JSONResponse(content=rubric)
+    return JSONResponse(content={"success": True, "rubric": rubric})
 
 
 # ---------------------------------------------------------------------------
