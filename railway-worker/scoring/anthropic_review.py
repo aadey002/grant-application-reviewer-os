@@ -123,7 +123,29 @@ def score_application_with_claude(application: Path, criteria: list[dict[str, An
         raise RuntimeError(f"Anthropic API timeout after 600s: {exc}") from exc
     except anthropic.APIError as exc:
         raise RuntimeError(f"Anthropic API error ({exc.status_code}): {exc.message}") from exc
+    import logging
+    logger = logging.getLogger("grant_worker")
+    logger.info("Claude response: stop_reason=%s, content_types=%s", response.stop_reason, [b.type for b in response.content])
     tool_use = next((block for block in response.content if block.type == "tool_use" and block.name == "submit_grant_review"), None)
     if not tool_use:
+        # Log what Claude returned instead
+        text_blocks = [b.text for b in response.content if hasattr(b, 'text')]
+        logger.error("Claude did not return tool use. Text response: %s", text_blocks[:500] if text_blocks else "none")
         raise RuntimeError("Claude did not return a structured grant review")
-    return _validate(tool_use.input, criteria, len(pages))
+    review = tool_use.input
+    logger.info("Claude returned %d criteria, applicant=%s", len(review.get("criteria", [])), review.get("applicant_name", "?"))
+    if not review.get("criteria"):
+        logger.error("Empty criteria in tool_use.input keys: %s", list(review.keys()))
+        # Retry once with explicit instruction
+        payload["messages"].append({"role": "assistant", "content": [{"type": "tool_use", "id": tool_use.id, "name": "submit_grant_review", "input": review}]})
+        payload["messages"].append({"role": "user", "content": f"The criteria array was empty. You must score all {len(criteria)} criteria from the approved rubric. Return the complete review with all criteria scored."})
+        del payload["tool_choice"]
+        logger.info("Retrying Claude with correction prompt")
+        retry_response = client.messages.create(**payload)
+        tool_use_retry = next((b for b in retry_response.content if b.type == "tool_use" and b.name == "submit_grant_review"), None)
+        if tool_use_retry and tool_use_retry.input.get("criteria"):
+            review = tool_use_retry.input
+            logger.info("Retry returned %d criteria", len(review.get("criteria", [])))
+        else:
+            raise RuntimeError(f"Claude retry also returned empty criteria")
+    return _validate(review, criteria, len(pages))
