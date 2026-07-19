@@ -13,6 +13,23 @@ async function getAuthHeader(): Promise<Record<string, string>> {
   return token ? { Authorization: 'Bearer ' + token } : {};
 }
 
+/** Normalize error responses from FastAPI into a readable string. */
+function normalizeError(detail: unknown, fallback: string): string {
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) {
+    return detail.map((item: any) => {
+      if (typeof item === 'string') return item;
+      if (item && typeof item === 'object' && item.msg) {
+        const loc = Array.isArray(item.loc) ? item.loc.filter((s: any) => s !== 'body').join('.') : '';
+        return loc ? `${loc}: ${item.msg}` : item.msg;
+      }
+      return JSON.stringify(item);
+    }).join('; ');
+  }
+  if (detail && typeof detail === 'object' && 'msg' in (detail as any)) return (detail as any).msg;
+  return fallback;
+}
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -102,7 +119,7 @@ export const extractRubric = async (nofo: File, agency: string): Promise<Extract
     body: formData,
   });
   const body = await response.json();
-  if (!response.ok) throw new Error(body.detail || 'Rubric extraction failed');
+  if (!response.ok) throw new Error(normalizeError(body.detail, 'Rubric extraction failed'));
   return body.rubric;
 };
 
@@ -170,9 +187,12 @@ export const runSafeReviews = async (
     formData.append('worksheet', item.worksheet);
   }
 
+  // NOFO file is required by the worker
+  formData.append('nofo', item.nofo);
   formData.append('agency', item.agency);
-  formData.append('approved_criteria', JSON.stringify(criteria));
+  formData.append('approved_criteria', JSON.stringify(criteria.criteria));
   formData.append('review_id', reviewId);
+  formData.append('user_id', user?.id || 'anonymous-test');
 
   const response = await fetch(API_BASE_URL + '/safe-reviews/run', {
     method: 'POST',
@@ -180,7 +200,7 @@ export const runSafeReviews = async (
     body: formData,
   });
   const body = await response.json();
-  if (!response.ok) throw new Error(body.detail || 'Review processing failed');
+  if (!response.ok) throw new Error(normalizeError(body.detail, 'Review processing failed'));
 
   // API returns { review_id, job_ids } for async polling
   // Fallback: if API returns reviews directly (legacy), wrap them
@@ -200,7 +220,7 @@ export const pollJobStatus = async (jobId: string): Promise<JobStatus> => {
     headers: authHeader,
   });
   const body = await response.json();
-  if (!response.ok) throw new Error(body.detail || 'Job status fetch failed');
+  if (!response.ok) throw new Error(normalizeError(body.detail, 'Job status fetch failed'));
   return body as JobStatus;
 };
 
@@ -210,7 +230,7 @@ export const getReviewResults = async (reviewId: string): Promise<ReviewResults>
     headers: authHeader,
   });
   const body = await response.json();
-  if (!response.ok) throw new Error(body.detail || 'Results fetch failed');
+  if (!response.ok) throw new Error(normalizeError(body.detail, 'Results fetch failed'));
   return body as ReviewResults;
 };
 
@@ -221,7 +241,7 @@ export const getWorksheetUrl = async (reviewId: string, applicationId: string): 
     { headers: authHeader }
   );
   const body = await response.json();
-  if (!response.ok) throw new Error(body.detail || 'Worksheet URL fetch failed');
+  if (!response.ok) throw new Error(normalizeError(body.detail, 'Worksheet URL fetch failed'));
   return (body.url ?? body.signed_url ?? '') as string;
 };
 
