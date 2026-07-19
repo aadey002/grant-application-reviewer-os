@@ -13,15 +13,31 @@ export interface SafeReview {
   criteria: SafeCriterion[];
 }
 
-export interface ReviewPackage { application: File; nofo: File; rubric: File; worksheet: File }
-export const runSafeReviews = async (packages: ReviewPackage[]): Promise<SafeReview[]> => {
+export interface ReviewPackage { applications: File[]; nofo: File; rubric: File | null; worksheet: File | null }
+export interface ExtractedCriterion { number:number; name:string; points:number; keywords:string[]; source_page:number; source_heading:string }
+export interface ExtractedRubric { grant_index:number; criteria:ExtractedCriterion[]; total_points:number; status:string; warnings:string[]; approved?:boolean }
+
+export const extractRubrics = async (nofos: File[]): Promise<ExtractedRubric[]> => {
   const formData = new FormData();
+  nofos.forEach(nofo => formData.append('nofos', nofo));
+  const response = await fetch(`${API_BASE_URL}/safe-reviews/extract-rubrics`, {method:'POST', body:formData});
+  const body = await response.json();
+  if (!response.ok) throw new Error(body.detail || 'Rubric extraction failed');
+  return body.rubrics;
+};
+
+export const runSafeReviews = async (packages: ReviewPackage[], criteria: ExtractedRubric[]): Promise<SafeReview[]> => {
+  const formData = new FormData();
+  const includeRubrics = packages.every(item => item.rubric);
+  const includeWorksheets = packages.every(item => item.worksheet);
   packages.forEach(item => {
-    formData.append('applications', item.application);
+    item.applications.forEach(application => formData.append('applications', application));
     formData.append('nofos', item.nofo);
-    formData.append('rubrics', item.rubric);
-    formData.append('worksheets', item.worksheet);
+    if (includeRubrics && item.rubric) formData.append('rubrics', item.rubric);
+    if (includeWorksheets && item.worksheet) formData.append('worksheets', item.worksheet);
   });
+  formData.append('application_counts', JSON.stringify(packages.map(item => item.applications.length)));
+  formData.append('approved_criteria', JSON.stringify(criteria));
   const response = await fetch(`${API_BASE_URL}/safe-reviews/run`, { method: 'POST', body: formData });
   const body = await response.json();
   if (!response.ok) throw new Error(body.detail || 'Review processing failed');

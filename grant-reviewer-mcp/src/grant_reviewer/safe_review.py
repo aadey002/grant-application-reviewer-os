@@ -12,6 +12,11 @@ try:
 except ImportError:  # pragma: no cover
     fitz = None
 
+try:
+    from docx import Document
+except ImportError:  # pragma: no cover
+    Document = None
+
 DEFAULT_HRSA_CRITERIA = [
     {"name": "Statement of Need", "points": 20, "keywords": ["need", "population", "disparity", "data"]},
     {"name": "Project Description", "points": 20, "keywords": ["project", "approach", "activities", "services"]},
@@ -33,6 +38,47 @@ def extract_pdf_pages(path: Path) -> list[str]:
         raise RuntimeError("PyMuPDF is required: pip install pymupdf")
     with fitz.open(path) as document:
         return [page.get_text("text") for page in document]
+
+def extract_document_pages(path: Path) -> list[str]:
+    if path.suffix.lower() == ".pdf":
+        return extract_pdf_pages(path)
+    if path.suffix.lower() == ".docx" and Document:
+        text = "\n".join(paragraph.text for paragraph in Document(path).paragraphs)
+        return [text]
+    raise ValueError("NOFO must be PDF or DOCX")
+
+def extract_nofo_criteria(path: Path) -> dict[str, Any]:
+    """Extract criterion headings and point values with source-page provenance."""
+    pages = extract_document_pages(path)
+    patterns = [
+        re.compile(r"(?i)criterion\s+(\d+)\s*[:.\-–—]?\s*([^\n(]{2,100}?)\s*\(\s*(\d+)\s*points?\s*\)"),
+        re.compile(r"(?i)(?:review\s+)?criterion\s+(\d+)\s*[:.\-–—]\s*([^\n]{2,100}?)\s*[—–-]\s*(\d+)\s*points?"),
+    ]
+    found = []
+    seen = set()
+    for page_number, text in enumerate(pages, start=1):
+        for pattern in patterns:
+            for match in pattern.finditer(text):
+                number, name, points = match.groups()
+                name = " ".join(name.split()).strip(" :-–—")
+                key = (int(number), name.lower())
+                if key in seen:
+                    continue
+                seen.add(key)
+                nearby = text[match.end():match.end() + 1200]
+                keywords = [word.lower() for word in re.findall(r"[A-Za-z][A-Za-z-]{3,}", name) if word.lower() not in {"criterion", "review"}]
+                found.append({"number": int(number), "name": name, "points": int(points),
+                              "keywords": keywords or [name.lower()], "source_page": page_number,
+                              "source_heading": " ".join(match.group(0).split()),
+                              "context_preview": " ".join(nearby.split())[:500]})
+    found.sort(key=lambda item: item["number"])
+    total = sum(item["points"] for item in found)
+    return {
+        "criteria": found, "total_points": total, "source_file": path.name,
+        "status": "ready_for_approval" if found and total > 0 else "unable_to_extract",
+        "warnings": ([] if total == 100 else [f"Extracted point total is {total}, not 100; reviewer verification required."]),
+        "human_approval_required": True,
+    }
 
 def _sentences(text: str) -> Iterable[str]:
     for sentence in re.split(r"(?<=[.!?])\s+|\n+", text):

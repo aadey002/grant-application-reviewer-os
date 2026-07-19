@@ -35,7 +35,7 @@ try:
     from grant_reviewer.scoring_engine import ScoringEngine
     from grant_reviewer.comment_generator import CommentGenerator
     from grant_reviewer.report_generator import ReportGenerator
-    from grant_reviewer.safe_review import review_application
+    from grant_reviewer.safe_review import extract_nofo_criteria, review_application
     MCP_AVAILABLE = True
     logger.info("MCP Agent components loaded successfully")
 except ImportError as e:
@@ -80,40 +80,95 @@ except Exception as e:
 # Serve uploaded files
 app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 
+@app.post("/safe-reviews/extract-rubrics")
+async def extract_safe_rubrics(nofos: list[UploadFile] = File(...)):
+    if len(nofos) != 3:
+        raise HTTPException(status_code=400, detail="Exactly three NOFO files are required")
+    rubrics = []
+    for index, upload in enumerate(nofos, start=1):
+        extension = Path(upload.filename or "").suffix.lower()
+        if extension not in {".pdf", ".docx"}:
+            raise HTTPException(status_code=400, detail=f"{upload.filename}: NOFO must be PDF or DOCX")
+        directory = UPLOADS_DIR / f"grant-{index}"
+        directory.mkdir(exist_ok=True)
+        path = directory / f"nofo{extension}"
+        with open(path, "wb") as handle:
+            handle.write(await upload.read())
+        rubric = extract_nofo_criteria(path)
+        rubric["grant_index"] = index
+        rubrics.append(rubric)
+    return {"success": True, "rubrics": rubrics}
+
 @app.post("/safe-reviews/run")
 async def run_safe_reviews(
     applications: list[UploadFile] = File(...),
     nofos: list[UploadFile] = File(...),
-    rubrics: list[UploadFile] = File(...),
-    worksheets: list[UploadFile] = File(...),
+    rubrics: list[UploadFile] | None = File(None),
+    worksheets: list[UploadFile] | None = File(None),
+    application_counts: str = Form(...),
+    approved_criteria: str = Form(...),
 ):
-    """Store and run exactly three isolated, complete review packages."""
-    groups = {"applications": applications, "nofos": nofos, "rubrics": rubrics, "worksheets": worksheets}
-    if any(len(items) != 3 for items in groups.values()):
-        raise HTTPException(status_code=400, detail="Each of the three reviews requires an application, NOFO, rubric, and worksheet/instructions")
+    """Run multiple applications within each of exactly three grant competitions."""
+    import json as json_mod
+    try:
+        counts = json_mod.loads(application_counts)
+    except (json_mod.JSONDecodeError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid application counts")
+    if len(counts) != 3 or any(not isinstance(count, int) or count < 1 for count in counts):
+        raise HTTPException(status_code=400, detail="Each of the three grants requires at least one application")
+    rubrics = rubrics or []
+    worksheets = worksheets or []
+    if len(applications) != sum(counts) or len(nofos) != 3 or len(rubrics) not in {0, 3} or len(worksheets) not in {0, 3}:
+        raise HTTPException(status_code=400, detail="The uploaded files do not match the three grant packages")
+    try:
+        criteria_sets = json_mod.loads(approved_criteria)
+    except (json_mod.JSONDecodeError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid approved criteria")
+    if len(criteria_sets) != 3 or any(not item.get("approved") or not item.get("criteria") for item in criteria_sets):
+        raise HTTPException(status_code=400, detail="All three NOFO rubrics must be approved before review")
     results = []
     allowed = {".pdf", ".doc", ".docx", ".txt"}
-    for index, upload in enumerate(applications, start=1):
-        if Path(upload.filename or "").suffix.lower() != ".pdf":
-            raise HTTPException(status_code=400, detail=f"{upload.filename}: application must be PDF")
-        review_dir = UPLOADS_DIR / f"review-{index}"
-        review_dir.mkdir(exist_ok=True)
+    application_offset = 0
+    for grant_index in range(1, 4):
+        grant_dir = UPLOADS_DIR / f"grant-{grant_index}"
+        grant_dir.mkdir(exist_ok=True)
         package_files = {}
-        for kind, items in groups.items():
-            document = items[index - 1]
+        optional_groups = {"rubrics": rubrics, "worksheets": worksheets}
+        for kind, items in {"nofos": nofos, **{k:v for k,v in optional_groups.items() if v}}.items():
+            document = items[grant_index - 1]
             extension = Path(document.filename or "").suffix.lower()
             if extension not in allowed:
                 raise HTTPException(status_code=400, detail=f"{document.filename}: unsupported file type")
             content = await document.read()
             if not content or len(content) > 75 * 1024 * 1024:
                 raise HTTPException(status_code=400, detail=f"{document.filename}: invalid file size")
-            path = review_dir / f"{kind[:-1]}{extension}"
+            path = grant_dir / f"{kind[:-1]}{extension}"
             with open(path, "wb") as handle:
                 handle.write(content)
             package_files[kind[:-1]] = {"filename": document.filename, "path": str(path)}
-        result = review_application(f"review-{index}", Path(package_files["application"]["path"]))
-        result["package_files"] = package_files
-        results.append(result)
+        count = counts[grant_index - 1]
+        for application_index in range(1, count + 1):
+            upload = applications[application_offset + application_index - 1]
+            extension = Path(upload.filename or "").suffix.lower()
+            if extension != ".pdf":
+                raise HTTPException(status_code=400, detail=f"{upload.filename}: application must be PDF")
+            content = await upload.read()
+            if not content or len(content) > 75 * 1024 * 1024:
+                raise HTTPException(status_code=400, detail=f"{upload.filename}: invalid file size")
+            application_dir = grant_dir / f"application-{application_index}"
+            application_dir.mkdir(exist_ok=True)
+            path = application_dir / "application.pdf"
+            with open(path, "wb") as handle:
+                handle.write(content)
+            criteria = [{"name": item["name"], "points": item["points"], "keywords": item.get("keywords", [])}
+                        for item in criteria_sets[grant_index - 1]["criteria"]]
+            result = review_application(f"grant-{grant_index}-application-{application_index}", path, criteria)
+            result["application_file"] = upload.filename
+            result["grant_id"] = f"grant-{grant_index}"
+            result["grant_index"] = grant_index
+            result["application_index"] = application_index
+            results.append(result)
+        application_offset += count
     return {"success": True, "reviews": results}
 
 async def perform_full_analysis(file_path: str, agency: str, document_id: int) -> Dict[str, Any]:
