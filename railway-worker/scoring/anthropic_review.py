@@ -133,6 +133,8 @@ def score_application_with_claude(application: Path, criteria: list[dict[str, An
         logger.error("Claude did not return tool use. Text response: %s", text_blocks[:500] if text_blocks else "none")
         raise RuntimeError("Claude did not return a structured grant review")
     review = tool_use.input
+    if isinstance(review, str):
+        review = json.loads(review)
     logger.info("Claude returned %d criteria, applicant=%s", len(review.get("criteria", [])), review.get("applicant_name", "?"))
     if not review.get("criteria"):
         logger.error("Empty criteria in tool_use.input keys: %s", list(review.keys()))
