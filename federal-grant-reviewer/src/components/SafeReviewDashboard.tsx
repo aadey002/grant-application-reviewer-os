@@ -428,6 +428,16 @@ const SafeReviewDashboard: React.FC = () => {
 
     setBusy(true);
     setError('');
+    setStep('processing');
+    setAppProgress([{
+      jobId: 'uploading',
+      applicationName: 'Uploading documents...',
+      status: 'uploaded' as const,
+      progress: 0,
+      message: 'Uploading files to secure storage',
+      score: null,
+      errorMessage: null,
+    }]);
 
     // Stop brief polling if still running
     if (briefPollRef.current) {
@@ -443,9 +453,17 @@ const SafeReviewDashboard: React.FC = () => {
       let result: { review_id: string; job_ids: string[] } | null = null;
 
       try {
-        // If we already have a review record from the brief step, pass the existing ID
-        // createReviewAndUpload will create a new one if needed
-        result = await runSafeReviews(item, rubric);
+        result = await runSafeReviews(item, rubric, (stage, detail) => {
+          setAppProgress([{
+            jobId: 'uploading',
+            applicationName: detail,
+            status: 'uploaded' as const,
+            progress: 0,
+            message: stage,
+            score: null,
+            errorMessage: null,
+          }]);
+        });
       } catch (fetchErr) {
         const msg = fetchErr instanceof Error ? fetchErr.message : '';
         if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('network')) {
