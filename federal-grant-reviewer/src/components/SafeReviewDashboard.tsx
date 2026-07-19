@@ -200,27 +200,33 @@ const SafeReviewDashboard: React.FC = () => {
   const openReview = useCallback(async (reviewId: string) => {
     const all = loadStoredReviews();
     const stored = all.find(r => r.review_id === reviewId);
-    if (!stored) {
-      setError('Review not found in history.');
-      return;
-    }
     setCurrentReviewId(reviewId);
-    setAgency(stored.agency);
+    if (stored) setAgency(stored.agency);
     setError('');
+    setBusy(true);
 
-    // Try to get results first (may already be done)
+    // Try to get results from Supabase (works even without localStorage)
     try {
       const fetched = await getReviewResults(reviewId);
       if (fetched.reviews?.length > 0) {
         setReviews(fetched.reviews);
         setSelected(0);
         setStep('results');
-        updateStoredReviewStatus(reviewId, 'completed');
-        setStoredReviews(loadStoredReviews());
+        if (stored) {
+          updateStoredReviewStatus(reviewId, 'completed');
+          setStoredReviews(loadStoredReviews());
+        }
+        setBusy(false);
         return;
       }
     } catch {
       // Results not ready or API unreachable — fall through to polling
+    }
+    setBusy(false);
+
+    if (!stored) {
+      setError('Review has no completed results yet.');
+      return;
     }
 
     // Resume polling
