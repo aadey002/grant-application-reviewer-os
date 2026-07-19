@@ -113,7 +113,7 @@ def score_application_with_claude(application: Path, criteria: list[dict[str, An
     pages, application_text = _application_text(application)
     rubric = "\n".join(f"- {c['name']}: {int(c['points'])} points" for c in criteria)
     prompt = f"Agency: {agency}\nAPPROVED RUBRIC:\n{rubric}\n\nNOFO/WORKSHEET GUIDANCE:\n{guidance[:30000]}\n\nAPPLICATION:\n{application_text}\n\nReturn one complete review. Criterion names and maximum points must exactly match the approved rubric. If guidance explicitly provides scored subcriteria, include them and ensure their scores and maximums sum to the parent criterion. Use an empty finding list when no support exists; do not fabricate evidence."
-    payload = {"model": os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5"), "max_tokens": 12000, "temperature": 0, "system": SYSTEM_PROMPT,
+    payload = {"model": os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5"), "max_tokens": 16000, "temperature": 0, "system": SYSTEM_PROMPT,
         "messages": [{"role": "user", "content": prompt}], "tools": [_tool(criteria)], "tool_choice": {"type": "tool", "name": "submit_grant_review"}}
     import anthropic
     client = anthropic.Anthropic(api_key=api_key, timeout=600.0)
@@ -136,10 +136,11 @@ def score_application_with_claude(application: Path, criteria: list[dict[str, An
     logger.info("Claude returned %d criteria, applicant=%s", len(review.get("criteria", [])), review.get("applicant_name", "?"))
     if not review.get("criteria"):
         logger.error("Empty criteria in tool_use.input keys: %s", list(review.keys()))
-        # Retry once with explicit instruction
+        # Retry: send tool_result rejecting the empty submission, then ask again
         payload["messages"].append({"role": "assistant", "content": [{"type": "tool_use", "id": tool_use.id, "name": "submit_grant_review", "input": review}]})
-        payload["messages"].append({"role": "user", "content": f"The criteria array was empty. You must score all {len(criteria)} criteria from the approved rubric. Return the complete review with all criteria scored."})
-        del payload["tool_choice"]
+        payload["messages"].append({"role": "user", "content": [{"type": "tool_result", "tool_use_id": tool_use.id, "is_error": True, "content": f"REJECTED: The criteria array was empty. You must score all {len(criteria)} criteria from the approved rubric. Return the complete review with all criteria scored."}]})
+        if "tool_choice" in payload:
+            del payload["tool_choice"]
         logger.info("Retrying Claude with correction prompt")
         retry_response = client.messages.create(**payload)
         tool_use_retry = next((b for b in retry_response.content if b.type == "tool_use" and b.name == "submit_grant_review"), None)
