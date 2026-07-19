@@ -170,7 +170,68 @@ async def extract_rubric(
 
 
 # ---------------------------------------------------------------------------
-# POST /safe-reviews/run
+# POST /safe-reviews/enqueue — lightweight, accepts Supabase Storage paths only
+# ---------------------------------------------------------------------------
+
+@app.post("/safe-reviews/enqueue", status_code=202)
+async def enqueue_review(
+    background_tasks: BackgroundTasks,
+    application_storage_paths: str = Form(...),
+    nofo_storage_path: str = Form(...),
+    rubric_storage_path: Optional[str] = Form(None),
+    worksheet_storage_path: Optional[str] = Form(None),
+    approved_criteria: str = Form(...),
+    agency: str = Form("HRSA"),
+    user_id: str = Form(...),
+    review_id: str = Form(...),
+):
+    """Lightweight enqueue: files are already in Supabase Storage. Creates jobs and returns immediately."""
+    sb = get_supabase()
+    try:
+        criteria = json.loads(approved_criteria)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=422, detail=f"Invalid approved_criteria JSON: {exc}")
+    try:
+        app_paths = json.loads(application_storage_paths)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=422, detail=f"Invalid application_storage_paths JSON: {exc}")
+
+    prefix = f"{user_id}/{review_id}"
+    job_records = []
+    for idx, app_path in enumerate(app_paths):
+        application_id = str(uuid.uuid4())
+        job_id = str(uuid.uuid4())
+        filename = app_path.rsplit("/", 1)[-1] if "/" in app_path else app_path
+        _insert(sb, "applications", {
+            "id": application_id, "review_id": review_id, "user_id": user_id,
+            "filename": filename, "storage_path": app_path, "status": "queued",
+            "agency": agency, "criteria": json.dumps(criteria),
+            "nofo_storage_path": nofo_storage_path,
+            "worksheet_storage_path": worksheet_storage_path or "",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        _insert(sb, "processing_jobs", {
+            "id": job_id, "application_id": application_id, "review_id": review_id,
+            "user_id": user_id, "status": "queued", "agency": agency,
+            "criteria": json.dumps(criteria),
+            "nofo_storage_path": nofo_storage_path,
+            "worksheet_storage_path": worksheet_storage_path or "",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        job_records.append({"job_id": job_id, "application_id": application_id,
+                           "filename": filename, "status": "queued"})
+        background_tasks.add_task(
+            _process_job, job_id, app_path, criteria, agency, review_id,
+            nofo_storage_path, worksheet_storage_path or "",
+        )
+    return JSONResponse(status_code=202, content={
+        "review_id": review_id, "jobs": job_records,
+        "status": "queued", "message": f"{len(job_records)} application(s) queued for processing.",
+    })
+
+
+# ---------------------------------------------------------------------------
+# POST /safe-reviews/run — legacy endpoint, accepts file uploads
 # ---------------------------------------------------------------------------
 
 @app.post("/safe-reviews/run")

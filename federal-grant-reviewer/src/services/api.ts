@@ -134,67 +134,55 @@ export interface RunJobsResult {
 
 export const runSafeReviews = async (
   item: ReviewPackage,
-  criteria: ExtractedRubric
+  criteria: ExtractedRubric,
+  onUploadProgress?: (file: string, done: boolean) => void,
 ): Promise<RunJobsResult> => {
   const authHeader = await getAuthHeader();
   const { data: { user } } = await supabase.auth.getUser();
   const reviewId = crypto.randomUUID();
+  const prefix = (user?.id || 'anonymous-test') + '/' + reviewId;
 
-  const storagePaths: string[] = [];
+  // Upload NOFO directly to Supabase Storage
+  onUploadProgress?.(item.nofo.name, false);
+  const nofoPath = await uploadToStorage('nofo-files', prefix + '/nofo/' + item.nofo.name, item.nofo);
+  onUploadProgress?.(item.nofo.name, true);
 
-  // Upload applications to Storage
-  if (user) {
-    await Promise.all(
-      item.applications.map(async (file, idx) => {
-        const path = await uploadToStorage(
-          'grant-applications',
-          user.id + '/' + reviewId + '/' + idx + '_' + file.name,
-          file
-        );
-        storagePaths.push(path);
-      })
-    );
+  // Upload applications directly to Supabase Storage
+  const appPaths: string[] = [];
+  for (let i = 0; i < item.applications.length; i++) {
+    const f = item.applications[i];
+    onUploadProgress?.(f.name, false);
+    const path = await uploadToStorage('grant-applications', prefix + '/applications/' + i + '_' + f.name, f);
+    appPaths.push(path);
+    onUploadProgress?.(f.name, true);
   }
 
+  // Upload optional rubric/worksheet
+  let rubricPath: string | undefined;
+  let worksheetPath: string | undefined;
+  if (item.rubric) {
+    onUploadProgress?.(item.rubric.name, false);
+    rubricPath = await uploadToStorage('worksheet-templates', prefix + '/rubric/' + item.rubric.name, item.rubric);
+    onUploadProgress?.(item.rubric.name, true);
+  }
+  if (item.worksheet) {
+    onUploadProgress?.(item.worksheet.name, false);
+    worksheetPath = await uploadToStorage('worksheet-templates', prefix + '/worksheet/' + item.worksheet.name, item.worksheet);
+    onUploadProgress?.(item.worksheet.name, true);
+  }
+
+  // Lightweight enqueue call — metadata only, no file bytes
   const formData = new FormData();
-
-  if (storagePaths.length > 0) {
-    formData.append('application_storage_paths', JSON.stringify(storagePaths));
-  } else {
-    item.applications.forEach(f => formData.append('applications', f));
-  }
-
-  // Upload optional rubric/worksheet to dedicated bucket
-  if (item.rubric && user) {
-    const rubricPath = await uploadToStorage(
-      'worksheet-templates',
-      user.id + '/' + reviewId + '/rubric',
-      item.rubric
-    );
-    formData.append('rubric_storage_path', rubricPath);
-  } else if (item.rubric) {
-    formData.append('rubric', item.rubric);
-  }
-
-  if (item.worksheet && user) {
-    const wsPath = await uploadToStorage(
-      'worksheet-templates',
-      user.id + '/' + reviewId + '/worksheet',
-      item.worksheet
-    );
-    formData.append('worksheet_storage_path', wsPath);
-  } else if (item.worksheet) {
-    formData.append('worksheet', item.worksheet);
-  }
-
-  // NOFO file is required by the worker
-  formData.append('nofo', item.nofo);
+  formData.append('application_storage_paths', JSON.stringify(appPaths));
+  formData.append('nofo_storage_path', nofoPath);
+  if (rubricPath) formData.append('rubric_storage_path', rubricPath);
+  if (worksheetPath) formData.append('worksheet_storage_path', worksheetPath);
   formData.append('agency', item.agency);
   formData.append('approved_criteria', JSON.stringify(criteria.criteria));
   formData.append('review_id', reviewId);
-  formData.append('user_id', user?.id || 'anonymous-test');
+  formData.append('user_id', prefix.split('/')[0]);
 
-  const response = await fetch(API_BASE_URL + '/safe-reviews/run', {
+  const response = await fetch(API_BASE_URL + '/safe-reviews/enqueue', {
     method: 'POST',
     headers: authHeader,
     body: formData,
