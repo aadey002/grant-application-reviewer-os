@@ -414,15 +414,27 @@ async def _process_job(
     })
 
     try:
-        # -- Resolve application_id from job record --
+        # -- Resolve application_id and storage path from DB --
         job_rows = _select(sb, "processing_jobs", {"id": job_id})
         if not job_rows:
             raise RuntimeError(f"Job {job_id} not found in DB")
         job_row = job_rows[0]
         application_id: str = job_row["application_id"]
 
+        # Get actual storage path from applications table (application_storage_path arg may be UUID from retry)
+        app_rows = _select(sb, "applications", {"id": application_id})
+        actual_app_path = app_rows[0]["storage_path"] if app_rows else application_storage_path
+        if not actual_app_path or len(actual_app_path) < 10:
+            raise RuntimeError(f"No valid storage path for application {application_id}")
+
+        # Also resolve nofo/worksheet paths from the application record if not passed
+        if not nofo_storage_path and app_rows:
+            nofo_storage_path = app_rows[0].get("nofo_storage_path", "")
+        if not worksheet_storage_path and app_rows:
+            worksheet_storage_path = app_rows[0].get("worksheet_storage_path", "")
+
         # -- Download application PDF --
-        app_bytes = _download_bytes(sb, BUCKET_APPS, application_storage_path)
+        app_bytes = _download_bytes(sb, BUCKET_APPS, actual_app_path)
 
         # -- Download NOFO for guidance text --
         guidance_text = ""
@@ -600,15 +612,19 @@ async def trigger_process_job(job_id: str, background_tasks: BackgroundTasks):
 
     criteria = json.loads(job_row.get("criteria") or "[]")
 
+    # Look up actual storage path from applications table
+    app_rows = _select(sb, "applications", {"id": job_row["application_id"]})
+    app_storage_path = app_rows[0]["storage_path"] if app_rows else ""
+
     background_tasks.add_task(
         _process_job,
         job_id,
-        job_row["application_id"],    # storage path stored separately; use application_id to re-derive
+        app_storage_path,
         criteria,
         job_row.get("agency", "HRSA"),
         job_row["review_id"],
-        job_row["nofo_storage_path"],
-        job_row.get("worksheet_storage_path"),
+        job_row.get("nofo_storage_path", ""),
+        job_row.get("worksheet_storage_path", ""),
     )
     return {"message": "Job re-queued", "job_id": job_id}
 
