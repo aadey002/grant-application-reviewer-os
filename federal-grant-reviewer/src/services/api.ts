@@ -9,34 +9,31 @@ export interface SafeCriterion {
 }
 export interface SafeReview {
   review_id: string; application_file: string; page_count: number; word_count: number;
+  agency: string; application_index: number;
   review_status: string; final_score: number | null; certification: string;
   criteria: SafeCriterion[];
 }
 
-export interface ReviewPackage { applications: File[]; nofo: File; rubric: File | null; worksheet: File | null }
+export interface ReviewPackage { applications: File[]; nofo: File; rubric: File | null; worksheet: File | null; agency:string }
 export interface ExtractedCriterion { number:number; name:string; points:number; keywords:string[]; source_page:number; source_heading:string }
-export interface ExtractedRubric { grant_index:number; criteria:ExtractedCriterion[]; total_points:number; status:string; warnings:string[]; approved?:boolean }
+export interface ExtractedRubric { agency:string; criteria:ExtractedCriterion[]; total_points:number; status:string; warnings:string[]; approved?:boolean }
 
-export const extractRubrics = async (nofos: File[]): Promise<ExtractedRubric[]> => {
+export const extractRubric = async (nofo: File, agency:string): Promise<ExtractedRubric> => {
   const formData = new FormData();
-  nofos.forEach(nofo => formData.append('nofos', nofo));
-  const response = await fetch(`${API_BASE_URL}/safe-reviews/extract-rubrics`, {method:'POST', body:formData});
+  formData.append('nofo', nofo); formData.append('agency', agency);
+  const response = await fetch(`${API_BASE_URL}/safe-reviews/extract-rubric`, {method:'POST', body:formData});
   const body = await response.json();
   if (!response.ok) throw new Error(body.detail || 'Rubric extraction failed');
-  return body.rubrics;
+  return body.rubric;
 };
 
-export const runSafeReviews = async (packages: ReviewPackage[], criteria: ExtractedRubric[]): Promise<SafeReview[]> => {
+export const runSafeReviews = async (item: ReviewPackage, criteria: ExtractedRubric): Promise<SafeReview[]> => {
   const formData = new FormData();
-  const includeRubrics = packages.every(item => item.rubric);
-  const includeWorksheets = packages.every(item => item.worksheet);
-  packages.forEach(item => {
-    item.applications.forEach(application => formData.append('applications', application));
-    formData.append('nofos', item.nofo);
-    if (includeRubrics && item.rubric) formData.append('rubrics', item.rubric);
-    if (includeWorksheets && item.worksheet) formData.append('worksheets', item.worksheet);
-  });
-  formData.append('application_counts', JSON.stringify(packages.map(item => item.applications.length)));
+  item.applications.forEach(application => formData.append('applications', application));
+  formData.append('nofo', item.nofo);
+  if (item.rubric) formData.append('rubric', item.rubric);
+  if (item.worksheet) formData.append('worksheet', item.worksheet);
+  formData.append('agency', item.agency);
   formData.append('approved_criteria', JSON.stringify(criteria));
   const response = await fetch(`${API_BASE_URL}/safe-reviews/run`, { method: 'POST', body: formData });
   const body = await response.json();

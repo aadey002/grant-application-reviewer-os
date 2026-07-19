@@ -21,12 +21,12 @@ class SafeReviewTests(unittest.TestCase):
     def test_short_document_is_unable(self, _):
         self.assertEqual(review_application("r1", Path("app.pdf"))["review_status"], "unable_to_evaluate")
 
-    def test_manifest_requires_three(self):
+    def test_manifest_requires_at_least_one(self):
         from tempfile import TemporaryDirectory
         with TemporaryDirectory() as directory:
             manifest = Path(directory) / "manifest.json"
             manifest.write_text(json.dumps({"reviews":[]}), encoding="utf-8")
-            with self.assertRaisesRegex(ValueError, "exactly three"):
+            with self.assertRaisesRegex(ValueError, "at least one"):
                 run_manifest(manifest, Path(directory) / "out")
 
     @patch("grant_reviewer.safe_review.extract_document_pages", return_value=[

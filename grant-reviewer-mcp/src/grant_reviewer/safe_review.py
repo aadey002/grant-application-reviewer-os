@@ -181,8 +181,8 @@ def render_markdown(result: dict[str, Any]) -> str:
 def run_manifest(manifest_path: Path, output_dir: Path) -> list[dict[str, Any]]:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     reviews = manifest.get("reviews", [])
-    if len(reviews) != 3:
-        raise ValueError("The manifest must contain exactly three reviews")
+    if not reviews:
+        raise ValueError("The manifest must contain at least one review")
     output_dir.mkdir(parents=True, exist_ok=True)
     results = []
     for item in reviews:

@@ -80,109 +80,86 @@ except Exception as e:
 # Serve uploaded files
 app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 
-@app.post("/safe-reviews/extract-rubrics")
-async def extract_safe_rubrics(nofos: list[UploadFile] = File(...)):
-    if not 1 <= len(nofos) <= 3:
-        raise HTTPException(status_code=400, detail="Upload between one and three NOFO files")
-    rubrics = []
-    for index, upload in enumerate(nofos, start=1):
-        extension = Path(upload.filename or "").suffix.lower()
-        if extension not in {".pdf", ".docx"}:
-            raise HTTPException(status_code=400, detail=f"{upload.filename}: NOFO must be PDF or DOCX")
-        directory = UPLOADS_DIR / f"grant-{index}"
-        directory.mkdir(exist_ok=True)
-        path = directory / f"nofo{extension}"
-        with open(path, "wb") as handle:
-            handle.write(await upload.read())
-        rubric = extract_nofo_criteria(path)
-        rubric["grant_index"] = index
-        rubrics.append(rubric)
-    return {"success": True, "rubrics": rubrics}
+@app.post("/safe-reviews/extract-rubric")
+async def extract_safe_rubric(nofo: UploadFile = File(...), agency: str = Form("HRSA")):
+    extension = Path(nofo.filename or "").suffix.lower()
+    if extension not in {".pdf", ".docx"}:
+        raise HTTPException(status_code=400, detail=f"{nofo.filename}: NOFO must be PDF or DOCX")
+    directory = UPLOADS_DIR / "current-grant"
+    directory.mkdir(exist_ok=True)
+    path = directory / f"nofo{extension}"
+    with open(path, "wb") as handle:
+        handle.write(await nofo.read())
+    rubric = extract_nofo_criteria(path)
+    rubric["agency"] = agency
+    return {"success": True, "rubric": rubric}
 
 @app.post("/safe-reviews/run")
 async def run_safe_reviews(
     applications: list[UploadFile] = File(...),
-    nofos: list[UploadFile] = File(...),
-    rubrics: list[UploadFile] | None = File(None),
-    worksheets: list[UploadFile] | None = File(None),
-    application_counts: str = Form(...),
+    nofo: UploadFile = File(...),
+    rubric: UploadFile | None = File(None),
+    worksheet: UploadFile | None = File(None),
     approved_criteria: str = Form(...),
+    agency: str = Form("HRSA"),
 ):
-    """Run multiple applications within each of exactly three grant competitions."""
-    import json as json_mod
+    """Review multiple applications against one approved grant NOFO rubric."""
+    import json
     try:
-        counts = json_mod.loads(application_counts)
-    except (json_mod.JSONDecodeError, TypeError):
-        raise HTTPException(status_code=400, detail="Invalid application counts")
-    grant_count = len(counts)
-    if not 1 <= grant_count <= 3 or any(not isinstance(count, int) or count < 1 for count in counts):
-        raise HTTPException(status_code=400, detail="Provide one to three grants, each with at least one application")
-    rubrics = rubrics or []
-    worksheets = worksheets or []
-    if len(applications) != sum(counts) or len(nofos) != grant_count or len(rubrics) not in {0, grant_count} or len(worksheets) not in {0, grant_count}:
-        raise HTTPException(status_code=400, detail="The uploaded files do not match the active grant packages")
-    try:
-        criteria_sets = json_mod.loads(approved_criteria)
-    except (json_mod.JSONDecodeError, TypeError):
+        criteria_set = json.loads(approved_criteria)
+    except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid approved criteria")
-    if len(criteria_sets) != grant_count or any(not item.get("approved") or not item.get("criteria") for item in criteria_sets):
-        raise HTTPException(status_code=400, detail="Every active grant rubric must be approved before review")
-    results = []
+    if not criteria_set.get("approved") or not criteria_set.get("criteria"):
+        raise HTTPException(status_code=400, detail="The extracted NOFO rubric must be approved before review")
+    if not applications:
+        raise HTTPException(status_code=400, detail="At least one application PDF or ZIP is required")
     allowed = {".pdf", ".doc", ".docx", ".txt"}
-    application_offset = 0
-    for grant_index in range(1, grant_count + 1):
-        grant_dir = UPLOADS_DIR / f"grant-{grant_index}"
-        grant_dir.mkdir(exist_ok=True)
-        package_files = {}
-        optional_groups = {"rubrics": rubrics, "worksheets": worksheets}
-        for kind, items in {"nofos": nofos, **{k:v for k,v in optional_groups.items() if v}}.items():
-            document = items[grant_index - 1]
-            extension = Path(document.filename or "").suffix.lower()
-            if extension not in allowed:
-                raise HTTPException(status_code=400, detail=f"{document.filename}: unsupported file type")
-            content = await document.read()
-            if not content or len(content) > 75 * 1024 * 1024:
-                raise HTTPException(status_code=400, detail=f"{document.filename}: invalid file size")
-            path = grant_dir / f"{kind[:-1]}{extension}"
-            with open(path, "wb") as handle:
-                handle.write(content)
-            package_files[kind[:-1]] = {"filename": document.filename, "path": str(path)}
-        count = counts[grant_index - 1]
-        grant_application_paths = []
-        for upload_index in range(1, count + 1):
-            upload = applications[application_offset]
-            application_offset += 1
-            extension = Path(upload.filename or "").suffix.lower()
-            if extension not in {".pdf", ".zip"}:
-                raise HTTPException(status_code=400, detail=f"{upload.filename}: application must be PDF or ZIP")
-            content = await upload.read()
-            if not content or len(content) > 250 * 1024 * 1024:
-                raise HTTPException(status_code=400, detail=f"{upload.filename}: invalid file size")
-            incoming = grant_dir / f"incoming-{upload_index}{extension}"
-            with open(incoming, "wb") as handle:
-                handle.write(content)
-            if extension == ".zip":
-                try:
-                    grant_application_paths.extend(safe_extract_application_zip(incoming, grant_dir / f"zip-{upload_index}"))
-                except (ValueError, OSError) as exc:
-                    raise HTTPException(status_code=400, detail=f"{upload.filename}: {exc}")
-            else:
-                grant_application_paths.append(incoming)
-        for application_index, source_path in enumerate(grant_application_paths, start=1):
-            application_dir = grant_dir / f"application-{application_index}"
-            application_dir.mkdir(exist_ok=True)
-            path = application_dir / "application.pdf"
-            with open(source_path, "rb") as source, open(path, "wb") as handle:
-                while chunk := source.read(1024 * 1024):
-                    handle.write(chunk)
-            criteria = [{"name": item["name"], "points": item["points"], "keywords": item.get("keywords", [])}
-                        for item in criteria_sets[grant_index - 1]["criteria"]]
-            result = review_application(f"grant-{grant_index}-application-{application_index}", path, criteria)
-            result["application_file"] = source_path.name
-            result["grant_id"] = f"grant-{grant_index}"
-            result["grant_index"] = grant_index
-            result["application_index"] = application_index
-            results.append(result)
+    grant_dir = UPLOADS_DIR / "current-grant"
+    grant_dir.mkdir(exist_ok=True)
+    package_files = {}
+    for kind, document in {"nofo": nofo, "rubric": rubric, "worksheet": worksheet}.items():
+        if not document:
+            continue
+        extension = Path(document.filename or "").suffix.lower()
+        if extension not in allowed:
+            raise HTTPException(status_code=400, detail=f"{document.filename}: unsupported file type")
+        content = await document.read()
+        path = grant_dir / f"{kind}{extension}"
+        with open(path, "wb") as handle:
+            handle.write(content)
+        package_files[kind] = {"filename": document.filename, "path": str(path)}
+    application_paths = []
+    for upload_index, upload in enumerate(applications, start=1):
+        extension = Path(upload.filename or "").suffix.lower()
+        if extension not in {".pdf", ".zip"}:
+            raise HTTPException(status_code=400, detail=f"{upload.filename}: application must be PDF or ZIP")
+        content = await upload.read()
+        if not content or len(content) > 250 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail=f"{upload.filename}: invalid file size")
+        incoming = grant_dir / f"incoming-{upload_index}{extension}"
+        with open(incoming, "wb") as handle:
+            handle.write(content)
+        if extension == ".zip":
+            try:
+                application_paths.extend(safe_extract_application_zip(incoming, grant_dir / f"zip-{upload_index}"))
+            except (ValueError, OSError) as exc:
+                raise HTTPException(status_code=400, detail=f"{upload.filename}: {exc}")
+        else:
+            application_paths.append(incoming)
+    criteria = [{"name": item["name"], "points": item["points"], "keywords": item.get("keywords", [])}
+                for item in criteria_set["criteria"]]
+    results = []
+    for application_index, source_path in enumerate(application_paths, start=1):
+        application_dir = grant_dir / f"application-{application_index}"
+        application_dir.mkdir(exist_ok=True)
+        path = application_dir / "application.pdf"
+        with open(source_path, "rb") as source, open(path, "wb") as handle:
+            while chunk := source.read(1024 * 1024):
+                handle.write(chunk)
+        result = review_application(f"{agency.lower()}-application-{application_index}", path, criteria)
+        result.update({"application_file": source_path.name, "agency": agency,
+                       "application_index": application_index, "package_files": package_files})
+        results.append(result)
     return {"success": True, "reviews": results}
 
 async def perform_full_analysis(file_path: str, agency: str, document_id: int) -> Dict[str, Any]:
