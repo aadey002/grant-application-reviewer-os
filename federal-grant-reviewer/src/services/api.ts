@@ -280,6 +280,18 @@ export const getWorksheetUrl = async (reviewId: string, applicationId: string): 
 };
 
 // ---------------------------------------------------------------------------
+// Update reviewer validation status on an application
+// ---------------------------------------------------------------------------
+
+export const updateReviewValidation = async (applicationId: string, status: string, notes?: string): Promise<void> => {
+  await supabase.from('applications').update({
+    review_status: status,
+    ...(notes !== undefined ? { reviewer_notes: notes } : {}),
+    updated_at: new Date().toISOString(),
+  }).eq('id', applicationId);
+};
+
+// ---------------------------------------------------------------------------
 // Delete review — removes from Supabase
 // ---------------------------------------------------------------------------
 
@@ -402,7 +414,13 @@ export const getNofoBrief = async (reviewId: string): Promise<NofoBrief | null> 
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
-  return data;
+  if (!data) return null;
+  // DB stores "status" column; frontend type uses "generation_status"
+  return {
+    ...data,
+    generation_status: data.generation_status ?? data.status ?? 'queued',
+    brief_json: typeof data.brief_json === 'string' ? JSON.parse(data.brief_json) : data.brief_json,
+  } as NofoBrief;
 };
 
 export const getNofoBriefDownload = async (briefId: string): Promise<string> => {

@@ -8,7 +8,7 @@ import {
   getApplicationViewUrl, getNofoBrief,
   getNofoBriefDownload, getReviewResults,
   getWorksheetUrl, JobStatus, NofoBrief, pollJobStatus, ReviewPackage,
-  runSafeReviews, SafeReview,
+  runSafeReviews, SafeReview, updateReviewValidation,
 } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -153,6 +153,10 @@ const SafeReviewDashboard: React.FC = () => {
   const [briefExpandedSections, setBriefExpandedSections] = useState<Record<string, boolean>>({});
   // Track the nofo storage path so brief generation can reference it
   const [nofoStoragePath, setNofoStoragePath] = useState<string>('');
+
+  // Reviewer validation state: applicationId -> validation status
+  const [validationStatus, setValidationStatus] = useState<Record<string, string>>({});
+  const [validationBusy, setValidationBusy] = useState<Record<string, boolean>>({});
   const briefPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // History
@@ -167,6 +171,23 @@ const SafeReviewDashboard: React.FC = () => {
       setSelected(0);
     }
   }, [reviews, selected]);
+
+  // Sync validation status from loaded reviews
+  useEffect(() => {
+    if (reviews.length === 0) return;
+    setValidationStatus(prev => {
+      const next = { ...prev };
+      for (const r of reviews) {
+        if (r.application_id && !next[r.application_id]) {
+          const knownValidationStatuses = ['ai_draft', 'reviewer_validating', 'reviewer_approved', 'needs_revision'];
+          if (r.review_status && knownValidationStatuses.includes(r.review_status)) {
+            next[r.application_id] = r.review_status;
+          }
+        }
+      }
+      return next;
+    });
+  }, [reviews]);
 
   // ---------------------------------------------------------------------------
   // Route handling — respond to #/reviews/{id} on mount and hash changes
@@ -763,10 +784,25 @@ const SafeReviewDashboard: React.FC = () => {
   const downloadWorksheet = async () => {
     if (!currentReviewId || !current) return;
     try {
-      const url = await getWorksheetUrl(currentReviewId, current.review_id);
+      const url = await getWorksheetUrl(currentReviewId, current.application_id);
       window.open(url, '_blank');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Worksheet download failed');
+    }
+  };
+
+  const handleValidationChange = async (applicationId: string, newStatus: string) => {
+    setValidationBusy(prev => ({ ...prev, [applicationId]: true }));
+    try {
+      await updateReviewValidation(applicationId, newStatus);
+      setValidationStatus(prev => ({ ...prev, [applicationId]: newStatus }));
+      if (newStatus === 'reviewer_approved') {
+        alert('Application marked as Approved. The AI draft has been validated.');
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Validation update failed');
+    } finally {
+      setValidationBusy(prev => ({ ...prev, [applicationId]: false }));
     }
   };
 
@@ -1883,6 +1919,55 @@ const SafeReviewDashboard: React.FC = () => {
                       </span>
                     </p>
                     <p className="mt-4 text-xs leading-5 text-slate-300">{current.certification}</p>
+
+                    {/* Reviewer Validation Controls */}
+                    {(() => {
+                      const appId = current.application_id;
+                      const vs = validationStatus[appId] || 'ai_draft';
+                      const isBusy = validationBusy[appId] || false;
+                      const badgeClass =
+                        vs === 'reviewer_approved' ? 'bg-emerald-500 text-white' :
+                        vs === 'reviewer_validating' ? 'bg-blue-500 text-white' :
+                        vs === 'needs_revision' ? 'bg-amber-400 text-slate-900' :
+                        'bg-slate-500 text-white';
+                      const badgeLabel =
+                        vs === 'reviewer_approved' ? '\u2713 Approved' :
+                        vs === 'reviewer_validating' ? 'Validating' :
+                        vs === 'needs_revision' ? 'Needs Revision' :
+                        'AI Draft';
+                      return (
+                        <div className="mt-5">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Validation</p>
+                            <span className={'text-xs font-bold rounded-full px-2.5 py-1 ' + badgeClass}>{badgeLabel}</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {([
+                              { value: 'ai_draft', label: 'AI Draft' },
+                              { value: 'reviewer_validating', label: 'Validating' },
+                              { value: 'reviewer_approved', label: '\u2713 Approve' },
+                              { value: 'needs_revision', label: 'Needs Revision' },
+                            ] as const).map(opt => (
+                              <button
+                                key={opt.value}
+                                disabled={isBusy || vs === opt.value}
+                                onClick={() => handleValidationChange(appId, opt.value)}
+                                className={'rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors ' + (
+                                  vs === opt.value
+                                    ? opt.value === 'reviewer_approved' ? 'bg-emerald-500 text-white cursor-default'
+                                      : opt.value === 'reviewer_validating' ? 'bg-blue-500 text-white cursor-default'
+                                      : opt.value === 'needs_revision' ? 'bg-amber-400 text-slate-900 cursor-default'
+                                      : 'bg-slate-500 text-white cursor-default'
+                                    : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
+                                )}
+                              >
+                                {isBusy && vs !== opt.value ? '...' : opt.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     {(current.completed_worksheet_url || currentReviewId) && (
                       <button
