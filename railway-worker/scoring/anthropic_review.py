@@ -280,7 +280,9 @@ INSTRUCTIONS:
 11. Give an overall score_rationale summarizing the criterion assessment.
 12. Each comment must be one concise sentence. No unexpanded acronyms."""
 
-    response = client.messages.create(model=model, max_tokens=4000, temperature=0, system=SYSTEM_PROMPT,
+    # Larger criteria (35 pts with subcriteria) need more output tokens
+    needed_tokens = 8000 if points >= 25 or subcriteria_defs else 5000
+    response = client.messages.create(model=model, max_tokens=needed_tokens, temperature=0, system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": prompt}], tools=[tool], tool_choice={"type": "tool", "name": "score_criterion"})
 
     tool_use = next((b for b in response.content if b.type == "tool_use"), None)
@@ -291,6 +293,26 @@ INSTRUCTIONS:
         result = json.loads(result)
     result["name"] = name
     result["maximum_points"] = points
+    # If Claude didn't return the equitable fields, compute from what we have
+    MULTIPLIER_MAP = {"strength": 1.0, "met": 0.8, "minor_weakness": 0.6, "moderate_weakness": 0.5, "major_weakness": 0.25, "not_addressed": 0.0}
+    if not result.get("calculated_score") and result.get("classification"):
+        mult = MULTIPLIER_MAP.get(result["classification"], 0.8)
+        result["multiplier"] = mult
+        result["calculated_score"] = round(points * mult)
+        result["formula_version"] = "equitable-v1"
+    elif not result.get("calculated_score") and result.get("score"):
+        # Legacy: Claude returned a raw score — infer classification
+        raw = result["score"]
+        ratio = raw / points if points > 0 else 0
+        if ratio >= 0.95: result["classification"] = "strength"
+        elif ratio >= 0.75: result["classification"] = "met"
+        elif ratio >= 0.55: result["classification"] = "minor_weakness"
+        elif ratio >= 0.45: result["classification"] = "moderate_weakness"
+        elif ratio >= 0.15: result["classification"] = "major_weakness"
+        else: result["classification"] = "not_addressed"
+        result["multiplier"] = MULTIPLIER_MAP[result["classification"]]
+        result["calculated_score"] = round(points * result["multiplier"])
+        result["formula_version"] = "equitable-v1"
     # Map calculated_score → score for backward compatibility with frontend/validate
     result["score"] = result.get("calculated_score", result.get("score", 0))
     logger.info("  Criterion '%s': %s/%s (multiplier=%s, classification=%s)",
