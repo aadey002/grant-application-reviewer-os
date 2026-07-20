@@ -84,16 +84,47 @@ def extract_document_pages(path: Path) -> list[str]:
     raise ValueError("NOFO must be PDF or DOCX")
 
 def extract_nofo_criteria(path: Path) -> dict[str, Any]:
-    """Extract criterion headings and point values with source-page provenance."""
+    """Extract criterion headings, subcriteria, and point values with source-page provenance."""
     pages = extract_document_pages(path)
-    patterns = [
+
+    # Main criteria patterns: "Criterion 1: Name (20 points)"
+    main_patterns = [
         re.compile(r"(?i)criterion\s+(\d+)\s*[:.\-–—]?\s*([^\n(]{2,100}?)\s*\(\s*(\d+)\s*points?\s*\)"),
         re.compile(r"(?i)(?:review\s+)?criterion\s+(\d+)\s*[:.\-–—]\s*([^\n]{2,100}?)\s*[—–-]\s*(\d+)\s*points?"),
     ]
+
+    # Subcriterion patterns: "Criterion 2.1: Name (10 points)" or "2.1 Name (10 points)"
+    sub_patterns = [
+        re.compile(r"(?i)(?:criterion\s+)?(\d+)\.(\d+)\s*[:.\-–—]?\s*([^\n(]{2,100}?)\s*\(\s*(\d+)\s*points?\s*\)"),
+        re.compile(r"(?i)(?:criterion\s+)?(\d+)\.(\d+)\s*[:.\-–—]\s*([^\n]{2,100}?)\s*[—–-]\s*(\d+)\s*points?"),
+    ]
+
     found = []
+    subcriteria_map: dict[int, list[dict]] = {}  # parent_number -> list of subcriteria
     seen = set()
+    seen_subs = set()
+
     for page_number, text in enumerate(pages, start=1):
-        for pattern in patterns:
+        # Extract subcriteria first
+        for pattern in sub_patterns:
+            for match in pattern.finditer(text):
+                parent_num, sub_num, name, points = match.groups()
+                name = " ".join(name.split()).strip(" :-–—")
+                key = (int(parent_num), int(sub_num), name.lower())
+                if key in seen_subs:
+                    continue
+                seen_subs.add(key)
+                parent = int(parent_num)
+                if parent not in subcriteria_map:
+                    subcriteria_map[parent] = []
+                subcriteria_map[parent].append({
+                    "name": name, "points": int(points),
+                    "number": f"{parent_num}.{sub_num}",
+                    "source_page": page_number,
+                })
+
+        # Extract main criteria
+        for pattern in main_patterns:
             for match in pattern.finditer(text):
                 number, name, points = match.groups()
                 name = " ".join(name.split()).strip(" :-–—")
@@ -103,10 +134,15 @@ def extract_nofo_criteria(path: Path) -> dict[str, Any]:
                 seen.add(key)
                 nearby = text[match.end():match.end() + 1200]
                 keywords = [word.lower() for word in re.findall(r"[A-Za-z][A-Za-z-]{3,}", name) if word.lower() not in {"criterion", "review"}]
-                found.append({"number": int(number), "name": name, "points": int(points),
+                criterion = {"number": int(number), "name": name, "points": int(points),
                               "keywords": keywords or [name.lower()], "source_page": page_number,
                               "source_heading": " ".join(match.group(0).split()),
-                              "context_preview": " ".join(nearby.split())[:500]})
+                              "context_preview": " ".join(nearby.split())[:500]}
+                # Attach subcriteria if found
+                if int(number) in subcriteria_map:
+                    criterion["subcriteria"] = sorted(subcriteria_map[int(number)], key=lambda s: s.get("number", ""))
+                found.append(criterion)
+
     found.sort(key=lambda item: item["number"])
     total = sum(item["points"] for item in found)
     return {
