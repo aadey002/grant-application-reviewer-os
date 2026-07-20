@@ -1800,7 +1800,7 @@ const SafeReviewDashboard: React.FC = () => {
                             {current.criteria.map((c: any, ci: number) => (
                               <React.Fragment key={ci}>
                                 <tr className="border-t hover:bg-slate-50">
-                                  <td className="p-2 border font-semibold">{c.name}</td>
+                                  <td className="p-2 border font-semibold"><button onClick={() => { setFindingsFilter('all'); setTimeout(() => document.getElementById('criterion-' + ci)?.scrollIntoView({behavior:'smooth'}), 50); }} className="text-blue-700 hover:underline cursor-pointer text-left">{c.name}</button></td>
                                   <td className="p-2 border text-center font-bold">{c.score ?? '—'}/{c.maximum_points}</td>
                                   <td className="p-2 border text-center">
                                     <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
