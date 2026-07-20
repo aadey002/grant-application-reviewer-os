@@ -2182,6 +2182,55 @@ const SafeReviewDashboard: React.FC = () => {
                   </aside>
                 </div>
 
+                {/* Budget Summary */}
+                {reviews.length > 0 && current && (() => {
+                  const result = current as any;
+                  const budget = result.budget || (result.criteria?.find((c: any) => c.name?.toLowerCase().includes('support'))?.budget);
+                  if (!budget) return null;
+                  const years = budget.annual_recommended_funding || [];
+                  const total = years.reduce((s: number, v: number | null) => s + (v || 0), 0);
+                  return (
+                    <div className="mt-6 rounded-xl border bg-white p-6">
+                      <h3 className="font-bold text-lg mb-4">Budget Recommendation</h3>
+                      <div className="flex items-center gap-4 mb-4">
+                        <span className={`rounded-full px-4 py-1.5 text-sm font-bold ${
+                          budget.recommendation === 'as_requested' ? 'bg-emerald-100 text-emerald-800' :
+                          budget.recommendation === 'as_reduced' ? 'bg-amber-100 text-amber-800' :
+                          'bg-slate-100 text-slate-600'
+                        }`}>
+                          {budget.recommendation === 'as_requested' ? 'Recommended as Requested' :
+                           budget.recommendation === 'as_reduced' ? 'Recommended as Reduced' :
+                           'Unable to Determine'}
+                        </span>
+                      </div>
+                      {years.length > 0 && (
+                        <table className="w-full text-sm border mb-4">
+                          <thead>
+                            <tr className="bg-slate-100">
+                              {years.map((_: any, i: number) => <th key={i} className="p-2 border text-center">Year {i + 1}</th>)}
+                              <th className="p-2 border text-center font-bold bg-slate-200">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              {years.map((amt: number | null, i: number) => (
+                                <td key={i} className="p-2 border text-center">{amt != null ? '$' + amt.toLocaleString() : '—'}</td>
+                              ))}
+                              <td className="p-2 border text-center font-bold">${total.toLocaleString()}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      )}
+                      {budget.reduction_rationale && (
+                        <div className="text-sm text-slate-700">
+                          <p className="font-semibold text-slate-500 text-xs uppercase mb-1">Budget Rationale</p>
+                          <p>{budget.reduction_rationale}</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 {/* Delete Applicant Data — bottom of completed review */}
                 {reviews.length > 0 && !polling && (
                   <div className="mt-8 rounded-xl border-2 border-red-200 bg-red-50 p-6">
