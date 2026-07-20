@@ -2011,12 +2011,26 @@ const SafeReviewDashboard: React.FC = () => {
                           </div>
                         )}
 
-                        {(['strengths', 'mets', 'weaknesses'] as const).map(group => (
+                        {(['strengths', 'mets', 'weaknesses'] as const).map(group => {
+                          const findings = c[group] || [];
+                          // Group findings by subcriterion tag [Name] in comment
+                          const grouped: Record<string, any[]> = {};
+                          const hasSubs = (c.subcriteria || []).length > 0;
+                          findings.forEach((f: any) => {
+                            const match = f.comment?.match(/^\[([^\]]+)\]\s*/);
+                            const subName = match ? match[1] : (hasSubs ? 'General' : '');
+                            if (!grouped[subName]) grouped[subName] = [];
+                            grouped[subName].push({...f, comment: match ? f.comment.replace(match[0], '') : f.comment});
+                          });
+                          return (
                           <div key={group} className="mt-5">
                             <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{group}</p>
                             <div className="mt-2 space-y-2">
-                              {(c[group] || []).length ? (
-                                (c[group] || []).map((finding: any, fi: number) => (
+                              {findings.length ? (
+                                Object.entries(grouped).map(([subName, subFindings]) => (
+                                <div key={subName}>
+                                  {subName && <p className="text-xs font-semibold text-indigo-700 mt-3 mb-1 border-b border-indigo-100 pb-1">{subName}</p>}
+                                  {subFindings.map((finding: any, fi: number) => (
                                   <div key={fi} className="rounded-lg bg-slate-50 p-4">
                                     <p className="text-sm leading-6">{finding.comment}</p>
                                     {group === 'weaknesses' ? (
@@ -2080,12 +2094,14 @@ const SafeReviewDashboard: React.FC = () => {
                                     )}
                                   </div>
                                 ))
+                                </div>
+                                ))
                               ) : (
                                 <p className="text-sm text-slate-400">None identified.</p>
                               )}
                             </div>
                           </div>
-                        ))}
+                        )})}
                       </article>
                     ))}
                   </div>
