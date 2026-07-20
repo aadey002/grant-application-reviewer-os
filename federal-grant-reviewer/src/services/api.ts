@@ -25,6 +25,9 @@ export interface SafeReview {
   maximum_score?: number; applicant_name?: string; application_number?: string;
   completed_worksheet_url?: string | null;
   criteria: SafeCriterion[];
+  budget?: { recommendation: string; annual_recommended_funding: (number | null)[]; reduction_rationale: string };
+  overview?: Record<string, string>;
+  overall_summary?: string;
 }
 
 export interface ReviewPackage { applications: File[]; nofo: File; rubric: File | null; worksheet: File | null; agency: string }
@@ -256,6 +259,9 @@ export const getReviewResults = async (reviewId: string): Promise<ReviewResults>
       application_number: result.application_number ?? app.application_number,
       completed_worksheet_url: null,
       criteria: result.criteria || [],
+      budget: result.budget || undefined,
+      overview: result.overview || undefined,
+      overall_summary: result.overall_summary || undefined,
     });
   }
   return { review_id: reviewId, reviews };
