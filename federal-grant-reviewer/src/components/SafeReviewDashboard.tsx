@@ -1512,6 +1512,37 @@ const SafeReviewDashboard: React.FC = () => {
               </div>
             </div>
 
+            {/* NOFO Brief + Overview section */}
+            {current.applicant_name && (
+              <div className="mb-6 rounded-xl border bg-slate-50 p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-bold text-lg">Overview Presentation Information</h3>
+                  {currentReviewId && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          const brief = await getNofoBrief(currentReviewId!);
+                          if (brief?.docx_storage_path) {
+                            const url = await getNofoBriefDownload(brief.id);
+                            window.open(url, '_blank');
+                          } else {
+                            setError('NOFO Brief not yet generated. It will be available after the first review.');
+                          }
+                        } catch { setError('NOFO Brief not available'); }
+                      }}
+                      className="flex items-center gap-2 rounded-lg border bg-white px-3 py-1.5 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+                    >
+                      <Download size={14} /> NOFO Brief
+                    </button>
+                  )}
+                </div>
+                <div className="grid gap-3 text-sm">
+                  {current.applicant_name && <div><span className="font-semibold text-slate-500">Applicant:</span> {current.applicant_name}</div>}
+                  {current.application_number && <div><span className="font-semibold text-slate-500">Application #:</span> {current.application_number}</div>}
+                </div>
+              </div>
+            )}
+
             <div className="mb-6 flex flex-wrap gap-2">
               {reviews.map((r, i) => (
                 <button

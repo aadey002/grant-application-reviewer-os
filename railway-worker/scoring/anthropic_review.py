@@ -191,20 +191,32 @@ def score_application_with_claude(application: Path, criteria: list[dict[str, An
     errors = []
 
     def _get_overview():
-        overview_keys = ["applicant_information", "target_population", "project_description", "goals_objectives", "significant_findings", "other_information"]
-        overview_tool = {"name": "submit_overview", "description": "Submit applicant overview and budget.", "input_schema": {"type": "object", "additionalProperties": False,
+        overview_tool = {"name": "submit_overview", "description": "Submit the OVERVIEW PRESENTATION INFORMATION and budget recommendation.", "input_schema": {"type": "object", "additionalProperties": False,
             "required": ["applicant_name", "application_number", "overview", "budget", "overall_summary"],
             "properties": {
-                "applicant_name": {"type": "string"}, "application_number": {"type": "string"},
-                "overview": {"type": "object", "additionalProperties": False, "required": overview_keys, "properties": {k: {"type": "string"} for k in overview_keys}},
+                "applicant_name": {"type": "string", "description": "Full legal name of the applicant organization"},
+                "application_number": {"type": "string", "description": "Application or grant number from SF-424 or cover page"},
+                "overview": {"type": "object", "additionalProperties": False,
+                    "required": ["applicant_information", "target_population", "project_description", "goals_objectives", "significant_findings", "other_information"],
+                    "properties": {
+                        "applicant_information": {"type": "string", "description": "Who the applicant is: organization type, location, mission, relevant experience. 2-3 sentences."},
+                        "target_population": {"type": "string", "description": "Target population, service area, and appropriateness of the budget for the proposed scope. 2-3 sentences."},
+                        "project_description": {"type": "string", "description": "Proposed project/program description: what is being proposed and how it will be accomplished. 2-3 sentences."},
+                        "goals_objectives": {"type": "string", "description": "Major goals and objectives of the proposed project. 2-3 sentences."},
+                        "significant_findings": {"type": "string", "description": "The most significant strength and/or weakness found in the application. 2-3 sentences citing specific evidence."},
+                        "other_information": {"type": "string", "description": "Any other pertinent information relevant to the review. 1-2 sentences or 'None identified.'"},
+                    }},
                 "budget": {"type": "object", "additionalProperties": False, "required": ["recommendation", "annual_recommended_funding", "reduction_rationale"], "properties": {
                     "recommendation": {"type": "string", "enum": ["as_requested", "as_reduced", "unable_to_determine"]},
                     "annual_recommended_funding": {"type": "array", "items": {"type": ["number", "null"]}, "maxItems": 5},
                     "reduction_rationale": {"type": "string"}}},
-                "overall_summary": {"type": "string"}}}}
+                "overall_summary": {"type": "string", "description": "2-3 sentence overall assessment of the application's competitiveness."}}}}
         rubric_list = "\n".join(f"- {c['name']}: {int(c['points'])} points" for c in criteria)
-        prompt = f"Agency: {agency}\n\nRUBRIC:\n{rubric_list}\n\nAPPLICATION:\n{application_text[:40000]}\n\nProvide: applicant name, application number, overview sections, budget recommendation, and a 2-3 sentence overall summary. Be concise."
-        resp = client.messages.create(model=model, max_tokens=3000, temperature=0, system="Extract applicant information and budget from the application. Be concise and factual.",
+        overview_system = """You are completing the OVERVIEW PRESENTATION INFORMATION section of an HRSA reviewer worksheet. This section provides a concise "big picture" of who the applicant is, what is being proposed, how it will be accomplished in view of the published program guidance and review criteria, and the most significant strength and/or weakness found in the application.
+
+Each overview field should be 2-3 concise sentences. Never use unexpanded acronyms — always write the full term first, then the acronym in parentheses. Be factual and evidence-based. Do not speculate or use outside knowledge."""
+        prompt = f"Agency: {agency}\n\nRUBRIC:\n{rubric_list}\n\nNOFO GUIDANCE:\n{nofo_text[:15000]}\n\nAPPLICATION:\n{application_text[:40000]}\n\nComplete the OVERVIEW PRESENTATION INFORMATION worksheet section and provide the budget recommendation."
+        resp = client.messages.create(model=model, max_tokens=4000, temperature=0, system=overview_system,
             messages=[{"role": "user", "content": prompt}], tools=[overview_tool], tool_choice={"type": "tool", "name": "submit_overview"})
         tu = next((b for b in resp.content if b.type == "tool_use"), None)
         result = tu.input if tu else {}
