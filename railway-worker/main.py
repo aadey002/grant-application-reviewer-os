@@ -9,6 +9,7 @@ import io
 import json
 import logging
 import os
+import re
 import sys
 import tempfile
 import uuid
@@ -1106,7 +1107,10 @@ async def _process_job(
                     wstmp.write(ws_bytes)
                     ws_tmp_path = Path(wstmp.name)
 
-                out_filename = f"{application_id}_completed{ws_suffix}"
+                # Use applicant name for the filename, fallback to application ID
+                applicant = review_result.get("applicant_name", "").strip()
+                safe_name = re.sub(r'[^\w\s\-]', '', applicant).strip().replace(' ', '_') if applicant else application_id
+                out_filename = f"{safe_name}_Completed_Worksheet{ws_suffix}"
                 with tempfile.NamedTemporaryFile(suffix=ws_suffix, delete=False) as outtmp:
                     out_tmp_path = Path(outtmp.name)
 
