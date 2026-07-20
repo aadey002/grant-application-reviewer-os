@@ -880,26 +880,65 @@ const SafeReviewDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Step indicator (not shown on history) */}
-      {step !== 'history' && (
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-7 text-sm font-semibold">
-          <span className={step === 'upload' ? 'text-blue-700' : 'text-emerald-700'}>
-            <Upload className="mr-2 inline" size={20} />Upload
-          </span>
-          <span className={step === 'rubric' ? 'text-blue-700' : (step === 'brief' || step === 'processing') ? 'text-emerald-700' : 'text-slate-400'}>
-            <BarChart3 className="mr-2 inline" size={20} />Rubric
-          </span>
-          <span className={step === 'brief' ? 'text-blue-700' : step === 'processing' ? 'text-emerald-700' : 'text-slate-400'}>
-            <FileText className="mr-2 inline" size={20} />NOFO Brief
-          </span>
-          <span className={step === 'processing' && (polling || appProgress.some(p => p.status !== 'completed' && p.status !== 'failed')) ? 'text-blue-700' : step === 'processing' ? 'text-emerald-700' : 'text-slate-400'}>
-            <Loader2 className={'mr-2 inline' + (step === 'processing' && polling ? ' animate-spin' : '')} size={20} />Processing
-          </span>
-          <span className={step === 'processing' && reviews.length > 0 && !polling ? 'text-emerald-700' : 'text-slate-400'}>
-            <CheckCircle2 className="mr-2 inline" size={20} />Results
-          </span>
+      {/* Navigation bar — always visible */}
+      <nav className="border-b bg-white">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="flex items-center gap-1 overflow-x-auto py-1">
+            {([
+              { id: 'upload' as Step, label: 'Upload', icon: Upload, enabled: true },
+              { id: 'rubric' as Step, label: 'Rubric', icon: BarChart3, enabled: !!rubric },
+              { id: 'processing' as Step, label: currentReviewId && reviews.length > 0 && !polling ? 'Results' : polling ? 'Processing' : 'Review', icon: currentReviewId && reviews.length > 0 && !polling ? CheckCircle2 : polling ? Loader2 : FileSearch, enabled: !!currentReviewId },
+              { id: 'history' as Step, label: 'My Reviews', icon: History, enabled: true },
+            ] as const).map(tab => {
+              const isActive = step === tab.id || (tab.id === 'processing' && step === 'brief');
+              const isCompleted = (tab.id === 'upload' && step !== 'upload') ||
+                (tab.id === 'rubric' && (step === 'processing' || step === 'brief'));
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  disabled={!tab.enabled}
+                  onClick={() => {
+                    if (tab.id === 'history') {
+                      setStep('history');
+                      setStoredReviews(loadStoredReviews());
+                      window.location.hash = '#/reviews';
+                    } else if (tab.id === 'processing' && currentReviewId) {
+                      setStep('processing');
+                      window.location.hash = '#/reviews/' + currentReviewId;
+                    } else if (tab.id === 'upload') {
+                      setStep('upload');
+                      window.location.hash = '#/app';
+                    } else if (tab.id === 'rubric' && rubric) {
+                      setStep('rubric');
+                    }
+                  }}
+                  className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors ${
+                    isActive
+                      ? 'bg-blue-100 text-blue-800'
+                      : isCompleted
+                        ? 'text-emerald-700 hover:bg-emerald-50'
+                        : tab.enabled
+                          ? 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+                          : 'text-slate-300 cursor-not-allowed'
+                  }`}
+                >
+                  <Icon size={16} className={isActive && polling && tab.id === 'processing' ? 'animate-spin' : ''} />
+                  {tab.label}
+                  {tab.id === 'processing' && reviews.length > 0 && !polling && (
+                    <span className="rounded-full bg-emerald-500 text-white text-xs px-1.5 py-0.5">{reviews.length}</span>
+                  )}
+                  {tab.id === 'processing' && polling && appProgress.length > 0 && (
+                    <span className="rounded-full bg-blue-500 text-white text-xs px-1.5 py-0.5">
+                      {appProgress.filter(p => p.status === 'completed').length}/{appProgress.length}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      )}
+      </nav>
 
       <main className="mx-auto max-w-6xl px-6 pb-12">
 
