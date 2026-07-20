@@ -39,7 +39,7 @@ Example weakness: "The evaluation plan does not specify measurable outcome targe
 WEAKNESS RULES: Every weakness MUST cite the specific NOFO requirement the application falls short of, with the exact NOFO page number(s). Include application page(s) showing the shortfall and explain the material impact. Do not identify weaknesses based on reviewer preference or outside knowledge — only against explicitly stated NOFO requirements. If a weakness cannot be supported by a specific NOFO requirement, omit it rather than lowering the score."""
 
 
-def _application_text(path: Path, max_chars: int = 100_000) -> tuple[list[str], str]:
+def _application_text(path: Path, max_chars: int = 175_000) -> tuple[list[str], str]:
     pages = extract_pdf_pages(path)
     blocks, used = [], 0
     for number, page in enumerate(pages, 1):
