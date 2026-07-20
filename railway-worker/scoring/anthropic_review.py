@@ -213,18 +213,19 @@ def _score_single_criterion(client, model: str, application_text: str, criterion
     weakness = {"type": "object", "additionalProperties": False, "required": ["comment", "application_pages", "nofo_requirement", "nofo_pages", "impact"], "properties": {"comment": {"type": "string"}, "application_pages": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}}, "nofo_requirement": {"type": "string"}, "nofo_pages": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}}, "impact": {"type": "string"}}}
     sub = {"type": "object", "additionalProperties": False, "required": ["name", "score", "maximum_points"], "properties": {"name": {"type": "string"}, "score": {"type": "integer", "minimum": 0}, "maximum_points": {"type": "integer", "minimum": 0}}}
 
-    tool = {"name": "score_criterion", "description": f"Submit score for '{name}' ({points} points).", "input_schema": {"type": "object", "additionalProperties": False,
-        "required": ["name", "maximum_points", "score_rationale", "requirement_assessments", "classification", "multiplier", "calculated_score", "formula_version", "question_responses", "strengths", "mets", "weaknesses", "subcriteria"],
+    tool = {"name": "score_criterion", "description": f"Submit equitable score for '{name}' ({points} points). classification determines score via multiplier.", "input_schema": {"type": "object", "additionalProperties": False,
+        "required": ["name", "maximum_points", "classification", "multiplier", "calculated_score", "score_rationale", "strengths", "mets", "weaknesses"],
         "properties": {"name": {"type": "string", "enum": [name]}, "maximum_points": {"type": "integer", "enum": [points]},
-            "score_rationale": {"type": "string", "description": "1-2 sentence overall summary of how well the application addresses this criterion"},
-            "requirement_assessments": {"type": "array", "items": requirement_assessment, "description": "Assess each individual NOFO requirement for this criterion"},
             "classification": {"type": "string", "enum": ["strength", "met", "minor_weakness", "moderate_weakness", "major_weakness", "not_addressed"]},
             "multiplier": {"type": "number", "enum": [1.0, 0.8, 0.6, 0.5, 0.25, 0.0]},
             "calculated_score": {"type": "integer", "minimum": 0},
-            "formula_version": {"type": "string", "enum": ["equitable-v1"]},
-            "question_responses": {"type": "array", "items": question_answer, "description": "Answer each NOFO evaluation question/bullet under this criterion"},
+            "score_rationale": {"type": "string", "description": "1-2 sentence overall summary"},
             "strengths": {"type": "array", "items": strength_met}, "mets": {"type": "array", "items": strength_met},
-            "weaknesses": {"type": "array", "items": weakness}, "subcriteria": {"type": "array", "items": sub}}}}
+            "weaknesses": {"type": "array", "items": weakness},
+            "subcriteria": {"type": "array", "items": sub},
+            "formula_version": {"type": "string", "enum": ["equitable-v1"]},
+            "requirement_assessments": {"type": "array", "items": requirement_assessment},
+            "question_responses": {"type": "array", "items": question_answer}}}}
 
     # Build subcriteria prompt if defined
     subcriteria_defs = criterion.get("subcriteria", [])
