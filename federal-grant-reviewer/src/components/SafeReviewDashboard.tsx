@@ -1845,8 +1845,8 @@ const SafeReviewDashboard: React.FC = () => {
                                 </tr>
                                 {(c.subcriteria || []).map((sub: any, si: number) => (
                                   <tr key={`${ci}-sub-${si}`} className="border-t bg-slate-50/50">
-                                    <td className="p-2 border pl-8 text-slate-600 text-xs">↳ {sub.name}</td>
-                                    <td className="p-2 border text-center text-xs text-slate-600">{sub.score ?? '—'}/{sub.maximum_points}</td>
+                                    <td className="p-2 border pl-8 text-xs"><button onClick={() => { setFindingsFilter('all'); setTimeout(() => document.getElementById('criterion-' + ci)?.scrollIntoView({behavior:'smooth'}), 50); }} className="text-blue-600 hover:underline cursor-pointer">↳ {sub.name}</button></td>
+                                    <td className="p-2 border text-center text-xs font-semibold text-slate-700">{sub.score ?? '—'}/{sub.maximum_points}</td>
                                     <td className="p-2 border" colSpan={4}></td>
                                   </tr>
                                 ))}
