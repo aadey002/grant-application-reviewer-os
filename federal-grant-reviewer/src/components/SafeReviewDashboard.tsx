@@ -165,6 +165,8 @@ const SafeReviewDashboard: React.FC = () => {
   // ---------------------------------------------------------------------------
   useEffect(() => {
     const handleHash = () => {
+      // Don't interrupt active processing
+      if (step === 'processing' && polling) return;
       const hash = window.location.hash;
       const match = hash.match(/^#\/reviews\/([a-z0-9-]+)$/);
       if (match) {
@@ -1385,6 +1387,36 @@ const SafeReviewDashboard: React.FC = () => {
             {error && (
               <div className="mt-4 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-red-800 text-sm">
                 <AlertTriangle size={16} className="shrink-0" />{error}
+              </div>
+            )}
+
+            {/* Recovery: check for results button */}
+            {currentReviewId && (totalJobs === 0 || (!polling && completedJobs === 0)) && (
+              <div className="mt-4 rounded-xl bg-slate-50 border p-4">
+                <p className="text-sm text-slate-600">Processing may have completed. Click to check Supabase for results.</p>
+                <button
+                  onClick={async () => {
+                    if (!currentReviewId) return;
+                    setBusy(true);
+                    try {
+                      const fetched = await getReviewResults(currentReviewId);
+                      if (fetched.reviews?.length > 0) {
+                        setReviews(fetched.reviews);
+                        setSelected(0);
+                        setStep('results');
+                      } else {
+                        setError('No completed results yet. The review may still be processing.');
+                      }
+                    } catch (e) {
+                      setError(e instanceof Error ? e.message : 'Failed to check results');
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                  className="mt-2 flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
+                >
+                  <RefreshCw size={14} /> Check for Results
+                </button>
               </div>
             )}
 
