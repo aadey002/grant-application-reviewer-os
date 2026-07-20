@@ -52,6 +52,18 @@ export interface ReviewResults {
 }
 
 // ---------------------------------------------------------------------------
+// Auth header helper — attaches the Supabase Bearer token to Railway API calls
+// ---------------------------------------------------------------------------
+
+async function getAuthHeader(): Promise<Record<string, string>> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.access_token) {
+    return { Authorization: 'Bearer ' + session.access_token };
+  }
+  return {};
+}
+
+// ---------------------------------------------------------------------------
 // Supabase Storage helpers
 // ---------------------------------------------------------------------------
 
@@ -69,7 +81,8 @@ export const extractRubric = async (nofo: File, agency: string): Promise<Extract
   const formData = new FormData();
   formData.append('nofo', nofo);
   formData.append('agency', agency);
-  const response = await fetch(API_BASE_URL + '/safe-reviews/extract-rubric', { method: 'POST', body: formData });
+  const authHeader = await getAuthHeader();
+  const response = await fetch(API_BASE_URL + '/safe-reviews/extract-rubric', { method: 'POST', headers: authHeader, body: formData });
   const body = await response.json();
   if (!response.ok) throw new Error(typeof body.detail === 'string' ? body.detail : 'Rubric extraction failed');
   return body.rubric;
@@ -84,7 +97,8 @@ export const createReviewAndUpload = async (
   criteria: ExtractedRubric,
   onProgress?: (stage: string, detail: string) => void,
 ): Promise<RunJobsResult> => {
-  const userId = 'anonymous-test';
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id || 'anonymous-test';
   const reviewId = crypto.randomUUID();
   const prefix = userId + '/' + reviewId;
 
@@ -175,8 +189,9 @@ export const createReviewAndUpload = async (
 
   // STEP 6: Notify the worker to start processing (fire-and-forget)
   onProgress?.('enqueuing', 'Starting review processing...');
+  const authHeader = await getAuthHeader();
   for (const jobId of jobIds) {
-    fetch(API_BASE_URL + '/jobs/' + jobId + '/process', { method: 'POST' }).catch(() => {
+    fetch(API_BASE_URL + '/jobs/' + jobId + '/process', { method: 'POST', headers: authHeader }).catch(() => {
       // Worker unavailable — job stays queued, user can retry later
     });
   }
@@ -294,7 +309,7 @@ export const retryJob = async (jobId: string): Promise<void> => {
     completed_at: null,
   }).eq('id', jobId);
   // Fire-and-forget to worker
-  fetch(API_BASE_URL + '/jobs/' + jobId + '/process', { method: 'POST' }).catch(() => {});
+  getAuthHeader().then(h => fetch(API_BASE_URL + '/jobs/' + jobId + '/process', { method: 'POST', headers: h }).catch(() => {}));
 };
 
 // ---------------------------------------------------------------------------
@@ -371,7 +386,8 @@ export const generateNofoBrief = async (reviewId: string, nofoStoragePath: strin
   formData.append('agency', agency);
   formData.append('criteria_json', criteriaJson);
   const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
-  const response = await fetch(API_BASE + '/nofo-brief/generate', { method: 'POST', body: formData });
+  const authHeader = await getAuthHeader();
+  const response = await fetch(API_BASE + '/nofo-brief/generate', { method: 'POST', headers: authHeader, body: formData });
   const body = await response.json();
   if (!response.ok) throw new Error(body.detail || 'Brief generation failed');
   return body.brief_id;
@@ -406,9 +422,10 @@ export const getNofoBriefDownload = async (briefId: string): Promise<string> => 
 
 export const deleteApplicantData = async (reviewId: string, confirmation: string): Promise<any> => {
   const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
+  const authHeader = await getAuthHeader();
   const response = await fetch(API_BASE + '/reviews/' + reviewId + '/delete-applicant-data', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeader },
     body: JSON.stringify({ review_id: reviewId, confirmation }),
   });
   const body = await response.json();

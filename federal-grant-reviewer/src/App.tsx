@@ -50,8 +50,12 @@ const AppRoutes: React.FC = () => {
   if (route === '/demo') return <DemoMode />;
   if (route === '/login') return <LoginPage />;
 
-  // Review routes — SafeReviewDashboard reads hash internally to set its step
+  // Protected routes — require authentication
   if (route === '/app' || route === '/reviews' || route.startsWith('/reviews/')) {
+    if (!user) {
+      window.location.hash = '/login';
+      return null;
+    }
     return <SafeReviewDashboard />;
   }
 
