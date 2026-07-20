@@ -2366,9 +2366,26 @@ const SafeReviewDashboard: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="mt-3 flex items-center gap-1">
-                      <Clock size={12} className="text-slate-400" />
-                      <span className="text-xs text-slate-400">ID: {r.review_id.slice(0, 8)}…</span>
+                    <div className="mt-3 flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <Clock size={12} className="text-slate-400" />
+                        <span className="text-xs text-slate-400">ID: {r.review_id.slice(0, 8)}…</span>
+                      </div>
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (!window.confirm('Delete this review and all its data?')) return;
+                          try {
+                            await deleteReview(r.review_id);
+                            const remaining = loadStoredReviews().filter(x => x.review_id !== r.review_id);
+                            saveStoredReviews(remaining);
+                            setStoredReviews(remaining);
+                          } catch (err) { setError(err instanceof Error ? err.message : 'Delete failed'); }
+                        }}
+                        className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-red-500 hover:bg-red-50 hover:text-red-700"
+                      >
+                        <Trash2 size={12} /> Delete
+                      </button>
                     </div>
                   </div>
                 );
