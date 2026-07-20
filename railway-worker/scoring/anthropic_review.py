@@ -144,17 +144,51 @@ def _score_single_criterion(client, model: str, application_text: str, criterion
     name = criterion["name"]
     points = int(criterion["points"])
 
+    # Question-answer finding: answers a specific NOFO evaluation question
+    question_answer = {"type": "object", "additionalProperties": False,
+        "required": ["nofo_question", "answer", "application_pages", "assessment"],
+        "properties": {
+            "nofo_question": {"type": "string", "description": "The exact evaluation question or bullet point from the NOFO"},
+            "answer": {"type": "string", "description": "How the application addresses this question — one concise sentence"},
+            "application_pages": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}},
+            "assessment": {"type": "string", "enum": ["strength", "met", "weakness"], "description": "Whether the response exceeds (strength), satisfies (met), or falls short (weakness) of the requirement"},
+            "nofo_requirement": {"type": "string", "description": "For weaknesses only: the exact NOFO requirement text"},
+            "nofo_pages": {"type": "array", "items": {"type": "integer", "minimum": 1}, "description": "For weaknesses only: NOFO page numbers"},
+            "impact": {"type": "string", "description": "For weaknesses only: material impact of the shortfall"},
+        }}
+
     strength_met = {"type": "object", "additionalProperties": False, "required": ["comment", "application_pages"], "properties": {"comment": {"type": "string"}, "application_pages": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}}}}
     weakness = {"type": "object", "additionalProperties": False, "required": ["comment", "application_pages", "nofo_requirement", "nofo_pages", "impact"], "properties": {"comment": {"type": "string"}, "application_pages": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}}, "nofo_requirement": {"type": "string"}, "nofo_pages": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}}, "impact": {"type": "string"}}}
     sub = {"type": "object", "additionalProperties": False, "required": ["name", "score", "maximum_points"], "properties": {"name": {"type": "string"}, "score": {"type": "integer", "minimum": 0}, "maximum_points": {"type": "integer", "minimum": 0}}}
 
     tool = {"name": "score_criterion", "description": f"Submit score for '{name}' ({points} points).", "input_schema": {"type": "object", "additionalProperties": False,
-        "required": ["name", "score", "maximum_points", "score_rationale", "strengths", "mets", "weaknesses", "subcriteria"],
+        "required": ["name", "score", "maximum_points", "score_rationale", "question_responses", "strengths", "mets", "weaknesses", "subcriteria"],
         "properties": {"name": {"type": "string", "enum": [name]}, "score": {"type": "integer", "minimum": 0, "maximum": points}, "maximum_points": {"type": "integer", "enum": [points]},
-            "score_rationale": {"type": "string"}, "strengths": {"type": "array", "items": strength_met}, "mets": {"type": "array", "items": strength_met},
+            "score_rationale": {"type": "string", "description": "1-2 sentence overall summary of how well the application addresses this criterion"},
+            "question_responses": {"type": "array", "items": question_answer, "description": "Answer each NOFO evaluation question/bullet under this criterion"},
+            "strengths": {"type": "array", "items": strength_met}, "mets": {"type": "array", "items": strength_met},
             "weaknesses": {"type": "array", "items": weakness}, "subcriteria": {"type": "array", "items": sub}}}}
 
-    prompt = f"Score this single criterion:\n\nCRITERION: {name}\nMAXIMUM POINTS: {points}\nAGENCY: {agency}\n\nNOFO TEXT:\n{nofo_text[:20000]}\n\nAPPLICATION:\n{application_text}\n\nScore ONLY this criterion. Each finding comment must be one concise sentence with application page citations. Every weakness must cite the NOFO requirement and page."
+    prompt = f"""Score this single criterion by answering each NOFO evaluation question individually.
+
+CRITERION: {name}
+MAXIMUM POINTS: {points}
+AGENCY: {agency}
+
+NOFO TEXT (find the evaluation questions/bullets for this criterion):
+{nofo_text[:25000]}
+
+APPLICATION:
+{application_text}
+
+INSTRUCTIONS:
+1. Find all evaluation questions/bullets listed under this criterion in the NOFO.
+2. For EACH question, provide the application's answer with page citations.
+3. Assess each as strength (exceeds), met (satisfies), or weakness (falls short).
+4. For weaknesses, cite the exact NOFO requirement and page.
+5. Also provide traditional strengths/mets/weaknesses lists.
+6. Give an overall score_rationale summarizing the criterion assessment.
+7. Each comment must be one concise sentence. No unexpanded acronyms."""
 
     response = client.messages.create(model=model, max_tokens=4000, temperature=0, system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": prompt}], tools=[tool], tool_choice={"type": "tool", "name": "score_criterion"})
