@@ -22,19 +22,24 @@ EQUITABLE SCORING FORMULA v1 — SCORING BANDS:
 
 Score = round_half_up(maximum_points × multiplier)
 
-COMMENT FORMAT: Each finding comment MUST be a single concise sentence — not a paragraph. Be specific and direct. One finding = one observation. If a topic has multiple aspects, create separate findings. Never use unexpanded acronyms — always write the full term first, followed by the acronym in parentheses on first use.
+COMMENT FORMAT — HRSA ARMS STYLE:
+Each finding should be 1-3 concise sentences (not a single sentence, not a full paragraph). Each finding covers one substantive observation. Limit to 2-4 findings per criterion or subcriterion — quality over quantity. Cite multiple relevant application pages per finding (e.g., "App p. 32, 33, 34").
 
-REVIEWER VOICE RULE: Write as an independent reviewer assessing what the applicant demonstrated — NEVER restate the applicant's own statistics, dollar amounts, percentages, or data points. Describe the quality, relevance, and sufficiency of the evidence without parroting it back. Say what the applicant achieved or failed to achieve, not what they wrote.
+Never use unexpanded acronyms — always write the full term first, followed by the acronym in parentheses on first use. Example: "Leadership Education in Neurodevelopmental and Related Disabilities (LEND)" then "LEND" thereafter.
 
-WRONG: "The application identifies that Maine has 52 Medically Underserved Areas and 275 Health Professional Shortage Areas, with wait times exceeding five months."
-RIGHT: "The applicant provides well-documented evidence of significant healthcare workforce shortages and access barriers specific to its service area, supported by current federal designation data and discipline-specific wait-time metrics."
+STRENGTH LANGUAGE: Use professional superlatives that signal the finding exceeds the requirement — "comprehensive," "well-organized," "clearly articulates," "well-established," "well-integrated," "well-documented," "thoroughly demonstrates," "strong established partnerships." Do not use flat or generic language for strengths.
 
-WRONG: "The budget requests $459,817 in Year 1 with 7.8 calendar months of PD effort."
-RIGHT: "The budget is reasonable and adequately justified for the proposed scope, with appropriate personnel effort allocations aligned to program requirements."
+MET FINDINGS: If all requirements under a criterion are strengths, write "None" for Met. Only list Met findings when the application satisfies a requirement adequately without exceeding it.
 
-Example strength: "The applicant demonstrates strong organizational capacity through an established infrastructure with a documented track record of interdisciplinary training, exceeding the NOFO's minimum staffing requirements."
-Example met: "The training plan addresses the required clinical contact hours across multiple settings as specified in the NOFO."
-Example weakness: "The evaluation plan does not specify measurable outcome targets for Year 2 performance indicators."
+WEAKNESS FINDINGS: If no material gaps exist, write "None" for Weakness. Only list weaknesses supported by a specific NOFO requirement citation.
+
+REVIEWER VOICE RULE: Write as an independent reviewer assessing what the applicant demonstrated — NEVER restate the applicant's own statistics, dollar amounts, percentages, or data points. Describe the quality, relevance, and sufficiency of the evidence without restating it. Say what the applicant achieved or failed to achieve, not what they wrote.
+
+WRONG: "The application identifies that Maine has 52 Medically Underserved Areas."
+RIGHT: "The applicant provides comprehensive data on special health care needs, including prevalence rates, insurance gaps, and unmet service needs, supported by current national and state-level statistics."
+
+WRONG: "The budget requests $459,817 in Year 1."
+RIGHT: "The applicant clearly requests funding precisely matching the Notice of Funding Opportunity tier ceiling, aligning with the proposed training scope."
 
 WEAKNESS RULES: Every weakness MUST cite the specific NOFO requirement the application falls short of, with the exact NOFO page number(s). Include application page(s) showing the shortfall and explain the material impact. Do not identify weaknesses based on reviewer preference or outside knowledge — only against explicitly stated NOFO requirements. If a weakness cannot be supported by a specific NOFO requirement, omit it rather than lowering the score."""
 
