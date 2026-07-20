@@ -145,6 +145,15 @@ const SafeReviewDashboard: React.FC = () => {
   // Step: upload | rubric | brief | processing | results | history
   const [step, setStep] = useState<Step>('upload');
 
+  // Elapsed timer
+  const [processingStartTime, setProcessingStartTime] = useState<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  useEffect(() => {
+    if (!processingStartTime) { setElapsedSeconds(0); return; }
+    const timer = setInterval(() => setElapsedSeconds(Math.floor((Date.now() - processingStartTime) / 1000)), 1000);
+    return () => clearInterval(timer);
+  }, [processingStartTime]);
+
   // NOFO Brief state
   const [nofoBrief, setNofoBrief] = useState<NofoBrief | null>(null);
   const [briefLoading, setBriefLoading] = useState(false);
@@ -294,7 +303,7 @@ const SafeReviewDashboard: React.FC = () => {
 
     // Resume polling for in-progress reviews
     if (stored.job_ids.length > 0) {
-      setPolling(true);
+      setPolling(true); if (!processingStartTime) setProcessingStartTime(Date.now());
     }
   }, []);
 
@@ -568,7 +577,7 @@ const SafeReviewDashboard: React.FC = () => {
           errorMessage: null,
         }));
         setAppProgress(initial);
-        setPolling(true);
+        setPolling(true); if (!processingStartTime) setProcessingStartTime(Date.now());
         // step is already 'processing'
       } else {
         const fetched = await getReviewResults(result.review_id);
@@ -859,7 +868,7 @@ const SafeReviewDashboard: React.FC = () => {
               'bg-emerald-100 text-emerald-800'
             }`}>
               {connectionLost ? <><WifiOff size={16} /> Connection Lost</> :
-               busy ? <><Loader2 size={16} className="animate-spin" /> Processing...</> :
+               busy ? <><Loader2 size={16} className="animate-spin" /> {Math.floor(elapsedSeconds / 60)}:{String(elapsedSeconds % 60).padStart(2, '0')}</> :
                <><CheckCircle2 size={16} /> Ready</>}
             </span>
             {user && (
@@ -1528,7 +1537,8 @@ const SafeReviewDashboard: React.FC = () => {
             {/* Estimated time */}
             {totalJobs > 0 && completedJobs < totalJobs && (
               <p className="mt-2 text-xs text-slate-400">
-                Estimated: ~{(totalJobs - completedJobs - failedJobs) * 5} minutes remaining
+                Elapsed: {Math.floor(elapsedSeconds / 60)}:{String(elapsedSeconds % 60).padStart(2, '0')}
+                {' · '}Estimated: ~{(totalJobs - completedJobs - failedJobs) * 3} min remaining
                 · Claude is scoring each application independently
               </p>
             )}
