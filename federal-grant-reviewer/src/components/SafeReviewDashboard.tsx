@@ -159,6 +159,9 @@ const SafeReviewDashboard: React.FC = () => {
   const [validationBusy, setValidationBusy] = useState<Record<string, boolean>>({});
   const briefPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Findings filter
+  const [findingsFilter, setFindingsFilter] = useState<'all' | 'strengths' | 'mets' | 'weaknesses'>('all');
+
   // History
   const [storedReviews, setStoredReviews] = useState<StoredReview[]>(loadStoredReviews);
 
@@ -1766,7 +1769,7 @@ const SafeReviewDashboard: React.FC = () => {
                   {reviews.map((r, i) => (
                     <button
                       key={r.review_id}
-                      onClick={() => setSelected(i)}
+                      onClick={() => { setSelected(i); setFindingsFilter('all'); }}
                       className={'rounded-lg border px-4 py-2 text-sm font-semibold ' + (selected === i ? 'border-blue-600 bg-blue-600 text-white' : 'bg-white')}
                     >
                       {r.applicant_name || 'Application ' + (i + 1)}
@@ -1778,8 +1781,135 @@ const SafeReviewDashboard: React.FC = () => {
 
                 <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
                   <div className="space-y-4">
-                    {current.criteria.map(c => (
-                      <article key={c.name} className="rounded-xl border bg-white p-6">
+                    {/* Review Scorecard */}
+                    <div className="rounded-xl border bg-white p-5 mb-4">
+                      <h3 className="font-bold text-lg mb-3">Review Scorecard</h3>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm border">
+                          <thead>
+                            <tr className="bg-slate-100">
+                              <th className="text-left p-2 border">Criterion</th>
+                              <th className="text-center p-2 border w-20">Score</th>
+                              <th className="text-center p-2 border w-28">Classification</th>
+                              <th className="text-center p-2 border w-14 bg-emerald-50 text-emerald-800">S</th>
+                              <th className="text-center p-2 border w-14 bg-blue-50 text-blue-800">M</th>
+                              <th className="text-center p-2 border w-14 bg-red-50 text-red-800">W</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {current.criteria.map((c: any, ci: number) => (
+                              <React.Fragment key={ci}>
+                                <tr className="border-t hover:bg-slate-50">
+                                  <td className="p-2 border font-semibold">{c.name}</td>
+                                  <td className="p-2 border text-center font-bold">{c.score ?? '—'}/{c.maximum_points}</td>
+                                  <td className="p-2 border text-center">
+                                    <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                                      c.classification === 'strength' ? 'bg-emerald-100 text-emerald-800' :
+                                      c.classification === 'met' ? 'bg-blue-100 text-blue-800' :
+                                      c.classification === 'minor_weakness' ? 'bg-amber-100 text-amber-800' :
+                                      c.classification === 'moderate_weakness' ? 'bg-orange-100 text-orange-800' :
+                                      c.classification === 'major_weakness' ? 'bg-red-100 text-red-800' :
+                                      'bg-slate-100 text-slate-600'
+                                    }`}>{(c.classification || '—').replace(/_/g, ' ')}</span>
+                                  </td>
+                                  <td className="p-2 border text-center">
+                                    {(c.strengths?.length || 0) > 0 ? (
+                                      <button onClick={() => { setFindingsFilter('strengths'); document.getElementById('criterion-' + ci)?.scrollIntoView({behavior:'smooth'}); }}
+                                        className="text-emerald-700 font-bold hover:underline cursor-pointer">{c.strengths.length}</button>
+                                    ) : <span className="text-slate-300">0</span>}
+                                  </td>
+                                  <td className="p-2 border text-center">
+                                    {(c.mets?.length || 0) > 0 ? (
+                                      <button onClick={() => { setFindingsFilter('mets'); document.getElementById('criterion-' + ci)?.scrollIntoView({behavior:'smooth'}); }}
+                                        className="text-blue-700 font-bold hover:underline cursor-pointer">{c.mets.length}</button>
+                                    ) : <span className="text-slate-300">0</span>}
+                                  </td>
+                                  <td className="p-2 border text-center">
+                                    {(c.weaknesses?.length || 0) > 0 ? (
+                                      <button onClick={() => { setFindingsFilter('weaknesses'); document.getElementById('criterion-' + ci)?.scrollIntoView({behavior:'smooth'}); }}
+                                        className="text-red-700 font-bold hover:underline cursor-pointer">{c.weaknesses.length}</button>
+                                    ) : <span className="text-slate-300">0</span>}
+                                  </td>
+                                </tr>
+                                {(c.subcriteria || []).map((sub: any, si: number) => (
+                                  <tr key={`${ci}-sub-${si}`} className="border-t bg-slate-50/50">
+                                    <td className="p-2 border pl-8 text-slate-600 text-xs">↳ {sub.name}</td>
+                                    <td className="p-2 border text-center text-xs text-slate-600">{sub.score ?? '—'}/{sub.maximum_points}</td>
+                                    <td className="p-2 border" colSpan={4}></td>
+                                  </tr>
+                                ))}
+                              </React.Fragment>
+                            ))}
+                            <tr className="border-t-2 border-slate-400 bg-slate-100 font-bold">
+                              <td className="p-2 border">Total</td>
+                              <td className="p-2 border text-center">{current.criteria.reduce((s: number, c: any) => s + (c.score || 0), 0)}/{current.criteria.reduce((s: number, c: any) => s + c.maximum_points, 0)}</td>
+                              <td className="p-2 border"></td>
+                              <td className="p-2 border text-center text-emerald-700">{current.criteria.reduce((s: number, c: any) => s + (c.strengths?.length || 0), 0)}</td>
+                              <td className="p-2 border text-center text-blue-700">{current.criteria.reduce((s: number, c: any) => s + (c.mets?.length || 0), 0)}</td>
+                              <td className="p-2 border text-center text-red-700">{current.criteria.reduce((s: number, c: any) => s + (c.weaknesses?.length || 0), 0)}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Findings Filter Bar */}
+                    <div className="flex gap-2 mb-4">
+                      {(['all', 'strengths', 'mets', 'weaknesses'] as const).map(f => (
+                        <button key={f} onClick={() => setFindingsFilter(f)}
+                          className={`rounded-lg px-4 py-2 text-sm font-semibold ${
+                            findingsFilter === f
+                              ? f === 'strengths' ? 'bg-emerald-600 text-white' :
+                                f === 'mets' ? 'bg-blue-600 text-white' :
+                                f === 'weaknesses' ? 'bg-red-600 text-white' :
+                                'bg-slate-800 text-white'
+                              : 'bg-white border text-slate-600 hover:bg-slate-50'
+                          }`}>
+                          {f === 'all' ? 'All Criteria' : f.charAt(0).toUpperCase() + f.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Findings summary table when a filter is active */}
+                    {findingsFilter !== 'all' && current && (
+                      <div className="rounded-xl border bg-white p-6">
+                        <h3 className="font-bold text-lg mb-4">
+                          {findingsFilter === 'strengths' ? 'All Strengths' : findingsFilter === 'mets' ? 'All Met Criteria' : 'All Weaknesses'}
+                          {' \u2014 '}{current.applicant_name || 'Application'}
+                        </h3>
+                        <table className="w-full text-sm border">
+                          <thead>
+                            <tr className="bg-slate-100">
+                              <th className="text-left p-2 border">Criterion</th>
+                              <th className="text-left p-2 border">Finding</th>
+                              <th className="text-left p-2 border w-28">App Pages</th>
+                              {findingsFilter === 'weaknesses' && <th className="text-left p-2 border">NOFO Requirement</th>}
+                              {findingsFilter === 'weaknesses' && <th className="text-left p-2 border">Impact</th>}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {current.criteria.flatMap((c: any) =>
+                              (c[findingsFilter] || []).map((finding: any, fi: number) => (
+                                <tr key={c.name + fi} className="border-t">
+                                  <td className="p-2 border align-top font-semibold text-slate-700">{c.name}<br/><span className="text-xs text-slate-400">{c.score}/{c.maximum_points}</span></td>
+                                  <td className="p-2 border align-top">{finding.comment}</td>
+                                  <td className="p-2 border align-top text-xs text-blue-700">p. {(finding.application_pages || finding.pages || []).join(', ')}</td>
+                                  {findingsFilter === 'weaknesses' && <td className="p-2 border align-top text-xs">{finding.nofo_requirement || ''}<br/><span className="text-amber-600">NOFO p. {(finding.nofo_pages || []).join(', ')}</span></td>}
+                                  {findingsFilter === 'weaknesses' && <td className="p-2 border align-top text-xs italic">{finding.impact || ''}</td>}
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                        {current.criteria.flatMap((c: any) => c[findingsFilter] || []).length === 0 && (
+                          <p className="text-slate-400 text-sm mt-4">No {findingsFilter} identified.</p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Per-criterion cards — shown only when filter is 'all' */}
+                    {findingsFilter === 'all' && current.criteria.map((c, ci) => (
+                      <article key={c.name} id={'criterion-' + ci} className="rounded-xl border bg-white p-6 scroll-mt-4">
                         <div className="flex justify-between gap-3">
                           <div>
                             <h3 className="font-bold">{c.name}</h3>
@@ -1789,6 +1919,44 @@ const SafeReviewDashboard: React.FC = () => {
                             {c.score !== undefined && c.score !== null ? c.score : '—'} / {c.maximum_points}
                           </div>
                         </div>
+                        {/* Requirement Assessment Table */}
+                        {(c as any).requirement_assessments?.length > 0 && (
+                          <div className="mt-4 overflow-x-auto">
+                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500 mb-2">Requirement Assessment</p>
+                            <table className="w-full text-sm border">
+                              <thead>
+                                <tr className="bg-slate-100">
+                                  <th className="text-left p-2 border">NOFO Requirement</th>
+                                  <th className="text-left p-2 border">Application Response</th>
+                                  <th className="text-left p-2 border w-32">Status</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {(c as any).requirement_assessments.map((ra: any, ri: number) => (
+                                  <tr key={ri} className="border-t">
+                                    <td className="p-2 border align-top">
+                                      <p className="text-sm">{ra.requirement_text}</p>
+                                      <p className="text-xs text-amber-600 mt-1">NOFO p. {(ra.nofo_pages || []).join(', ')}</p>
+                                    </td>
+                                    <td className="p-2 border align-top">
+                                      <p className="text-sm">{ra.explanation}</p>
+                                      <p className="text-xs text-blue-600 mt-1">App p. {(ra.application_pages || []).join(', ')}</p>
+                                    </td>
+                                    <td className="p-2 border align-top">
+                                      <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                                        ra.response_status === 'exceeds' ? 'bg-emerald-100 text-emerald-800' :
+                                        ra.response_status === 'fully_addressed' ? 'bg-blue-100 text-blue-800' :
+                                        ra.response_status === 'partially_addressed' ? 'bg-amber-100 text-amber-800' :
+                                        ra.response_status === 'not_addressed' ? 'bg-red-100 text-red-800' :
+                                        'bg-slate-100 text-slate-600'
+                                      }`}>{(ra.response_status || '').replace(/_/g, ' ')}</span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
                         {/* NOFO Question Responses */}
                         {(c as any).question_responses?.length > 0 && (
                           <div className="mt-5">
