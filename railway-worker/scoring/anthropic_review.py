@@ -14,8 +14,8 @@ SYSTEM_PROMPT = """You are an independent federal grant merit reviewer applying 
 
 EQUITABLE SCORING FORMULA v1 — SCORING BANDS:
 - Strength (multiplier 1.00): ALL requirements exceeded with documented above-and-beyond evidence. CRITICAL: Do not award Strength merely because no weakness was found. Strength requires explicit, documented evidence that the applicant went beyond what the NOFO requires.
-- Met (multiplier 0.80): ALL requirements adequately addressed, no gaps, no exceedance. Met = 80%, NOT 100%. This is the expected baseline when the application fully satisfies all requirements.
-- Minor weakness (multiplier 0.60): Most requirements addressed; limited gaps reduce reviewer confidence.
+- Met (multiplier 0.90): ALL requirements adequately addressed, no gaps, no exceedance. Met = 90%, NOT 100%. This is the expected baseline when the application fully satisfies all requirements.
+- Minor weakness (multiplier 0.70): Most requirements addressed; limited gaps reduce reviewer confidence.
 - Moderate weakness (multiplier 0.50): Multiple requirements partially addressed or missing.
 - Major weakness (multiplier 0.25): A mandatory element is omitted or seriously deficient.
 - Not addressed (multiplier 0.00): No responsive information found for this criterion.
@@ -150,7 +150,7 @@ def _validate(review: dict[str, Any], criteria: list[dict[str, Any]], page_count
                 raise ValueError(f"Weakness missing valid nofo_pages in {source['name']}")
         # Equitable formula v1 validation
         multiplier = item.get("multiplier")
-        valid_multipliers = [1.0, 0.8, 0.6, 0.5, 0.25, 0.0]
+        valid_multipliers = [1.0, 0.9, 0.7, 0.5, 0.25, 0.0]
         if multiplier is not None and multiplier not in valid_multipliers:
             raise ValueError(f"Invalid multiplier {multiplier} for {source['name']} — must be one of {valid_multipliers}")
         calculated_score = item.get("calculated_score")
@@ -217,7 +217,7 @@ def _score_single_criterion(client, model: str, application_text: str, criterion
         "required": ["name", "maximum_points", "classification", "multiplier", "calculated_score", "score_rationale", "strengths", "mets", "weaknesses"],
         "properties": {"name": {"type": "string", "enum": [name]}, "maximum_points": {"type": "integer", "enum": [points]},
             "classification": {"type": "string", "enum": ["strength", "met", "minor_weakness", "moderate_weakness", "major_weakness", "not_addressed"]},
-            "multiplier": {"type": "number", "enum": [1.0, 0.8, 0.6, 0.5, 0.25, 0.0]},
+            "multiplier": {"type": "number", "enum": [1.0, 0.9, 0.7, 0.5, 0.25, 0.0]},
             "calculated_score": {"type": "integer", "minimum": 0},
             "score_rationale": {"type": "string", "description": "1-2 sentence overall summary"},
             "strengths": {"type": "array", "items": strength_met}, "mets": {"type": "array", "items": strength_met},
@@ -256,22 +256,22 @@ APPLICATION:
 
 SCORING FORMULA (Equitable Formula v1):
 - Strength (1.00): ALL requirements exceeded, documented above-and-beyond evidence
-- Met (0.80): ALL requirements adequately addressed, no gaps, no exceedance
-- Minor weakness (0.60): Most addressed, limited gaps reduce confidence
+- Met (0.90): ALL requirements adequately addressed, no gaps, no exceedance
+- Minor weakness (0.70): Most addressed, limited gaps reduce confidence
 - Moderate weakness (0.50): Multiple partial/missing requirements
 - Major weakness (0.25): Mandatory element omitted or seriously deficient
 - Not addressed (0.00): No responsive information found
 
 Score = round_half_up(maximum_points × multiplier)
 
-CRITICAL: Met = 80%, NOT 100%. Full points require EVIDENCE of exceeding requirements.
+CRITICAL: Met = 90%, NOT 100%. Full points require EVIDENCE of exceeding requirements.
 Do not award Strength merely because no weakness was found.
 
 INSTRUCTIONS:
 1. Break this criterion into its individual NOFO requirements.
 2. Assess each requirement individually in requirement_assessments (use response_status: exceeds/fully_addressed/partially_addressed/not_addressed/unable_to_evaluate).
 3. Classify the overall criterion (strength/met/minor_weakness/moderate_weakness/major_weakness/not_addressed).
-4. Apply the corresponding multiplier (1.0/0.8/0.6/0.5/0.25/0.0).
+4. Apply the corresponding multiplier (1.0/0.9/0.7/0.5/0.25/0.0).
 5. Calculate: calculated_score = round_half_up(maximum_points × multiplier). Set formula_version to "equitable-v1".
 6. Find all evaluation questions/bullets listed under this criterion in the NOFO.
 7. For EACH question, provide the application's answer with page citations in question_responses.
@@ -295,9 +295,9 @@ INSTRUCTIONS:
     result["name"] = name
     result["maximum_points"] = points
     # If Claude didn't return the equitable fields, compute from what we have
-    MULTIPLIER_MAP = {"strength": 1.0, "met": 0.8, "minor_weakness": 0.6, "moderate_weakness": 0.5, "major_weakness": 0.25, "not_addressed": 0.0}
+    MULTIPLIER_MAP = {"strength": 1.0, "met": 0.9, "minor_weakness": 0.7, "moderate_weakness": 0.5, "major_weakness": 0.25, "not_addressed": 0.0}
     if not result.get("calculated_score") and result.get("classification"):
-        mult = MULTIPLIER_MAP.get(result["classification"], 0.8)
+        mult = MULTIPLIER_MAP.get(result["classification"], 0.9)
         result["multiplier"] = mult
         result["calculated_score"] = round(points * mult)
         result["formula_version"] = "equitable-v1"
