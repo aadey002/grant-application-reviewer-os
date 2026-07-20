@@ -2093,9 +2093,8 @@ const SafeReviewDashboard: React.FC = () => {
                                       })()
                                     )}
                                   </div>
-                                ))
-                                </div>
-                                ))
+                                ))}
+                                </div>))
                               ) : (
                                 <p className="text-sm text-slate-400">None identified.</p>
                               )}
