@@ -971,7 +971,7 @@ def _create_application_job(
 # Background: _process_job
 # ---------------------------------------------------------------------------
 
-async def _process_job(
+def _process_job(
     job_id: str,
     application_storage_path: str,
     criteria: list[dict[str, Any]],
@@ -1215,20 +1215,23 @@ async def trigger_process_job(job_id: str, background_tasks: BackgroundTasks):
     app_rows = _select(sb, "applications", {"id": job_row["application_id"]})
     app_storage_path = app_rows[0]["storage_path"] if app_rows else ""
 
-    import asyncio, threading
+    import threading
     def _run_in_thread():
         try:
-            asyncio.run(_process_job(
+            _process_job(
                 job_id, app_storage_path, criteria,
                 job_row.get("agency", "HRSA"),
                 job_row["review_id"],
                 job_row.get("nofo_storage_path", ""),
                 job_row.get("worksheet_storage_path", ""),
-            ))
+            )
         except Exception as exc:
             logger.error("Thread job %s failed: %s", job_id, exc)
-            sb = get_supabase()
-            _update(sb, "processing_jobs", {"id": job_id}, {"status": "failed", "error_message": str(exc)[:2000]})
+            try:
+                sb2 = get_supabase()
+                _update(sb2, "processing_jobs", {"id": job_id}, {"status": "failed", "error_message": str(exc)[:2000]})
+            except Exception:
+                pass
     threading.Thread(target=_run_in_thread, daemon=True).start()
     return {"message": "Job re-queued", "job_id": job_id}
 
