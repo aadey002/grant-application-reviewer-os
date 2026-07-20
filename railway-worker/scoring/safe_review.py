@@ -93,37 +93,21 @@ def extract_nofo_criteria(path: Path) -> dict[str, Any]:
         re.compile(r"(?i)(?:review\s+)?criterion\s+(\d+)\s*[:.\-–—]\s*([^\n]{2,100}?)\s*[—–-]\s*(\d+)\s*points?"),
     ]
 
-    # Subcriterion patterns: "Criterion 2.1: Name (10 points)" or "2.1 Name (10 points)"
-    sub_patterns = [
+    # Subcriterion patterns: numbered "2.1 Name (10 points)"
+    sub_numbered_patterns = [
         re.compile(r"(?i)(?:criterion\s+)?(\d+)\.(\d+)\s*[:.\-–—]?\s*([^\n(]{2,100}?)\s*\(\s*(\d+)\s*points?\s*\)"),
-        re.compile(r"(?i)(?:criterion\s+)?(\d+)\.(\d+)\s*[:.\-–—]\s*([^\n]{2,100}?)\s*[—–-]\s*(\d+)\s*points?"),
     ]
 
+    # Unnumbered subcriterion: "Overall methodology (10 points)" — no "Criterion" prefix
+    # Match lines like "Name here (N points)" that don't start with "Criterion"
+    sub_unnumbered_pattern = re.compile(r"\n\s*([A-Z][A-Za-z][A-Za-z,\- ]{2,80}?)\s*\(\s*(\d+)\s*points?\s*\)")
+
     found = []
-    subcriteria_map: dict[int, list[dict]] = {}  # parent_number -> list of subcriteria
+    all_point_entries: list[dict] = []  # all entries with points, sorted by page/position
     seen = set()
-    seen_subs = set()
 
+    # Pass 1: Extract all main criteria
     for page_number, text in enumerate(pages, start=1):
-        # Extract subcriteria first
-        for pattern in sub_patterns:
-            for match in pattern.finditer(text):
-                parent_num, sub_num, name, points = match.groups()
-                name = " ".join(name.split()).strip(" :-–—")
-                key = (int(parent_num), int(sub_num), name.lower())
-                if key in seen_subs:
-                    continue
-                seen_subs.add(key)
-                parent = int(parent_num)
-                if parent not in subcriteria_map:
-                    subcriteria_map[parent] = []
-                subcriteria_map[parent].append({
-                    "name": name, "points": int(points),
-                    "number": f"{parent_num}.{sub_num}",
-                    "source_page": page_number,
-                })
-
-        # Extract main criteria
         for pattern in main_patterns:
             for match in pattern.finditer(text):
                 number, name, points = match.groups()
@@ -137,11 +121,71 @@ def extract_nofo_criteria(path: Path) -> dict[str, Any]:
                 criterion = {"number": int(number), "name": name, "points": int(points),
                               "keywords": keywords or [name.lower()], "source_page": page_number,
                               "source_heading": " ".join(match.group(0).split()),
-                              "context_preview": " ".join(nearby.split())[:500]}
-                # Attach subcriteria if found
-                if int(number) in subcriteria_map:
-                    criterion["subcriteria"] = sorted(subcriteria_map[int(number)], key=lambda s: s.get("number", ""))
+                              "context_preview": " ".join(nearby.split())[:500],
+                              "_pos": match.start(), "_page": page_number}
                 found.append(criterion)
+
+    found.sort(key=lambda item: (item.get("_page", 0), item.get("_pos", 0)))
+
+    # Pass 2: Find unnumbered subcriteria between main criteria
+    # Build a list of all "Name (N points)" entries that are NOT main criteria
+    main_names = {c["name"].lower() for c in found}
+    all_sub_candidates: list[dict] = []
+
+    for page_number, text in enumerate(pages, start=1):
+        # Numbered subcriteria (2.1, 5.2, etc.)
+        for pattern in sub_numbered_patterns:
+            for match in pattern.finditer(text):
+                parent_num, sub_num, name, points = match.groups()
+                name = " ".join(name.split()).strip(" :-–—")
+                all_sub_candidates.append({
+                    "name": name, "points": int(points), "parent_hint": int(parent_num),
+                    "source_page": page_number, "_pos": match.start(),
+                })
+
+        # Unnumbered subcriteria
+        for match in sub_unnumbered_pattern.finditer(text):
+            name, points = match.groups()
+            name = " ".join(name.split()).strip(" :-–—")
+            if name.lower() in main_names:
+                continue
+            if int(points) >= 30:  # likely a main criterion, not sub
+                continue
+            all_sub_candidates.append({
+                "name": name, "points": int(points), "parent_hint": None,
+                "source_page": page_number, "_pos": match.start(),
+            })
+
+    # Pass 3: Assign subcriteria to parent criteria by page proximity
+    for sub in all_sub_candidates:
+        # Find the main criterion whose page range contains this subcriterion
+        best_parent = None
+        for ci, criterion in enumerate(found):
+            c_page = criterion.get("_page", criterion["source_page"])
+            next_page = found[ci + 1].get("_page", found[ci + 1]["source_page"]) if ci + 1 < len(found) else 9999
+            if sub.get("parent_hint") and sub["parent_hint"] == criterion["number"]:
+                best_parent = ci
+                break
+            if c_page <= sub["source_page"] <= next_page + 1:
+                # Sub appears on same or next page as this criterion
+                if sub["points"] < criterion["points"]:
+                    best_parent = ci
+        if best_parent is not None:
+            if "subcriteria" not in found[best_parent]:
+                found[best_parent]["subcriteria"] = []
+            # Avoid duplicates
+            existing = {s["name"].lower() for s in found[best_parent]["subcriteria"]}
+            if sub["name"].lower() not in existing:
+                found[best_parent]["subcriteria"].append({
+                    "name": sub["name"], "points": sub["points"], "source_page": sub["source_page"],
+                })
+
+    # Clean up internal fields
+    for c in found:
+        c.pop("_pos", None)
+        c.pop("_page", None)
+
+    found.sort(key=lambda item: item["number"])
 
     found.sort(key=lambda item: item["number"])
     total = sum(item["points"] for item in found)
