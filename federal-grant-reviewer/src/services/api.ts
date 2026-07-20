@@ -262,6 +262,22 @@ export const getReviewResults = async (reviewId: string): Promise<ReviewResults>
 };
 
 // ---------------------------------------------------------------------------
+// Get NOFO view URL — signed URL for the uploaded NOFO PDF
+// ---------------------------------------------------------------------------
+
+export const getNofoViewUrl = async (reviewId: string): Promise<string> => {
+  const { data } = await supabase
+    .from('grant_reviews')
+    .select('nofo_storage_path')
+    .eq('id', reviewId)
+    .single();
+  if (!data?.nofo_storage_path) throw new Error('NOFO not found');
+  const { data: urlData, error } = await supabase.storage.from('nofo-files').createSignedUrl(data.nofo_storage_path, 3600);
+  if (error || !urlData) throw new Error('Failed to create NOFO URL');
+  return urlData.signedUrl;
+};
+
+// ---------------------------------------------------------------------------
 // Get worksheet download URL — signed URL from Supabase Storage
 // ---------------------------------------------------------------------------
 

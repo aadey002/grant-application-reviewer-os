@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import {
   deleteApplicantData, deleteReview, extractRubric, ExtractedRubric, generateNofoBrief,
-  getApplicationViewUrl, getNofoBrief,
+  getApplicationViewUrl, getNofoBrief, getNofoViewUrl,
   getNofoBriefDownload, getReviewResults,
   getWorksheetUrl, JobStatus, NofoBrief, pollJobStatus, ReviewPackage,
   runSafeReviews, SafeReview, updateReviewValidation,
@@ -1808,7 +1808,7 @@ const SafeReviewDashboard: React.FC = () => {
                                   </div>
                                   {qr.assessment === 'weakness' && qr.nofo_requirement && (
                                     <div className="mt-2 rounded border-l-4 border-amber-400 bg-amber-50 p-2">
-                                      <p className="text-xs text-amber-800"><span className="font-bold">NOFO:</span> {qr.nofo_requirement} (p. {(qr.nofo_pages || []).join(', ')})</p>
+                                      <p className="text-xs text-amber-800"><span className="font-bold">NOFO:</span> {qr.nofo_requirement} <button onClick={async () => { try { const url = await getNofoViewUrl(currentReviewId!); window.open(url + '#page=' + (qr.nofo_pages?.[0] || 1), '_blank'); } catch {} }} className="font-bold text-amber-700 hover:underline cursor-pointer">(NOFO p. {(qr.nofo_pages || []).join(', ')})</button></p>
                                       {qr.impact && <p className="text-xs text-amber-700 mt-1"><span className="font-bold">Impact:</span> {qr.impact}</p>}
                                     </div>
                                   )}
@@ -1845,7 +1845,7 @@ const SafeReviewDashboard: React.FC = () => {
                                           <div className="mt-2 rounded-lg border-l-4 border-amber-400 bg-amber-50 p-3">
                                             <p className="text-xs font-bold uppercase text-amber-700">NOFO Requirement</p>
                                             <p className="text-sm">{finding.nofo_requirement}</p>
-                                            <p className="text-xs font-bold text-amber-600 mt-1">NOFO p. {(finding.nofo_pages || []).join(', ')}</p>
+                                            <button onClick={async () => { try { const url = await getNofoViewUrl(currentReviewId!); window.open(url + '#page=' + (finding.nofo_pages?.[0] || 1), '_blank'); } catch {} }} className="text-xs font-bold text-amber-600 mt-1 hover:underline cursor-pointer">NOFO p. {(finding.nofo_pages || []).join(', ')}</button>
                                           </div>
                                         )}
                                         <div className="mt-1">
