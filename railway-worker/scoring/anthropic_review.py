@@ -231,7 +231,7 @@ def _score_single_criterion(client, model: str, application_text: str, criterion
     subcriteria_defs = criterion.get("subcriteria", [])
     if subcriteria_defs:
         sub_text = "\n".join(f"  {s['name']}: {s['points']} points" for s in subcriteria_defs)
-        sub_instruction = f"\n\nSUBCRITERIA (score each individually — scores must sum to the parent criterion total):\n{sub_text}\n\nYou MUST return a subcriteria array with exact names and point allocations matching the list above. Each subcriterion score must be between 0 and its maximum. The sum of subcriterion scores must equal the parent criterion score."
+        sub_instruction = f"\n\nSUBCRITERIA (score each individually — scores must sum to the parent criterion total):\n{sub_text}\n\nYou MUST return a subcriteria array with exact names and point allocations matching the list above. Each subcriterion score must be between 0 and its maximum. The sum of subcriterion scores must equal the parent criterion score.\n\nIMPORTANT: In requirement_assessments, prefix each explanation with the subcriterion name in brackets, e.g., '[Overall methodology] The applicant...' or '[Trainee recruitment and retention] The applicant...'. Group strengths, mets, and weaknesses by subcriterion as well."
         # Update tool schema to enforce subcriteria names
         sub_enum = {"type": "object", "additionalProperties": False, "required": ["name", "score", "maximum_points"], "properties": {
             "name": {"type": "string", "enum": [s["name"] for s in subcriteria_defs]},
@@ -268,10 +268,11 @@ CRITICAL: Met = 90%, NOT 100%. Full points require EVIDENCE of exceeding require
 Do not award Strength merely because no weakness was found.
 
 INSTRUCTIONS:
-1. Break this criterion into its individual NOFO requirements.
-2. Assess each requirement individually in requirement_assessments (use response_status: exceeds/fully_addressed/partially_addressed/not_addressed/unable_to_evaluate).
+1. If this criterion has subcriteria, group your requirement_assessments by subcriterion. Tag each assessment with the subcriterion name it belongs to in the explanation field (e.g., "[Overall methodology] The applicant...").
+2. Assess each NOFO requirement individually in requirement_assessments (use response_status: exceeds/fully_addressed/partially_addressed/not_addressed/unable_to_evaluate).
 3. Classify the overall criterion (strength/met/minor_weakness/moderate_weakness/major_weakness/not_addressed).
 4. Apply the corresponding multiplier (1.0/0.9/0.7/0.5/0.25/0.0).
+5. For strengths, use professional superlative language that signals the finding exceeds the requirement — e.g., "thoroughly documents," "comprehensively addresses," "clearly demonstrates exceptional," "provides well-integrated and robust," "establishes a notably strong framework." Do not use generic or flat language for strengths.
 5. Calculate: calculated_score = round_half_up(maximum_points × multiplier). Set formula_version to "equitable-v1.2".
 6. Find all evaluation questions/bullets listed under this criterion in the NOFO.
 7. For EACH question, provide the application's answer with page citations in question_responses.
