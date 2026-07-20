@@ -398,3 +398,38 @@ export const getNofoBriefDownload = async (briefId: string): Promise<string> => 
   if (error) throw new Error('Download URL failed');
   return urlData.signedUrl;
 };
+
+// ---------------------------------------------------------------------------
+// Delete applicant data — wipes application documents and scores, keeps NOFO
+// ---------------------------------------------------------------------------
+
+export const deleteApplicantData = async (reviewId: string, confirmation: string): Promise<any> => {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
+  const response = await fetch(API_BASE + '/reviews/' + reviewId + '/delete-applicant-data', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ review_id: reviewId, confirmation }),
+  });
+  const body = await response.json();
+  if (!response.ok) throw new Error(body.detail || 'Deletion failed');
+  return body;
+};
+
+// ---------------------------------------------------------------------------
+// Secure application viewer — signed URL via Supabase Storage directly
+// ---------------------------------------------------------------------------
+
+export const getApplicationViewUrl = async (
+  _reviewId: string,
+  applicationId: string,
+): Promise<{ url: string; filename: string; expires_in: number }> => {
+  const { data: app } = await supabase
+    .from('applications')
+    .select('storage_path, filename')
+    .eq('id', applicationId)
+    .single();
+  if (!app?.storage_path) throw new Error('Application not found');
+  const { data, error } = await supabase.storage.from('grant-applications').createSignedUrl(app.storage_path, 3600);
+  if (error) throw new Error('Failed to create view URL');
+  return { url: data.signedUrl, filename: app.filename, expires_in: 3600 };
+};

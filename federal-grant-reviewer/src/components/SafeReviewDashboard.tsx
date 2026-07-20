@@ -4,7 +4,8 @@ import {
   FileText, History, Loader2, LogOut, RefreshCw, Trash2, Upload, WifiOff, XCircle,
 } from 'lucide-react';
 import {
-  deleteReview, extractRubric, ExtractedRubric, generateNofoBrief, getNofoBrief,
+  deleteApplicantData, deleteReview, extractRubric, ExtractedRubric, generateNofoBrief,
+  getApplicationViewUrl, getNofoBrief,
   getNofoBriefDownload, getReviewResults,
   getWorksheetUrl, JobStatus, NofoBrief, pollJobStatus, ReviewPackage,
   runSafeReviews, SafeReview,
@@ -1514,6 +1515,53 @@ const SafeReviewDashboard: React.FC = () => {
                       </button>
                     </div>
                   )}
+
+                  {/* Application access buttons — show for completed jobs that map to a review result */}
+                  {p.status === 'completed' && (() => {
+                    const matchedReview = reviews.find(
+                      r => r.applicant_name === p.applicationName || r.review_id === p.jobId
+                    );
+                    const appId = matchedReview?.review_id;
+                    if (!appId || !currentReviewId) return null;
+                    return (
+                      <div className="flex gap-2 mt-3">
+                        <button
+                          onClick={async () => {
+                            try {
+                              const { url } = await getApplicationViewUrl(currentReviewId!, appId);
+                              window.open(url, '_blank');
+                            } catch (e) { setError(e instanceof Error ? e.message : 'Failed to open application'); }
+                          }}
+                          className="flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+                        >
+                          <FileText size={14} /> View Application
+                        </button>
+                        <button
+                          onClick={async () => {
+                            try {
+                              const { url } = await getApplicationViewUrl(currentReviewId!, appId);
+                              await navigator.clipboard.writeText(url);
+                              alert('Secure link copied. Expires in 60 minutes.');
+                            } catch (e) { setError(e instanceof Error ? e.message : 'Failed to copy link'); }
+                          }}
+                          className="flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                        >
+                          Copy Secure Link
+                        </button>
+                        <button
+                          onClick={async () => {
+                            try {
+                              const { url, filename } = await getApplicationViewUrl(currentReviewId!, appId);
+                              const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
+                            } catch (e) { setError(e instanceof Error ? e.message : 'Failed to download'); }
+                          }}
+                          className="flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                        >
+                          <Download size={14} /> Download PDF
+                        </button>
+                      </div>
+                    );
+                  })()}
                 </div>
               ))}
             </div>
@@ -1645,6 +1693,19 @@ const SafeReviewDashboard: React.FC = () => {
                                       {qr.impact && <p className="text-xs text-amber-700 mt-1"><span className="font-bold">Impact:</span> {qr.impact}</p>}
                                     </div>
                                   )}
+                                  {(qr.application_pages || []).length > 0 && currentReviewId && current && (
+                                    <button
+                                      onClick={async () => {
+                                        try {
+                                          const { url } = await getApplicationViewUrl(currentReviewId!, current.review_id);
+                                          window.open(url + '#page=' + (qr.application_pages || [])[0], '_blank');
+                                        } catch (e) { setError(e instanceof Error ? e.message : 'Failed to open'); }
+                                      }}
+                                      className="text-xs font-bold text-blue-700 hover:underline cursor-pointer mt-1 block"
+                                    >
+                                      Application p. {(qr.application_pages || []).join(', ')}
+                                    </button>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -1669,9 +1730,26 @@ const SafeReviewDashboard: React.FC = () => {
                                           </div>
                                         )}
                                         <div className="mt-1">
-                                          <p className="text-xs font-bold text-blue-700">
-                                            Application p. {(finding.application_pages || finding.pages || []).join(', ')}
-                                          </p>
+                                          {(() => {
+                                            const pages = finding.application_pages || finding.pages || [];
+                                            return pages.length > 0 && currentReviewId && current ? (
+                                              <button
+                                                onClick={async () => {
+                                                  try {
+                                                    const { url } = await getApplicationViewUrl(currentReviewId!, current.review_id);
+                                                    window.open(url + '#page=' + pages[0], '_blank');
+                                                  } catch (e) { setError(e instanceof Error ? e.message : 'Failed to open'); }
+                                                }}
+                                                className="text-xs font-bold text-blue-700 hover:underline cursor-pointer"
+                                              >
+                                                Application p. {pages.join(', ')}
+                                              </button>
+                                            ) : (
+                                              <p className="text-xs font-bold text-blue-700">
+                                                Application p. {pages.join(', ')}
+                                              </p>
+                                            );
+                                          })()}
                                         </div>
                                         {finding.impact && (
                                           <div className="mt-2 text-sm text-slate-600 italic">
@@ -1680,9 +1758,26 @@ const SafeReviewDashboard: React.FC = () => {
                                         )}
                                       </>
                                     ) : (
-                                      <p className="mt-1 text-xs font-bold text-blue-700">
-                                        Application p. {(finding.application_pages || finding.pages || []).join(', ')}
-                                      </p>
+                                      (() => {
+                                        const pages = finding.application_pages || finding.pages || [];
+                                        return pages.length > 0 && currentReviewId && current ? (
+                                          <button
+                                            onClick={async () => {
+                                              try {
+                                                const { url } = await getApplicationViewUrl(currentReviewId!, current.review_id);
+                                                window.open(url + '#page=' + pages[0], '_blank');
+                                              } catch (e) { setError(e instanceof Error ? e.message : 'Failed to open'); }
+                                            }}
+                                            className="mt-1 text-xs font-bold text-blue-700 hover:underline cursor-pointer"
+                                          >
+                                            Application p. {pages.join(', ')}
+                                          </button>
+                                        ) : (
+                                          <p className="mt-1 text-xs font-bold text-blue-700">
+                                            Application p. {pages.join(', ')}
+                                          </p>
+                                        );
+                                      })()
                                     )}
                                   </div>
                                 ))
@@ -1723,6 +1818,39 @@ const SafeReviewDashboard: React.FC = () => {
                     </button>
                   </aside>
                 </div>
+
+                {/* Delete Applicant Data — bottom of completed review */}
+                {reviews.length > 0 && !polling && (
+                  <div className="mt-8 rounded-xl border-2 border-red-200 bg-red-50 p-6">
+                    <h3 className="font-bold text-red-800">Delete Applicant Data</h3>
+                    <p className="mt-2 text-sm text-red-700">
+                      Permanently deletes application documents, applicant identities, scores, findings, and completed worksheets.
+                      The NOFO, approved rubric, and Reviewer NOFO Brief will be preserved.
+                    </p>
+                    <input
+                      type="text"
+                      placeholder="Type DELETE APPLICANT DATA to confirm"
+                      className="mt-3 w-full rounded-lg border border-red-300 px-3 py-2 text-sm"
+                      id="delete-confirm"
+                    />
+                    <button
+                      onClick={async () => {
+                        const input = (document.getElementById('delete-confirm') as HTMLInputElement)?.value;
+                        if (input !== 'DELETE APPLICANT DATA') { setError('Type the exact confirmation phrase.'); return; }
+                        try {
+                          await deleteApplicantData(currentReviewId!, input);
+                          setReviews([]);
+                          setAppProgress([]);
+                          setError('');
+                          alert('Applicant data deleted. NOFO materials preserved.');
+                        } catch (e) { setError(e instanceof Error ? e.message : 'Deletion failed'); }
+                      }}
+                      className="mt-3 rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700"
+                    >
+                      Permanently Delete Applicant Data
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 

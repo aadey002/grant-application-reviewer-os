@@ -33,6 +33,7 @@ sys.path.insert(0, str(Path(__file__).parent / "scoring"))
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 # ---------------------------------------------------------------------------
 # Lazy imports for heavy dependencies (PyMuPDF, anthropic, python-docx)
@@ -1348,6 +1349,114 @@ def delete_review(review_id: str):
 # ---------------------------------------------------------------------------
 # GET /reviews/{review_id}/worksheet/{application_id}
 # ---------------------------------------------------------------------------
+
+class DeleteApplicantDataRequest(BaseModel):
+    review_id: str = ""
+    confirmation: str = ""
+
+
+@app.post("/reviews/{review_id}/delete-applicant-data")
+def delete_applicant_data(review_id: str, body: DeleteApplicantDataRequest):
+    """
+    Permanently delete all applicant data for a review:
+    - Storage: grant-applications bucket, completed-worksheets bucket
+    - DB: generated_documents, review_findings, criterion_scores, processing_jobs, applications
+    Preserves: grant_reviews row, nofo-files bucket, nofo_briefs, worksheet-templates.
+    Requires confirmation == 'DELETE APPLICANT DATA'.
+    """
+    if body.confirmation != "DELETE APPLICANT DATA":
+        raise HTTPException(
+            status_code=400,
+            detail="Confirmation phrase must be exactly 'DELETE APPLICANT DATA'",
+        )
+
+    sb = get_supabase()
+
+    # Gather all applications for this review
+    applications = _select(sb, "applications", {"review_id": review_id})
+    app_ids = [a["id"] for a in applications]
+    storage_objects_deleted = 0
+
+    for app in applications:
+        app_id = app["id"]
+
+        # Delete from grant-applications bucket by storage_path
+        if app.get("storage_path"):
+            try:
+                sb.storage.from_(BUCKET_APPS).remove([app["storage_path"]])
+                storage_objects_deleted += 1
+            except Exception as exc:
+                logger.warning("Could not delete app storage %s: %s", app["storage_path"], exc)
+
+        # Delete completed-worksheets bucket objects via generated_documents
+        docs = _select(sb, "generated_documents", {"application_id": app_id})
+        for doc in docs:
+            bucket = doc.get("storage_bucket") or BUCKET_COMPLETED
+            if doc.get("storage_path"):
+                try:
+                    sb.storage.from_(bucket).remove([doc["storage_path"]])
+                    storage_objects_deleted += 1
+                except Exception as exc:
+                    logger.warning("Could not delete doc storage %s: %s", doc["storage_path"], exc)
+
+        # Delete DB child records
+        sb.table("generated_documents").delete().eq("application_id", app_id).execute()
+        sb.table("review_findings").delete().eq("application_id", app_id).execute()
+        sb.table("criterion_scores").delete().eq("application_id", app_id).execute()
+
+    # Delete processing_jobs at review level
+    sb.table("processing_jobs").delete().eq("review_id", review_id).execute()
+
+    # Delete applications rows
+    sb.table("applications").delete().eq("review_id", review_id).execute()
+
+    # Update grant_reviews status
+    _update(sb, "grant_reviews", {"id": review_id}, {
+        "status": "applicant_data_deleted",
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    })
+
+    logger.info(
+        "Applicant data deleted for review %s: %d applications, %d storage objects",
+        review_id, len(app_ids), storage_objects_deleted,
+    )
+
+    return {
+        "review_id": review_id,
+        "applications_deleted": len(app_ids),
+        "storage_objects_deleted": storage_objects_deleted,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@app.get("/reviews/{review_id}/application/{application_id}/view-url")
+def get_application_view_url(review_id: str, application_id: str):
+    """Generate a 60-minute signed URL for viewing an application PDF."""
+    sb = get_supabase()
+    app_rows = (
+        sb.table("applications")
+        .select("storage_path, filename")
+        .eq("id", application_id)
+        .eq("review_id", review_id)
+        .execute()
+        .data
+    )
+    if not app_rows:
+        raise HTTPException(status_code=404, detail="Application not found")
+    app_row = app_rows[0]
+    storage_path = app_row.get("storage_path")
+    if not storage_path:
+        raise HTTPException(status_code=404, detail="Application has no storage path")
+    try:
+        signed = _signed_url(sb, BUCKET_APPS, storage_path, expires_in=3600)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Could not generate view URL: {exc}")
+    return {
+        "url": signed,
+        "expires_in": 3600,
+        "filename": app_row.get("filename", "application.pdf"),
+    }
+
 
 @app.get("/reviews/{review_id}/worksheet/{application_id}")
 def get_worksheet_download_url(review_id: str, application_id: str):
