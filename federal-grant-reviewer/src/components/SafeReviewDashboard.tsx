@@ -1570,6 +1570,35 @@ const SafeReviewDashboard: React.FC = () => {
                         {c.score !== undefined && c.score !== null ? c.score : '—'} / {c.maximum_points}
                       </div>
                     </div>
+                    {/* NOFO Question Responses */}
+                    {(c as any).question_responses?.length > 0 && (
+                      <div className="mt-5">
+                        <p className="text-xs font-bold uppercase tracking-wide text-slate-500 mb-3">NOFO Evaluation Questions</p>
+                        <div className="space-y-3">
+                          {(c as any).question_responses.map((qr: any, qi: number) => (
+                            <div key={qi} className="rounded-lg border p-4">
+                              <p className="text-sm font-semibold text-slate-700">Q: {qr.nofo_question}</p>
+                              <p className="mt-2 text-sm leading-6">{qr.answer}</p>
+                              <div className="mt-2 flex items-center gap-3">
+                                <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                                  qr.assessment === 'strength' ? 'bg-emerald-100 text-emerald-800' :
+                                  qr.assessment === 'weakness' ? 'bg-red-100 text-red-800' :
+                                  'bg-blue-100 text-blue-800'
+                                }`}>{qr.assessment}</span>
+                                <span className="text-xs font-bold text-blue-700">Application p. {(qr.application_pages || []).join(', ')}</span>
+                              </div>
+                              {qr.assessment === 'weakness' && qr.nofo_requirement && (
+                                <div className="mt-2 rounded border-l-4 border-amber-400 bg-amber-50 p-2">
+                                  <p className="text-xs text-amber-800"><span className="font-bold">NOFO:</span> {qr.nofo_requirement} (p. {(qr.nofo_pages || []).join(', ')})</p>
+                                  {qr.impact && <p className="text-xs text-amber-700 mt-1"><span className="font-bold">Impact:</span> {qr.impact}</p>}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {(['strengths', 'mets', 'weaknesses'] as const).map(group => (
                       <div key={group} className="mt-5">
                         <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{group}</p>
