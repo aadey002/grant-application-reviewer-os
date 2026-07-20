@@ -181,11 +181,26 @@ def _score_single_criterion(client, model: str, application_text: str, criterion
             "strengths": {"type": "array", "items": strength_met}, "mets": {"type": "array", "items": strength_met},
             "weaknesses": {"type": "array", "items": weakness}, "subcriteria": {"type": "array", "items": sub}}}}
 
+    # Build subcriteria prompt if defined
+    subcriteria_defs = criterion.get("subcriteria", [])
+    if subcriteria_defs:
+        sub_text = "\n".join(f"  {s['name']}: {s['points']} points" for s in subcriteria_defs)
+        sub_instruction = f"\n\nSUBCRITERIA (score each individually — scores must sum to the parent criterion total):\n{sub_text}\n\nYou MUST return a subcriteria array with exact names and point allocations matching the list above. Each subcriterion score must be between 0 and its maximum. The sum of subcriterion scores must equal the parent criterion score."
+        # Update tool schema to enforce subcriteria names
+        sub_enum = {"type": "object", "additionalProperties": False, "required": ["name", "score", "maximum_points"], "properties": {
+            "name": {"type": "string", "enum": [s["name"] for s in subcriteria_defs]},
+            "score": {"type": "integer", "minimum": 0},
+            "maximum_points": {"type": "integer", "enum": [int(s["points"]) for s in subcriteria_defs]}
+        }}
+        tool["input_schema"]["properties"]["subcriteria"] = {"type": "array", "minItems": len(subcriteria_defs), "maxItems": len(subcriteria_defs), "items": sub_enum}
+    else:
+        sub_instruction = ""
+
     prompt = f"""Score this single criterion by answering each NOFO evaluation question individually.
 
 CRITERION: {name}
 MAXIMUM POINTS: {points}
-AGENCY: {agency}
+AGENCY: {agency}{sub_instruction}
 
 NOFO TEXT (find the evaluation questions/bullets for this criterion):
 {nofo_text[:25000]}

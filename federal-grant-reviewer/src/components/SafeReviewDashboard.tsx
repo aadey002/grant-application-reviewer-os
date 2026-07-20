@@ -1033,22 +1033,66 @@ const SafeReviewDashboard: React.FC = () => {
 
             <div className="mt-6 divide-y">
               {rubric.criteria.map((c, i) => (
-                <div key={i} className="grid gap-3 py-4 md:grid-cols-[80px_1fr_130px]">
-                  <span className="font-bold text-slate-500">#{c.number}</span>
-                  <div>
-                    <p className="font-bold">{c.name}</p>
-                    <p className="text-sm text-slate-500">NOFO page {c.source_page}</p>
+                <div key={i} className="py-4">
+                  <div className="grid gap-3 md:grid-cols-[80px_1fr_130px]">
+                    <span className="font-bold text-slate-500">#{c.number}</span>
+                    <div>
+                      <p className="font-bold">{c.name}</p>
+                      <p className="text-sm text-slate-500">NOFO page {c.source_page}</p>
+                    </div>
+                    <label className="text-sm font-semibold">
+                      Points{' '}
+                      <input
+                        className="ml-2 w-16 rounded border px-2 py-1"
+                        type="number"
+                        value={c.points}
+                        min="0"
+                        onChange={e => updatePoints(i, Number(e.target.value))}
+                      />
+                    </label>
                   </div>
-                  <label className="text-sm font-semibold">
-                    Points{' '}
-                    <input
-                      className="ml-2 w-16 rounded border px-2 py-1"
-                      type="number"
-                      value={c.points}
-                      min="0"
-                      onChange={e => updatePoints(i, Number(e.target.value))}
-                    />
-                  </label>
+                  {/* Subcriteria */}
+                  {c.subcriteria && c.subcriteria.length > 0 && (
+                    <div className="ml-20 mt-2 space-y-1">
+                      {c.subcriteria.map((sub, si) => (
+                        <div key={si} className="grid gap-3 md:grid-cols-[1fr_130px] text-sm">
+                          <span className="text-slate-600">↳ {sub.name}</span>
+                          <label className="font-semibold text-slate-500">
+                            <input className="ml-2 w-14 rounded border px-2 py-0.5 text-sm" type="number" value={sub.points} min="0"
+                              onChange={e => {
+                                const next = { ...rubric };
+                                const criteria = [...next.criteria];
+                                const subs = [...(criteria[i].subcriteria || [])];
+                                subs[si] = { ...subs[si], points: Number(e.target.value) };
+                                criteria[i] = { ...criteria[i], subcriteria: subs };
+                                next.criteria = criteria;
+                                setRubric(next);
+                              }}
+                            /> pts
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* Add subcriteria button */}
+                  <button
+                    onClick={() => {
+                      const name = prompt('Subcriterion name (e.g., "Overall methodology"):');
+                      if (!name) return;
+                      const pts = prompt('Points:');
+                      if (!pts) return;
+                      const next = { ...rubric };
+                      const criteria = [...next.criteria];
+                      const subs = [...(criteria[i].subcriteria || [])];
+                      subs.push({ name, points: Number(pts) });
+                      criteria[i] = { ...criteria[i], subcriteria: subs };
+                      next.criteria = criteria;
+                      setRubric(next);
+                    }}
+                    className="ml-20 mt-1 text-xs text-blue-600 hover:underline"
+                  >
+                    + Add subcriterion
+                  </button>
                 </div>
               ))}
             </div>

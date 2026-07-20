@@ -28,7 +28,8 @@ export interface SafeReview {
 }
 
 export interface ReviewPackage { applications: File[]; nofo: File; rubric: File | null; worksheet: File | null; agency: string }
-export interface ExtractedCriterion { number: number; name: string; points: number; keywords: string[]; source_page: number; source_heading: string }
+export interface SubCriterion { name: string; points: number }
+export interface ExtractedCriterion { number: number; name: string; points: number; keywords: string[]; source_page: number; source_heading: string; subcriteria?: SubCriterion[] }
 export interface ExtractedRubric { agency: string; criteria: ExtractedCriterion[]; total_points: number; status: string; warnings: string[]; approved?: boolean }
 
 export interface JobStatus {
