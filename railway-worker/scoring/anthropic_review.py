@@ -375,7 +375,7 @@ Each overview field should be 2-3 concise sentences. Never use unexpanded acrony
             result = json.loads(result)
         return result
 
-    with ThreadPoolExecutor(max_workers=7) as pool:
+    with ThreadPoolExecutor(max_workers=3) as pool:
         # Submit all 6 criteria + 1 overview
         criterion_futures = {
             pool.submit(_score_single_criterion, client, model, application_text, crit, agency, nofo_text, len(pages)): i
