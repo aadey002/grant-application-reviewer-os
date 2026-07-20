@@ -84,8 +84,12 @@ type Step = 'upload' | 'rubric' | 'brief' | 'processing' | 'results' | 'history'
 // ---------------------------------------------------------------------------
 const statusLabel: Record<AppProgress['status'], string> = {
   uploaded: 'Uploaded',
+  uploading: 'Uploading',
   queued: 'Queued',
+  extracting: 'Extracting',
   processing: 'Processing',
+  scoring: 'Scoring',
+  generating_worksheet: 'Generating Worksheet',
   completed: 'Completed',
   failed: 'Failed',
 };
