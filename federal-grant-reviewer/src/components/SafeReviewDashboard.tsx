@@ -993,8 +993,24 @@ const SafeReviewDashboard: React.FC = () => {
 
             {error && <div className="mt-5 rounded-lg bg-red-50 p-4 text-red-800">{error}</div>}
 
+            {/* Inline submission status */}
+            {busy && (
+              <div className="mt-5 rounded-xl bg-blue-50 border border-blue-200 p-4">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="animate-spin text-blue-600 shrink-0" size={24} />
+                  <div>
+                    <p className="font-bold text-blue-900">Submitting review...</p>
+                    <p className="text-sm text-blue-700 mt-1">Uploading documents to secure storage and creating review jobs. This takes 15-30 seconds.</p>
+                  </div>
+                </div>
+                <div className="mt-3 h-2 rounded-full bg-blue-100">
+                  <div className="h-2 rounded-full bg-blue-500 animate-pulse" style={{width: '60%'}} />
+                </div>
+              </div>
+            )}
+
             <div className="mt-6 flex justify-between">
-              <button onClick={() => setStep('upload')} className="rounded-lg border px-5 py-3 font-semibold">
+              <button onClick={() => setStep('upload')} disabled={busy} className="rounded-lg border px-5 py-3 font-semibold disabled:opacity-40">
                 Back
               </button>
               <button
@@ -1003,7 +1019,7 @@ const SafeReviewDashboard: React.FC = () => {
                 className="flex items-center gap-2 rounded-xl bg-blue-700 px-7 py-3 font-bold text-white disabled:opacity-40"
               >
                 {busy ? <Loader2 className="animate-spin" /> : <FileSearch />}
-                {busy ? 'Submitting review...' : 'Run Application Review'}
+                {busy ? 'Submitting...' : 'Run Application Review'}
               </button>
             </div>
           </section>
