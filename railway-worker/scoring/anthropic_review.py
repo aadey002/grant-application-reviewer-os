@@ -283,8 +283,15 @@ INSTRUCTIONS:
 
     # Larger criteria (35 pts with subcriteria) need more output tokens
     needed_tokens = 8000 if points >= 25 or subcriteria_defs else 5000
-    response = client.messages.create(model=model, max_tokens=needed_tokens, temperature=0, system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": prompt}], tools=[tool], tool_choice={"type": "tool", "name": "score_criterion"})
+    # Split prompt: cacheable blocks (app text, NOFO) + criterion-specific instruction
+    criterion_instruction = prompt.split("APPLICATION:")[0] + prompt.split(application_text)[-1] if application_text in prompt else prompt
+    response = client.messages.create(model=model, max_tokens=needed_tokens, temperature=0,
+        system=[{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
+        messages=[{"role": "user", "content": [
+            {"type": "text", "text": f"NOFO TEXT:\n{nofo_text[:15000]}\n\nAPPLICATION:\n{application_text}", "cache_control": {"type": "ephemeral"}},
+            {"type": "text", "text": criterion_instruction},
+        ]}],
+        tools=[tool], tool_choice={"type": "tool", "name": "score_criterion"})
 
     tool_use = next((b for b in response.content if b.type == "tool_use"), None)
     if not tool_use:
