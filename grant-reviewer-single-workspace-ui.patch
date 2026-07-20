@@ -1,0 +1,448 @@
+From e55c1082aacd79cfc64685fd2c74eff24db9d0a3 Mon Sep 17 00:00:00 2001
+From: Codex <codex@openai.com>
+Date: Sat, 18 Jul 2026 20:19:59 -0600
+Subject: [PATCH] Simplify UI to one NOFO with multiple applications
+
+---
+ federal-grant-reviewer/backend/main.py        | 161 ++++++++----------
+ .../src/components/SafeReviewDashboard.tsx    | 149 ++++++----------
+ federal-grant-reviewer/src/services/api.ts    |  30 ++--
+ .../src/grant_reviewer/safe_review.py         |   4 +-
+ grant-reviewer-mcp/tests/test_safe_review.py  |   4 +-
+ 5 files changed, 134 insertions(+), 214 deletions(-)
+
+diff --git a/federal-grant-reviewer/backend/main.py b/federal-grant-reviewer/backend/main.py
+index 32d8f15..1d1faa0 100644
+--- a/federal-grant-reviewer/backend/main.py
++++ b/federal-grant-reviewer/backend/main.py
+@@ -80,109 +80,86 @@ except Exception as e:
+ # Serve uploaded files
+ app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
+ 
+-@app.post("/safe-reviews/extract-rubrics")
+-async def extract_safe_rubrics(nofos: list[UploadFile] = File(...)):
+-    if not 1 <= len(nofos) <= 3:
+-        raise HTTPException(status_code=400, detail="Upload between one and three NOFO files")
+-    rubrics = []
+-    for index, upload in enumerate(nofos, start=1):
+-        extension = Path(upload.filename or "").suffix.lower()
+-        if extension not in {".pdf", ".docx"}:
+-            raise HTTPException(status_code=400, detail=f"{upload.filename}: NOFO must be PDF or DOCX")
+-        directory = UPLOADS_DIR / f"grant-{index}"
+-        directory.mkdir(exist_ok=True)
+-        path = directory / f"nofo{extension}"
+-        with open(path, "wb") as handle:
+-            handle.write(await upload.read())
+-        rubric = extract_nofo_criteria(path)
+-        rubric["grant_index"] = index
+-        rubrics.append(rubric)
+-    return {"success": True, "rubrics": rubrics}
++@app.post("/safe-reviews/extract-rubric")
++async def extract_safe_rubric(nofo: UploadFile = File(...), agency: str = Form("HRSA")):
++    extension = Path(nofo.filename or "").suffix.lower()
++    if extension not in {".pdf", ".docx"}:
++        raise HTTPException(status_code=400, detail=f"{nofo.filename}: NOFO must be PDF or DOCX")
++    directory = UPLOADS_DIR / "current-grant"
++    directory.mkdir(exist_ok=True)
++    path = directory / f"nofo{extension}"
++    with open(path, "wb") as handle:
++        handle.write(await nofo.read())
++    rubric = extract_nofo_criteria(path)
++    rubric["agency"] = agency
++    return {"success": True, "rubric": rubric}
+ 
+ @app.post("/safe-reviews/run")
+ async def run_safe_reviews(
+     applications: list[UploadFile] = File(...),
+-    nofos: list[UploadFile] = File(...),
+-    rubrics: list[UploadFile] | None = File(None),
+-    worksheets: list[UploadFile] | None = File(None),
+-    application_counts: str = Form(...),
++    nofo: UploadFile = File(...),
++    rubric: UploadFile | None = File(None),
++    worksheet: UploadFile | None = File(None),
+     approved_criteria: str = Form(...),
++    agency: str = Form("HRSA"),
+ ):
+-    """Run multiple applications within each of exactly three grant competitions."""
++    """Review multiple applications against one approved grant NOFO rubric."""
+     import json
+     try:
+-        counts = json.loads(application_counts)
+-    except json.JSONDecodeError:
+-        raise HTTPException(status_code=400, detail="Invalid application counts")
+-    grant_count = len(counts)
+-    if not 1 <= grant_count <= 3 or any(not isinstance(count, int) or count < 1 for count in counts):
+-        raise HTTPException(status_code=400, detail="Provide one to three grants, each with at least one application")
+-    rubrics = rubrics or []
+-    worksheets = worksheets or []
+-    if len(applications) != sum(counts) or len(nofos) != grant_count or len(rubrics) not in {0, grant_count} or len(worksheets) not in {0, grant_count}:
+-        raise HTTPException(status_code=400, detail="The uploaded files do not match the active grant packages")
+-    try:
+-        criteria_sets = json.loads(approved_criteria)
++        criteria_set = json.loads(approved_criteria)
+     except json.JSONDecodeError:
+         raise HTTPException(status_code=400, detail="Invalid approved criteria")
+-    if len(criteria_sets) != grant_count or any(not item.get("approved") or not item.get("criteria") for item in criteria_sets):
+-        raise HTTPException(status_code=400, detail="Every active grant rubric must be approved before review")
+-    results = []
++    if not criteria_set.get("approved") or not criteria_set.get("criteria"):
++        raise HTTPException(status_code=400, detail="The extracted NOFO rubric must be approved before review")
++    if not applications:
++        raise HTTPException(status_code=400, detail="At least one application PDF or ZIP is required")
+     allowed = {".pdf", ".doc", ".docx", ".txt"}
+-    application_offset = 0
+-    for grant_index, application_count in enumerate(counts, start=1):
+-        grant_dir = UPLOADS_DIR / f"grant-{grant_index}"
+-        grant_dir.mkdir(exist_ok=True)
+-        package_files = {}
+-        optional_groups = {"rubrics": rubrics, "worksheets": worksheets}
+-        for kind, items in {"nofos": nofos, **{k:v for k,v in optional_groups.items() if v}}.items():
+-            document = items[grant_index - 1]
+-            extension = Path(document.filename or "").suffix.lower()
+-            if extension not in allowed:
+-                raise HTTPException(status_code=400, detail=f"{document.filename}: unsupported file type")
+-            content = await document.read()
+-            if not content or len(content) > 75 * 1024 * 1024:
+-                raise HTTPException(status_code=400, detail=f"{document.filename}: invalid file size")
+-            path = grant_dir / f"{kind[:-1]}{extension}"
+-            with open(path, "wb") as handle:
+-                handle.write(content)
+-            package_files[kind[:-1]] = {"filename": document.filename, "path": str(path)}
+-        grant_application_paths = []
+-        for upload_index in range(1, application_count + 1):
+-            upload = applications[application_offset]
+-            application_offset += 1
+-            extension = Path(upload.filename or "").suffix.lower()
+-            if extension not in {".pdf", ".zip"}:
+-                raise HTTPException(status_code=400, detail=f"{upload.filename}: application must be PDF or ZIP")
+-            content = await upload.read()
+-            if not content or len(content) > 250 * 1024 * 1024:
+-                raise HTTPException(status_code=400, detail=f"{upload.filename}: invalid file size")
+-            incoming = grant_dir / f"incoming-{upload_index}{extension}"
+-            with open(incoming, "wb") as handle:
+-                handle.write(content)
+-            if extension == ".zip":
+-                try:
+-                    grant_application_paths.extend(safe_extract_application_zip(incoming, grant_dir / f"zip-{upload_index}"))
+-                except (ValueError, OSError) as exc:
+-                    raise HTTPException(status_code=400, detail=f"{upload.filename}: {exc}")
+-            else:
+-                grant_application_paths.append(incoming)
+-        for application_index, source_path in enumerate(grant_application_paths, start=1):
+-            application_dir = grant_dir / f"application-{application_index}"
+-            application_dir.mkdir(exist_ok=True)
+-            path = application_dir / "application.pdf"
+-            with open(source_path, "rb") as source, open(path, "wb") as handle:
+-                while chunk := source.read(1024 * 1024):
+-                    handle.write(chunk)
+-            criteria = [{"name": item["name"], "points": item["points"], "keywords": item.get("keywords", [])}
+-                        for item in criteria_sets[grant_index - 1]["criteria"]]
+-            result = review_application(f"grant-{grant_index}-application-{application_index}", path, criteria)
+-            result["application_file"] = source_path.name
+-            result["grant_id"] = f"grant-{grant_index}"
+-            result["grant_index"] = grant_index
+-            result["application_index"] = application_index
+-            result["package_files"] = package_files
+-            results.append(result)
++    grant_dir = UPLOADS_DIR / "current-grant"
++    grant_dir.mkdir(exist_ok=True)
++    package_files = {}
++    for kind, document in {"nofo": nofo, "rubric": rubric, "worksheet": worksheet}.items():
++        if not document:
++            continue
++        extension = Path(document.filename or "").suffix.lower()
++        if extension not in allowed:
++            raise HTTPException(status_code=400, detail=f"{document.filename}: unsupported file type")
++        content = await document.read()
++        path = grant_dir / f"{kind}{extension}"
++        with open(path, "wb") as handle:
++            handle.write(content)
++        package_files[kind] = {"filename": document.filename, "path": str(path)}
++    application_paths = []
++    for upload_index, upload in enumerate(applications, start=1):
++        extension = Path(upload.filename or "").suffix.lower()
++        if extension not in {".pdf", ".zip"}:
++            raise HTTPException(status_code=400, detail=f"{upload.filename}: application must be PDF or ZIP")
++        content = await upload.read()
++        if not content or len(content) > 250 * 1024 * 1024:
++            raise HTTPException(status_code=400, detail=f"{upload.filename}: invalid file size")
++        incoming = grant_dir / f"incoming-{upload_index}{extension}"
++        with open(incoming, "wb") as handle:
++            handle.write(content)
++        if extension == ".zip":
++            try:
++                application_paths.extend(safe_extract_application_zip(incoming, grant_dir / f"zip-{upload_index}"))
++            except (ValueError, OSError) as exc:
++                raise HTTPException(status_code=400, detail=f"{upload.filename}: {exc}")
++        else:
++            application_paths.append(incoming)
++    criteria = [{"name": item["name"], "points": item["points"], "keywords": item.get("keywords", [])}
++                for item in criteria_set["criteria"]]
++    results = []
++    for application_index, source_path in enumerate(application_paths, start=1):
++        application_dir = grant_dir / f"application-{application_index}"
++        application_dir.mkdir(exist_ok=True)
++        path = application_dir / "application.pdf"
++        with open(source_path, "rb") as source, open(path, "wb") as handle:
++            while chunk := source.read(1024 * 1024):
++                handle.write(chunk)
++        result = review_application(f"{agency.lower()}-application-{application_index}", path, criteria)
++        result.update({"application_file": source_path.name, "agency": agency,
++                       "application_index": application_index, "package_files": package_files})
++        results.append(result)
+     return {"success": True, "reviews": results}
+ 
+ async def perform_full_analysis(file_path: str, agency: str, document_id: int) -> Dict[str, Any]:
+diff --git a/federal-grant-reviewer/src/components/SafeReviewDashboard.tsx b/federal-grant-reviewer/src/components/SafeReviewDashboard.tsx
+index 64a503d..222c924 100644
+--- a/federal-grant-reviewer/src/components/SafeReviewDashboard.tsx
++++ b/federal-grant-reviewer/src/components/SafeReviewDashboard.tsx
+@@ -1,109 +1,56 @@
+-import React, { useMemo, useState } from 'react';
+-import { AlertTriangle, CheckCircle2, Download, FileSearch, Loader2, LockKeyhole, Upload } from 'lucide-react';
+-import { extractRubrics, runSafeReviews, SafeReview, ReviewPackage, ExtractedRubric } from '../services/api';
++import React, {useMemo, useState} from 'react';
++import {AlertTriangle, BarChart3, Brain, CheckCircle2, Download, FileSearch, FileText, Loader2, Upload} from 'lucide-react';
++import {extractRubric, ExtractedRubric, ReviewPackage, runSafeReviews, SafeReview} from '../services/api';
+ 
+-type PackageDraft = { applications: File[]; nofo: File | null; rubric: File | null; worksheet: File | null };
+-const emptyPackage = (): PackageDraft => ({applications:[], nofo:null, rubric:null, worksheet:null});
++const agencies = ['HRSA','SAMHSA','NIH','CDC'];
++const agencyText:Record<string,string> = {
++  HRSA:'The scoring criteria will be extracted from the uploaded HRSA NOFO.',
++  SAMHSA:'The scoring criteria will be extracted from the uploaded SAMHSA NOFO.',
++  NIH:'The review criteria will be extracted from the uploaded NIH funding announcement.',
++  CDC:'The scoring criteria will be extracted from the uploaded CDC NOFO.'
++};
+ 
+-const SafeReviewDashboard: React.FC = () => {
+-  const [packages, setPackages] = useState<PackageDraft[]>([emptyPackage(), emptyPackage(), emptyPackage()]);
+-  const [reviews, setReviews] = useState<SafeReview[]>([]);
+-  const [rubrics, setRubrics] = useState<ExtractedRubric[]>([]);
+-  const [selected, setSelected] = useState(0);
+-  const [scores, setScores] = useState<Record<string, string>>({});
+-  const [busy, setBusy] = useState(false);
+-  const [error, setError] = useState('');
+-  const started = (item: PackageDraft) => item.applications.length > 0 || !!item.nofo || !!item.rubric || !!item.worksheet;
+-  const complete = (item: PackageDraft) => item.applications.length > 0 && !!item.nofo;
+-  const activePackages = packages.filter(complete);
+-  const ready = activePackages.length > 0 && packages.every(item => !started(item) || complete(item));
+-  const current = reviews[selected];
+-  const scoreTotal = useMemo(() => current?.criteria.reduce((sum, c) => sum + Number(scores[`${current.review_id}:${c.name}`] || 0), 0) || 0, [current, scores]);
++const SafeReviewDashboard:React.FC = () => {
++  const [agency,setAgency]=useState('HRSA');
++  const [applications,setApplications]=useState<File[]>([]);
++  const [nofo,setNofo]=useState<File|null>(null);
++  const [supportRubric,setSupportRubric]=useState<File|null>(null);
++  const [worksheet,setWorksheet]=useState<File|null>(null);
++  const [rubric,setRubric]=useState<ExtractedRubric|null>(null);
++  const [reviews,setReviews]=useState<SafeReview[]>([]);
++  const [selected,setSelected]=useState(0);
++  const [scores,setScores]=useState<Record<string,string>>({});
++  const [busy,setBusy]=useState(false);
++  const [error,setError]=useState('');
++  const current=reviews[selected];
++  const scoreTotal=useMemo(()=>current?.criteria.reduce((sum,c)=>sum+Number(scores[`${current.review_id}:${c.name}`]||0),0)||0,[current,scores]);
+ 
+-  const choose = (index: number, kind: Exclude<keyof PackageDraft, 'applications'>, file?: File) => {
+-    const next = [...packages]; next[index] = {...next[index], [kind]: file || null}; setPackages(next);
+-  };
+-  const chooseApplications = (index: number, selected?: FileList | null) => {
+-    const next = [...packages]; next[index] = {...next[index], applications: selected ? Array.from(selected) : []}; setPackages(next);
+-  };
+-  const run = async () => {
+-    setBusy(true); setError('');
+-    try { setReviews(await runSafeReviews(activePackages as ReviewPackage[], rubrics)); setSelected(0); }
+-    catch (e) { setError(e instanceof Error ? e.message : 'Review failed'); }
+-    finally { setBusy(false); }
+-  };
+-  const extract = async () => {
+-    setBusy(true); setError('');
+-    try { setRubrics(await extractRubrics(activePackages.map(item => item.nofo as File))); }
+-    catch (e) { setError(e instanceof Error ? e.message : 'Rubric extraction failed'); }
+-    finally { setBusy(false); }
+-  };
+-  const setRubricApproval = (index:number, approved:boolean) => {
+-    const next=[...rubrics]; next[index]={...next[index],approved}; setRubrics(next);
+-  };
+-  const setCriterionPoints = (rubricIndex:number, criterionIndex:number, points:number) => {
+-    const next=[...rubrics]; const criteria=[...next[rubricIndex].criteria];
+-    criteria[criterionIndex]={...criteria[criterionIndex],points};
+-    next[rubricIndex]={...next[rubricIndex],criteria,total_points:criteria.reduce((sum,item)=>sum+item.points,0)};
+-    setRubrics(next);
+-  };
+-  const exportReview = () => {
+-    const completed = {...current, reviewer_scores: current.criteria.map(c => ({criterion:c.name, points:scores[`${current.review_id}:${c.name}`] || null})), reviewer_total:scoreTotal};
+-    const url = URL.createObjectURL(new Blob([JSON.stringify(completed, null, 2)], {type:'application/json'}));
+-    const link = document.createElement('a'); link.href=url; link.download=`${current.review_id}-review.json`; link.click(); URL.revokeObjectURL(url);
+-  };
++  const process=async()=>{if(!nofo||!applications.length)return;setBusy(true);setError('');try{setRubric(await extractRubric(nofo,agency));}catch(e){setError(e instanceof Error?e.message:'Processing failed');}finally{setBusy(false)}};
++  const run=async()=>{if(!nofo||!rubric)return;setBusy(true);setError('');try{const item:ReviewPackage={agency,nofo,applications,rubric:supportRubric,worksheet};setReviews(await runSafeReviews(item,rubric));setSelected(0);}catch(e){setError(e instanceof Error?e.message:'Review failed');}finally{setBusy(false)}};
++  const updatePoints=(index:number,points:number)=>{if(!rubric)return;const criteria=[...rubric.criteria];criteria[index]={...criteria[index],points};setRubric({...rubric,criteria,total_points:criteria.reduce((s,c)=>s+c.points,0)})};
++  const reset=()=>{setApplications([]);setNofo(null);setSupportRubric(null);setWorksheet(null);setRubric(null);setReviews([]);setScores({});setError('')};
++  const exportReview=()=>{const output={...current,reviewer_scores:current.criteria.map(c=>({criterion:c.name,points:scores[`${current.review_id}:${c.name}`]||null})),reviewer_total:scoreTotal};const url=URL.createObjectURL(new Blob([JSON.stringify(output,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=`${current.review_id}-review.json`;a.click();URL.revokeObjectURL(url)};
++  const step=reviews.length?'results':rubric?'rubric':'upload';
+ 
+-  return <div className="min-h-screen bg-slate-50 text-slate-900">
+-    <header className="border-b bg-white">
+-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+-        <div><p className="text-xs font-bold uppercase tracking-[.24em] text-blue-700">ReviewerOS</p><h1 className="text-2xl font-bold">Federal Grant Review Workspace</h1></div>
+-        <div className="flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800"><LockKeyhole size={16}/> Evidence-first mode</div>
+-      </div>
+-    </header>
+-    <main className="mx-auto max-w-7xl px-6 py-8">
+-      {!reviews.length && <section>
+-        <div className="mb-7"><h2 className="text-3xl font-bold">Prepare three grant reviews</h2><p className="mt-2 text-slate-600">Each application remains isolated and produces a separate evidence map and reviewer scorecard.</p></div>
+-        <div className="space-y-5">{packages.map((item, i) => <div key={i} className="rounded-2xl border bg-white p-6">
+-          <div className="mb-4 flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-wider text-blue-700">Grant {i+1}</p><h3 className="text-xl font-bold">Grant competition package</h3></div><span className={`rounded-full px-3 py-1 text-xs font-bold ${item.applications.length&&item.nofo&&item.rubric&&item.worksheet?'bg-emerald-50 text-emerald-700':'bg-amber-50 text-amber-700'}`}>{item.applications.length} application{item.applications.length===1?'':'s'}</span></div>
+-          <div className="grid gap-3 md:grid-cols-4">
+-            <label className="cursor-pointer rounded-xl border-2 border-dashed border-slate-200 p-4 hover:border-blue-500">
+-              <input className="hidden" multiple type="file" accept=".pdf,.zip" onChange={e=>chooseApplications(i,e.target.files)}/>
+-              <Upload className="mb-3 text-blue-700" size={20}/><p className="text-sm font-bold">Applications</p><p className="mt-1 text-xs text-slate-500">{item.applications.length ? `${item.applications.length} file bundle(s) selected` : 'Choose PDFs or ZIP files'}</p>
+-            </label>
+-            {([
+-            ['nofo','NOFO','.pdf,.doc,.docx'], ['rubric','Scoring rubric','.pdf,.doc,.docx,.txt'], ['worksheet','Worksheet / instructions','.pdf,.doc,.docx,.txt']
+-          ] as [Exclude<keyof PackageDraft,'applications'>,string,string][]).map(([kind,label,accept])=><label key={kind} className="cursor-pointer rounded-xl border-2 border-dashed border-slate-200 p-4 hover:border-blue-500">
+-            <input className="hidden" type="file" accept={accept} onChange={e=>choose(i,kind,e.target.files?.[0])}/>
+-            <Upload className="mb-3 text-blue-700" size={20}/><p className="text-sm font-bold">{label}</p><p className="mt-1 truncate text-xs text-slate-500">{item[kind]?.name || 'Choose file'}</p>
+-          </label>)}</div>
+-        </div>)}</div>
+-        {error && <div className="mt-5 flex gap-2 rounded-xl bg-red-50 p-4 text-red-800"><AlertTriangle/>{error}</div>}
+-        {!!rubrics.length && <div className="mt-7 space-y-4">{rubrics.map((rubric,ri)=><div key={ri} className="rounded-2xl border bg-white p-6">
+-          <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase text-blue-700">Grant {ri+1}</p><h3 className="text-xl font-bold">Extracted NOFO rubric</h3></div><span className={`rounded-full px-3 py-1 text-sm font-bold ${rubric.total_points===100?'bg-emerald-50 text-emerald-700':'bg-amber-50 text-amber-700'}`}>{rubric.total_points} points</span></div>
+-          <div className="mt-4 divide-y">{rubric.criteria.map((c,ci)=><div key={ci} className="grid gap-2 py-3 md:grid-cols-[80px_1fr_120px]"><span className="text-sm font-bold text-slate-500">#{c.number}</span><div><p className="font-semibold">{c.name}</p><p className="text-xs text-slate-500">NOFO page {c.source_page}</p></div><label className="text-sm">Points <input className="ml-2 w-16 rounded border px-2 py-1" type="number" min="0" value={c.points} onChange={e=>setCriterionPoints(ri,ci,Number(e.target.value))}/></label></div>)}</div>
+-          {!rubric.criteria.length && <p className="mt-4 rounded-lg bg-red-50 p-3 text-red-700">Criteria could not be extracted. Upload a clearer NOFO or enter the rubric manually.</p>}
+-          <label className="mt-4 flex items-center gap-2 font-semibold"><input type="checkbox" checked={!!rubric.approved} disabled={!rubric.criteria.length} onChange={e=>setRubricApproval(ri,e.target.checked)}/>I verified these criteria and point values against the NOFO.</label>
+-        </div>)}</div>}
+-        <div className="sticky bottom-4 mt-7 rounded-2xl border border-blue-200 bg-white/95 p-4 shadow-xl backdrop-blur"><div className="flex flex-wrap items-center justify-between gap-3">
+-          <div><p className="font-bold">{activePackages.length} grant workspace(s) ready</p><p className="text-sm text-slate-500">{!ready?'Add an application and NOFO. Complete or clear any partially filled grant.':!rubrics.length?'Ready to extract the NOFO scoring criteria.':'Approve every rubric, then run the application reviews.'}</p></div>
+-          {!rubrics.length ? <button onClick={extract} disabled={!ready||busy} className="flex items-center gap-2 rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white disabled:opacity-40">{busy?<Loader2 className="animate-spin"/>:<FileSearch/>}{busy?'Extracting criteria…':'Process uploaded documents'}</button>
+-          : <button onClick={run} disabled={busy||!rubrics.every(r=>r.approved)} className="flex items-center gap-2 rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white disabled:opacity-40">{busy?<Loader2 className="animate-spin"/>:<FileSearch/>}{busy?'Building evidence maps…':'Run application reviews'}</button>}
+-        </div></div>
+-      </section>}
+-      {!!reviews.length && <section>
+-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><h2 className="text-3xl font-bold">Review dashboard</h2><p className="mt-1 text-slate-600">Validate citations, enter reviewer scores, then export.</p></div><button onClick={()=>{setReviews([]);setRubrics([]);setScores({})}} className="rounded-lg border bg-white px-4 py-2 font-semibold">New review set</button></div>
+-        <div className="grid gap-4 md:grid-cols-3">{reviews.map((r,i)=><button key={r.review_id} onClick={()=>setSelected(i)} className={`rounded-xl border p-5 text-left ${selected===i?'border-blue-600 bg-blue-50 ring-2 ring-blue-100':'bg-white'}`}>
+-          <div className="flex justify-between"><span className="font-bold">Grant {r.grant_index} · Application {r.application_index}</span><CheckCircle2 className="text-emerald-600" size={20}/></div><p className="mt-3 truncate text-sm font-semibold">{r.application_file}</p><p className="mt-1 text-xs text-slate-500">{r.page_count} pages · human review required</p>
+-        </button>)}</div>
+-        {current && <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
+-          <div className="space-y-4">{current.criteria.map(c=><article key={c.name} className="rounded-2xl border bg-white p-6">
+-            <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-lg font-bold">{c.name}</h3><p className="text-sm text-slate-500">{c.status.replace(/_/g,' ')}</p></div><label className="text-sm font-semibold">Score <input type="number" min="0" max={c.maximum_points} value={scores[`${current.review_id}:${c.name}`]||''} onChange={e=>setScores({...scores,[`${current.review_id}:${c.name}`]:e.target.value})} className="ml-2 w-20 rounded-lg border px-2 py-1"/> / {c.maximum_points}</label></div>
+-            <div className="mt-4 space-y-3">{c.evidence.map((e,j)=><div key={j} className="rounded-xl bg-slate-50 p-4"><p className="mb-1 text-xs font-bold uppercase text-blue-700">Application page {e.page}</p><p className="text-sm leading-6">{e.quote}</p></div>)}</div>
+-          </article>)}</div>
+-          <aside className="h-fit rounded-2xl border bg-slate-900 p-6 text-white lg:sticky lg:top-6"><p className="text-sm text-slate-300">Reviewer total</p><p className="mt-2 text-5xl font-bold">{scoreTotal}<span className="text-xl text-slate-400"> / {current.criteria.reduce((s,c)=>s+c.maximum_points,0)}</span></p><div className="my-6 border-t border-slate-700"/><p className="text-sm leading-6 text-slate-300">{current.certification}</p><button onClick={exportReview} className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 font-bold text-slate-900"><Download size={18}/>Export review JSON</button></aside>
+-        </div>}
++  return <div className="min-h-screen bg-[#f4f7fc] text-slate-900">
++    <header className="border-b bg-white"><div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4"><div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white"><Brain/></div><div><h1 className="text-xl font-bold">Federal Grant Reviewer AI</h1><p className="text-sm text-slate-500">Evidence-grounded analysis for federal grant applications</p></div></div><span className="flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-800"><CheckCircle2 size={16}/>AI System Ready</span></div></header>
++    <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-7 text-sm font-semibold"><span className={step==='upload'?'text-blue-700':'text-emerald-700'}><Upload className="mr-2 inline" size={20}/>Upload Documents</span><span className={step==='rubric'?'text-blue-700':'text-slate-400'}><BarChart3 className="mr-2 inline" size={20}/>Approve Rubric</span><span className={step==='results'?'text-blue-700':'text-slate-400'}><CheckCircle2 className="mr-2 inline" size={20}/>Review Results</span></div>
++    <main className="mx-auto max-w-6xl px-6 pb-12">
++      {step==='upload'&&<section className="rounded-2xl border bg-white p-8 shadow-lg md:p-10">
++        <div className="text-center"><div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-blue-700"><Upload size={32}/></div><h2 className="mt-5 text-2xl font-bold">Upload Grant Competition</h2><p className="mt-2 text-slate-600">One NOFO, with all applications assigned under that funding opportunity</p></div>
++        <div className="mt-8"><label className="text-sm font-bold">Select Funding Agency</label><div className="mt-2 grid grid-cols-2 gap-3 md:grid-cols-4">{agencies.map(a=><button key={a} onClick={()=>setAgency(a)} className={`rounded-lg border px-4 py-3 font-semibold ${agency===a?'border-blue-600 bg-blue-600 text-white shadow':'bg-white hover:border-blue-400'}`}>{a}</button>)}</div><div className="mt-3 rounded-lg bg-blue-50 p-3 text-sm text-blue-800"><b>{agency}</b> — {agencyText[agency]}</div></div>
++        <div className="mt-7 grid gap-4 md:grid-cols-2">
++          <label className="cursor-pointer rounded-xl border-2 border-dashed border-slate-300 p-6 hover:border-blue-500"><input className="hidden" type="file" accept=".pdf,.docx" onChange={e=>setNofo(e.target.files?.[0]||null)}/><FileText className="mb-4 text-blue-700"/><p className="font-bold">NOFO <span className="text-red-600">*</span></p><p className="mt-1 truncate text-sm text-slate-500">{nofo?.name||'Choose one NOFO'}</p></label>
++          <label className="cursor-pointer rounded-xl border-2 border-dashed border-slate-300 p-6 hover:border-blue-500"><input className="hidden" multiple type="file" accept=".pdf,.zip" onChange={e=>setApplications(e.target.files?Array.from(e.target.files):[])}/><Upload className="mb-4 text-blue-700"/><p className="font-bold">Applications <span className="text-red-600">*</span></p><p className="mt-1 text-sm text-slate-500">{applications.length?`${applications.length} PDF/ZIP bundle(s) selected`:'Choose multiple PDFs or one ZIP'}</p></label>
++          <label className="cursor-pointer rounded-xl border-2 border-dashed border-slate-200 p-5 hover:border-blue-400"><input className="hidden" type="file" accept=".pdf,.doc,.docx,.txt" onChange={e=>setSupportRubric(e.target.files?.[0]||null)}/><p className="font-semibold">Separate rubric <span className="font-normal text-slate-400">(optional)</span></p><p className="mt-1 truncate text-xs text-slate-500">{supportRubric?.name||'Used to validate NOFO extraction'}</p></label>
++          <label className="cursor-pointer rounded-xl border-2 border-dashed border-slate-200 p-5 hover:border-blue-400"><input className="hidden" type="file" accept=".pdf,.doc,.docx,.txt" onChange={e=>setWorksheet(e.target.files?.[0]||null)}/><p className="font-semibold">Reviewer worksheet/instructions <span className="font-normal text-slate-400">(optional)</span></p><p className="mt-1 truncate text-xs text-slate-500">{worksheet?.name||'Upload if provided'}</p></label>
++        </div>
++        {error&&<div className="mt-5 flex gap-2 rounded-lg bg-red-50 p-4 text-red-800"><AlertTriangle/>{error}</div>}
++        <div className="mt-7 flex justify-center"><button onClick={process} disabled={!nofo||!applications.length||busy} className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-3 font-bold text-white shadow-lg disabled:opacity-40">{busy?<Loader2 className="animate-spin"/>:<FileSearch/>}{busy?'Processing…':'Process Uploaded Documents'}</button></div>
+       </section>}
++      {step==='rubric'&&rubric&&<section className="rounded-2xl border bg-white p-8 shadow-lg"><h2 className="text-2xl font-bold">Verify NOFO scoring rubric</h2><p className="mt-2 text-slate-600">Confirm the extracted criteria against the cited NOFO pages before reviewing applications.</p><div className="mt-6 divide-y">{rubric.criteria.map((c,i)=><div key={i} className="grid gap-3 py-4 md:grid-cols-[80px_1fr_130px]"><span className="font-bold text-slate-500">#{c.number}</span><div><p className="font-bold">{c.name}</p><p className="text-sm text-slate-500">NOFO page {c.source_page}</p></div><label className="text-sm font-semibold">Points <input className="ml-2 w-16 rounded border px-2 py-1" type="number" value={c.points} min="0" onChange={e=>updatePoints(i,Number(e.target.value))}/></label></div>)}</div><div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-xl bg-slate-50 p-5"><div><p className="font-bold">Extracted total: {rubric.total_points} points</p>{rubric.warnings.map((w,i)=><p key={i} className="text-sm text-amber-700">{w}</p>)}</div><label className="flex items-center gap-2 font-bold"><input type="checkbox" checked={!!rubric.approved} onChange={e=>setRubric({...rubric,approved:e.target.checked})}/>I verified this rubric</label></div>{error&&<div className="mt-5 rounded-lg bg-red-50 p-4 text-red-800">{error}</div>}<div className="mt-6 flex justify-between"><button onClick={()=>setRubric(null)} className="rounded-lg border px-5 py-3 font-semibold">Back</button><button onClick={run} disabled={!rubric.approved||busy} className="flex items-center gap-2 rounded-xl bg-blue-700 px-7 py-3 font-bold text-white disabled:opacity-40">{busy?<Loader2 className="animate-spin"/>:<FileSearch/>}{busy?'Reviewing applications…':`Review ${applications.length} uploaded bundle(s)`}</button></div></section>}
++      {step==='results'&&current&&<section><div className="mb-6 flex items-end justify-between"><div><h2 className="text-3xl font-bold">Application reviews</h2><p className="text-slate-600">{agency} · {reviews.length} application(s) processed independently</p></div><button onClick={reset} className="rounded-lg border bg-white px-4 py-2 font-semibold">New grant review</button></div><div className="mb-6 flex flex-wrap gap-2">{reviews.map((r,i)=><button key={r.review_id} onClick={()=>setSelected(i)} className={`rounded-lg border px-4 py-2 text-sm font-semibold ${selected===i?'border-blue-600 bg-blue-600 text-white':'bg-white'}`}>Application {i+1}</button>)}</div><div className="grid gap-6 lg:grid-cols-[1fr_300px]"><div className="space-y-4">{current.criteria.map(c=><article key={c.name} className="rounded-xl border bg-white p-6"><div className="flex justify-between gap-3"><div><h3 className="font-bold">{c.name}</h3><p className="text-sm text-slate-500">{c.status.replace(/_/g,' ')}</p></div><label className="text-sm font-semibold">Score <input className="ml-2 w-20 rounded border px-2 py-1" type="number" min="0" max={c.maximum_points} value={scores[`${current.review_id}:${c.name}`]||''} onChange={e=>setScores({...scores,[`${current.review_id}:${c.name}`]:e.target.value})}/> / {c.maximum_points}</label></div><div className="mt-4 space-y-3">{c.evidence.map((e,i)=><div key={i} className="rounded-lg bg-slate-50 p-4"><p className="text-xs font-bold uppercase text-blue-700">Application page {e.page}</p><p className="mt-1 text-sm leading-6">{e.quote}</p></div>)}</div></article>)}</div><aside className="h-fit rounded-xl bg-slate-900 p-6 text-white lg:sticky lg:top-5"><p className="text-slate-300">Reviewer total</p><p className="mt-2 text-4xl font-bold">{scoreTotal}<span className="text-lg text-slate-400"> / {current.criteria.reduce((s,c)=>s+c.maximum_points,0)}</span></p><button onClick={exportReview} className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-white px-4 py-3 font-bold text-slate-900"><Download size={18}/>Export review</button></aside></div></section>}
+     </main>
+-  </div>;
++  </div>
+ };
+ export default SafeReviewDashboard;
+diff --git a/federal-grant-reviewer/src/services/api.ts b/federal-grant-reviewer/src/services/api.ts
+index e839637..ea1aa3e 100644
+--- a/federal-grant-reviewer/src/services/api.ts
++++ b/federal-grant-reviewer/src/services/api.ts
+@@ -9,35 +9,31 @@ export interface SafeCriterion {
+ }
+ export interface SafeReview {
+   review_id: string; application_file: string; page_count: number; word_count: number;
+-  grant_id: string; grant_index: number; application_index: number;
++  agency: string; application_index: number;
+   review_status: string; final_score: number | null; certification: string;
+   criteria: SafeCriterion[];
+ }
+ 
+-export interface ReviewPackage { applications: File[]; nofo: File; rubric: File | null; worksheet: File | null }
++export interface ReviewPackage { applications: File[]; nofo: File; rubric: File | null; worksheet: File | null; agency:string }
+ export interface ExtractedCriterion { number:number; name:string; points:number; keywords:string[]; source_page:number; source_heading:string }
+-export interface ExtractedRubric { grant_index:number; criteria:ExtractedCriterion[]; total_points:number; status:string; warnings:string[]; approved?:boolean }
++export interface ExtractedRubric { agency:string; criteria:ExtractedCriterion[]; total_points:number; status:string; warnings:string[]; approved?:boolean }
+ 
+-export const extractRubrics = async (nofos: File[]): Promise<ExtractedRubric[]> => {
++export const extractRubric = async (nofo: File, agency:string): Promise<ExtractedRubric> => {
+   const formData = new FormData();
+-  nofos.forEach(nofo => formData.append('nofos', nofo));
+-  const response = await fetch(`${API_BASE_URL}/safe-reviews/extract-rubrics`, {method:'POST', body:formData});
++  formData.append('nofo', nofo); formData.append('agency', agency);
++  const response = await fetch(`${API_BASE_URL}/safe-reviews/extract-rubric`, {method:'POST', body:formData});
+   const body = await response.json();
+   if (!response.ok) throw new Error(body.detail || 'Rubric extraction failed');
+-  return body.rubrics;
++  return body.rubric;
+ };
+ 
+-export const runSafeReviews = async (packages: ReviewPackage[], criteria: ExtractedRubric[]): Promise<SafeReview[]> => {
++export const runSafeReviews = async (item: ReviewPackage, criteria: ExtractedRubric): Promise<SafeReview[]> => {
+   const formData = new FormData();
+-  const includeRubrics = packages.every(item => item.rubric);
+-  const includeWorksheets = packages.every(item => item.worksheet);
+-  packages.forEach(item => {
+-    item.applications.forEach(application => formData.append('applications', application));
+-    formData.append('nofos', item.nofo);
+-    if (includeRubrics && item.rubric) formData.append('rubrics', item.rubric);
+-    if (includeWorksheets && item.worksheet) formData.append('worksheets', item.worksheet);
+-  });
+-  formData.append('application_counts', JSON.stringify(packages.map(item => item.applications.length)));
++  item.applications.forEach(application => formData.append('applications', application));
++  formData.append('nofo', item.nofo);
++  if (item.rubric) formData.append('rubric', item.rubric);
++  if (item.worksheet) formData.append('worksheet', item.worksheet);
++  formData.append('agency', item.agency);
+   formData.append('approved_criteria', JSON.stringify(criteria));
+   const response = await fetch(`${API_BASE_URL}/safe-reviews/run`, { method: 'POST', body: formData });
+   const body = await response.json();
+diff --git a/grant-reviewer-mcp/src/grant_reviewer/safe_review.py b/grant-reviewer-mcp/src/grant_reviewer/safe_review.py
+index 664ef38..94b2c83 100644
+--- a/grant-reviewer-mcp/src/grant_reviewer/safe_review.py
++++ b/grant-reviewer-mcp/src/grant_reviewer/safe_review.py
+@@ -181,8 +181,8 @@ def render_markdown(result: dict[str, Any]) -> str:
+ def run_manifest(manifest_path: Path, output_dir: Path) -> list[dict[str, Any]]:
+     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+     reviews = manifest.get("reviews", [])
+-    if len(reviews) != 3:
+-        raise ValueError("The manifest must contain exactly three reviews")
++    if not reviews:
++        raise ValueError("The manifest must contain at least one review")
+     output_dir.mkdir(parents=True, exist_ok=True)
+     results = []
+     for item in reviews:
+diff --git a/grant-reviewer-mcp/tests/test_safe_review.py b/grant-reviewer-mcp/tests/test_safe_review.py
+index e956f14..04dffa4 100644
+--- a/grant-reviewer-mcp/tests/test_safe_review.py
++++ b/grant-reviewer-mcp/tests/test_safe_review.py
+@@ -21,12 +21,12 @@ class SafeReviewTests(unittest.TestCase):
+     def test_short_document_is_unable(self, _):
+         self.assertEqual(review_application("r1", Path("app.pdf"))["review_status"], "unable_to_evaluate")
+ 
+-    def test_manifest_requires_three(self):
++    def test_manifest_requires_at_least_one(self):
+         from tempfile import TemporaryDirectory
+         with TemporaryDirectory() as directory:
+             manifest = Path(directory) / "manifest.json"
+             manifest.write_text(json.dumps({"reviews":[]}), encoding="utf-8")
+-            with self.assertRaisesRegex(ValueError, "exactly three"):
++            with self.assertRaisesRegex(ValueError, "at least one"):
+                 run_manifest(manifest, Path(directory) / "out")
+ 
+     @patch("grant_reviewer.safe_review.extract_document_pages", return_value=[
+-- 
+2.51.1
+

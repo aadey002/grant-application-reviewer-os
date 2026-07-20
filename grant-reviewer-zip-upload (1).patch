@@ -1,0 +1,176 @@
+From ee72cdf5aac3197ccdc70148765ffdb6050cb256 Mon Sep 17 00:00:00 2001
+From: Codex <codex@openai.com>
+Date: Sat, 18 Jul 2026 19:14:41 -0600
+Subject: [PATCH] Add secure ZIP upload for application batches
+
+---
+ federal-grant-reviewer/backend/main.py        | 30 +++++++++++-----
+ .../src/components/SafeReviewDashboard.tsx    |  4 +--
+ .../src/grant_reviewer/safe_review.py         | 36 +++++++++++++++++++
+ grant-reviewer-mcp/tests/test_safe_review.py  | 16 ++++++++-
+ 4 files changed, 75 insertions(+), 11 deletions(-)
+
+diff --git a/federal-grant-reviewer/backend/main.py b/federal-grant-reviewer/backend/main.py
+index e5879bf..2df1fde 100644
+--- a/federal-grant-reviewer/backend/main.py
++++ b/federal-grant-reviewer/backend/main.py
+@@ -35,7 +35,7 @@ try:
+     from grant_reviewer.scoring_engine import ScoringEngine
+     from grant_reviewer.comment_generator import CommentGenerator
+     from grant_reviewer.report_generator import ReportGenerator
+-    from grant_reviewer.safe_review import extract_nofo_criteria, review_application
++    from grant_reviewer.safe_review import extract_nofo_criteria, review_application, safe_extract_application_zip
+     MCP_AVAILABLE = True
+     logger.info("MCP Agent components loaded successfully")
+ except ImportError as e:
+@@ -146,23 +146,37 @@ async def run_safe_reviews(
+             with open(path, "wb") as handle:
+                 handle.write(content)
+             package_files[kind[:-1]] = {"filename": document.filename, "path": str(path)}
+-        for application_index in range(1, application_count + 1):
++        grant_application_paths = []
++        for upload_index in range(1, application_count + 1):
+             upload = applications[application_offset]
+             application_offset += 1
+-            if Path(upload.filename or "").suffix.lower() != ".pdf":
+-                raise HTTPException(status_code=400, detail=f"{upload.filename}: application must be PDF")
++            extension = Path(upload.filename or "").suffix.lower()
++            if extension not in {".pdf", ".zip"}:
++                raise HTTPException(status_code=400, detail=f"{upload.filename}: application must be PDF or ZIP")
+             content = await upload.read()
+-            if not content or len(content) > 75 * 1024 * 1024:
++            if not content or len(content) > 250 * 1024 * 1024:
+                 raise HTTPException(status_code=400, detail=f"{upload.filename}: invalid file size")
++            incoming = grant_dir / f"incoming-{upload_index}{extension}"
++            with open(incoming, "wb") as handle:
++                handle.write(content)
++            if extension == ".zip":
++                try:
++                    grant_application_paths.extend(safe_extract_application_zip(incoming, grant_dir / f"zip-{upload_index}"))
++                except (ValueError, OSError) as exc:
++                    raise HTTPException(status_code=400, detail=f"{upload.filename}: {exc}")
++            else:
++                grant_application_paths.append(incoming)
++        for application_index, source_path in enumerate(grant_application_paths, start=1):
+             application_dir = grant_dir / f"application-{application_index}"
+             application_dir.mkdir(exist_ok=True)
+             path = application_dir / "application.pdf"
+-            with open(path, "wb") as handle:
+-                handle.write(content)
++            with open(source_path, "rb") as source, open(path, "wb") as handle:
++                while chunk := source.read(1024 * 1024):
++                    handle.write(chunk)
+             criteria = [{"name": item["name"], "points": item["points"], "keywords": item.get("keywords", [])}
+                         for item in criteria_sets[grant_index - 1]["criteria"]]
+             result = review_application(f"grant-{grant_index}-application-{application_index}", path, criteria)
+-            result["application_file"] = upload.filename
++            result["application_file"] = source_path.name
+             result["grant_id"] = f"grant-{grant_index}"
+             result["grant_index"] = grant_index
+             result["application_index"] = application_index
+diff --git a/federal-grant-reviewer/src/components/SafeReviewDashboard.tsx b/federal-grant-reviewer/src/components/SafeReviewDashboard.tsx
+index a23ae1f..f883ff7 100644
+--- a/federal-grant-reviewer/src/components/SafeReviewDashboard.tsx
++++ b/federal-grant-reviewer/src/components/SafeReviewDashboard.tsx
+@@ -64,8 +64,8 @@ const SafeReviewDashboard: React.FC = () => {
+           <div className="mb-4 flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-wider text-blue-700">Grant {i+1}</p><h3 className="text-xl font-bold">Grant competition package</h3></div><span className={`rounded-full px-3 py-1 text-xs font-bold ${item.applications.length&&item.nofo&&item.rubric&&item.worksheet?'bg-emerald-50 text-emerald-700':'bg-amber-50 text-amber-700'}`}>{item.applications.length} application{item.applications.length===1?'':'s'}</span></div>
+           <div className="grid gap-3 md:grid-cols-4">
+             <label className="cursor-pointer rounded-xl border-2 border-dashed border-slate-200 p-4 hover:border-blue-500">
+-              <input className="hidden" multiple type="file" accept=".pdf" onChange={e=>chooseApplications(i,e.target.files)}/>
+-              <Upload className="mb-3 text-blue-700" size={20}/><p className="text-sm font-bold">Applications</p><p className="mt-1 text-xs text-slate-500">{item.applications.length ? `${item.applications.length} PDFs selected` : 'Choose multiple PDFs'}</p>
++              <input className="hidden" multiple type="file" accept=".pdf,.zip" onChange={e=>chooseApplications(i,e.target.files)}/>
++              <Upload className="mb-3 text-blue-700" size={20}/><p className="text-sm font-bold">Applications</p><p className="mt-1 text-xs text-slate-500">{item.applications.length ? `${item.applications.length} file bundle(s) selected` : 'Choose PDFs or ZIP files'}</p>
+             </label>
+             {([
+             ['nofo','NOFO','.pdf,.doc,.docx'], ['rubric','Scoring rubric','.pdf,.doc,.docx,.txt'], ['worksheet','Worksheet / instructions','.pdf,.doc,.docx,.txt']
+diff --git a/grant-reviewer-mcp/src/grant_reviewer/safe_review.py b/grant-reviewer-mcp/src/grant_reviewer/safe_review.py
+index f5335e2..664ef38 100644
+--- a/grant-reviewer-mcp/src/grant_reviewer/safe_review.py
++++ b/grant-reviewer-mcp/src/grant_reviewer/safe_review.py
+@@ -3,6 +3,7 @@ from __future__ import annotations
+ 
+ import json
+ import re
++import zipfile
+ from dataclasses import asdict, dataclass
+ from pathlib import Path
+ from typing import Any, Iterable
+@@ -27,6 +28,41 @@ DEFAULT_HRSA_CRITERIA = [
+     {"name": "Budget and Budget Justification", "points": 5, "keywords": ["budget", "cost", "justification", "funds"]},
+ ]
+ 
++def safe_extract_application_zip(
++    archive: Path, destination: Path, max_files: int = 100,
++    max_uncompressed_bytes: int = 500 * 1024 * 1024,
++) -> list[Path]:
++    """Extract PDF applications while preventing zip-slip and zip bombs."""
++    destination.mkdir(parents=True, exist_ok=True)
++    extracted = []
++    total_size = 0
++    with zipfile.ZipFile(archive) as bundle:
++        members = [item for item in bundle.infolist() if not item.is_dir()]
++        pdf_members = [item for item in members if Path(item.filename).suffix.lower() == ".pdf"]
++        if not pdf_members:
++            raise ValueError("ZIP contains no PDF applications")
++        if len(pdf_members) > max_files:
++            raise ValueError(f"ZIP contains more than {max_files} PDF applications")
++        for index, member in enumerate(pdf_members, start=1):
++            if member.flag_bits & 0x1:
++                raise ValueError("Encrypted ZIP files are not supported")
++            total_size += member.file_size
++            if total_size > max_uncompressed_bytes:
++                raise ValueError("ZIP uncompressed contents exceed the safety limit")
++            safe_name = Path(member.filename).name
++            if not safe_name or safe_name in {".", ".."}:
++                raise ValueError("ZIP contains an unsafe filename")
++            target = destination / f"{index:03d}_{safe_name}"
++            with bundle.open(member) as source, open(target, "wb") as output:
++                while chunk := source.read(1024 * 1024):
++                    output.write(chunk)
++            with open(target, "rb") as candidate:
++                if candidate.read(5) != b"%PDF-":
++                    target.unlink()
++                    raise ValueError(f"{safe_name} is not a valid PDF file")
++            extracted.append(target)
++    return extracted
++
+ @dataclass
+ class Evidence:
+     page: int
+diff --git a/grant-reviewer-mcp/tests/test_safe_review.py b/grant-reviewer-mcp/tests/test_safe_review.py
+index 1a43147..e956f14 100644
+--- a/grant-reviewer-mcp/tests/test_safe_review.py
++++ b/grant-reviewer-mcp/tests/test_safe_review.py
+@@ -1,8 +1,9 @@
+ import json
+ import unittest
++import zipfile
+ from pathlib import Path
+ from unittest.mock import patch
+-from grant_reviewer.safe_review import extract_nofo_criteria, find_evidence, review_application, run_manifest
++from grant_reviewer.safe_review import extract_nofo_criteria, find_evidence, review_application, run_manifest, safe_extract_application_zip
+ 
+ class SafeReviewTests(unittest.TestCase):
+     def test_page_citations_are_actual(self):
+@@ -38,5 +39,18 @@ class SafeReviewTests(unittest.TestCase):
+         self.assertEqual([item["source_page"] for item in result["criteria"]], [1, 1, 2])
+         self.assertTrue(result["human_approval_required"])
+ 
++    def test_zip_extracts_only_pdf_applications(self):
++        from tempfile import TemporaryDirectory
++        with TemporaryDirectory() as directory:
++            root = Path(directory)
++            archive = root / "applications.zip"
++            with zipfile.ZipFile(archive, "w") as bundle:
++                bundle.writestr("Applicant A.pdf", b"%PDF-sample")
++                bundle.writestr("folder/Applicant B.PDF", b"%PDF-sample")
++                bundle.writestr("notes.txt", b"ignore")
++            extracted = safe_extract_application_zip(archive, root / "out")
++            self.assertEqual(len(extracted), 2)
++            self.assertTrue(all(path.suffix.lower() == ".pdf" for path in extracted))
++
+ if __name__ == "__main__":
+     unittest.main()
+-- 
+2.51.1
+

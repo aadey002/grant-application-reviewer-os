@@ -10,7 +10,17 @@ from typing import Any
 
 from .safe_review import extract_pdf_pages
 
-SYSTEM_PROMPT = """You are an independent federal grant merit reviewer. Score only against the approved review criteria supplied by the user. Use only application evidence; never invent facts, page numbers, findings, or budget amounts. Apply HRSA comment conventions: third person, present tense, criterion-specific findings, and constructive language. A strength exceeds a criterion, a met finding satisfies it, and a weakness materially falls short. Do not use outside knowledge. Every substantive finding must cite application page numbers. Scores must be integers within each criterion maximum and reflect the significance of findings. This is a draft for human reviewer validation, not an award decision.
+SYSTEM_PROMPT = """You are an independent federal grant merit reviewer applying the Equitable Federal Grant Scoring Formula v1. Score only against the approved review criteria supplied by the user. Use only application evidence; never invent facts, page numbers, findings, or budget amounts. Apply HRSA comment conventions: third person, present tense, criterion-specific findings, and constructive language. Do not use outside knowledge. Every substantive finding must cite application page numbers. This is a draft for human reviewer validation, not an award decision.
+
+EQUITABLE SCORING FORMULA v1 — SCORING BANDS:
+- Strength (multiplier 1.00): ALL requirements exceeded with documented above-and-beyond evidence. CRITICAL: Do not award Strength merely because no weakness was found. Strength requires explicit, documented evidence that the applicant went beyond what the NOFO requires.
+- Met (multiplier 0.80): ALL requirements adequately addressed, no gaps, no exceedance. Met = 80%, NOT 100%. This is the expected baseline when the application fully satisfies all requirements.
+- Minor weakness (multiplier 0.60): Most requirements addressed; limited gaps reduce reviewer confidence.
+- Moderate weakness (multiplier 0.50): Multiple requirements partially addressed or missing.
+- Major weakness (multiplier 0.25): A mandatory element is omitted or seriously deficient.
+- Not addressed (multiplier 0.00): No responsive information found for this criterion.
+
+Score = round_half_up(maximum_points × multiplier)
 
 COMMENT FORMAT: Each finding comment MUST be a single concise sentence — not a paragraph. Be specific and direct. One finding = one observation. If a topic has multiple aspects, create separate findings. Never use unexpanded acronyms — always write the full term first, followed by the acronym in parentheses on first use.
 
@@ -22,7 +32,7 @@ RIGHT: "The applicant provides well-documented evidence of significant healthcar
 WRONG: "The budget requests $459,817 in Year 1 with 7.8 calendar months of PD effort."
 RIGHT: "The budget is reasonable and adequately justified for the proposed scope, with appropriate personnel effort allocations aligned to program requirements."
 
-Example strength: "The applicant demonstrates strong organizational capacity through an established infrastructure with a documented track record of interdisciplinary training."
+Example strength: "The applicant demonstrates strong organizational capacity through an established infrastructure with a documented track record of interdisciplinary training, exceeding the NOFO's minimum staffing requirements."
 Example met: "The training plan addresses the required clinical contact hours across multiple settings as specified in the NOFO."
 Example weakness: "The evaluation plan does not specify measurable outcome targets for Year 2 performance indicators."
 
@@ -138,6 +148,23 @@ def _validate(review: dict[str, Any], criteria: list[dict[str, Any]], page_count
             nofo_pages = finding.get("nofo_pages", [])
             if not nofo_pages or not all(isinstance(p, int) and p >= 1 for p in nofo_pages):
                 raise ValueError(f"Weakness missing valid nofo_pages in {source['name']}")
+        # Equitable formula v1 validation
+        multiplier = item.get("multiplier")
+        valid_multipliers = [1.0, 0.8, 0.6, 0.5, 0.25, 0.0]
+        if multiplier is not None and multiplier not in valid_multipliers:
+            raise ValueError(f"Invalid multiplier {multiplier} for {source['name']} — must be one of {valid_multipliers}")
+        calculated_score = item.get("calculated_score")
+        if multiplier is not None and calculated_score is not None:
+            import math
+            expected_score = math.floor(maximum * multiplier + 0.5)  # round_half_up
+            if abs(int(calculated_score) - expected_score) > 1:
+                raise ValueError(f"calculated_score {calculated_score} does not match round_half_up({maximum} × {multiplier}) = {expected_score} for {source['name']}")
+        # If classification is strength, at least one requirement must have status "exceeds"
+        classification = item.get("classification")
+        if classification == "strength":
+            req_assessments = item.get("requirement_assessments", [])
+            if req_assessments and not any(r.get("response_status") == "exceeds" for r in req_assessments):
+                logger.warning("Strength classification for '%s' but no requirement has status 'exceeds'", source['name'])
         subs = item.get("subcriteria", [])
         if subs and (sum(int(s["maximum_points"]) for s in subs) != maximum or sum(int(s["score"]) for s in subs) != score):
             raise ValueError(f"Subcriterion totals do not reconcile for {source['name']}")
@@ -169,14 +196,32 @@ def _score_single_criterion(client, model: str, application_text: str, criterion
             "impact": {"type": "string", "description": "For weaknesses only: material impact of the shortfall"},
         }}
 
+    # Requirement-level assessment
+    requirement_assessment = {
+        "type": "object", "additionalProperties": False,
+        "required": ["requirement_text", "nofo_pages", "response_status", "application_pages", "explanation"],
+        "properties": {
+            "requirement_text": {"type": "string"},
+            "nofo_pages": {"type": "array", "items": {"type": "integer", "minimum": 1}},
+            "response_status": {"type": "string", "enum": ["exceeds", "fully_addressed", "partially_addressed", "not_addressed", "unable_to_evaluate"]},
+            "application_pages": {"type": "array", "items": {"type": "integer", "minimum": 1}},
+            "explanation": {"type": "string"},
+        }
+    }
+
     strength_met = {"type": "object", "additionalProperties": False, "required": ["comment", "application_pages"], "properties": {"comment": {"type": "string"}, "application_pages": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}}}}
     weakness = {"type": "object", "additionalProperties": False, "required": ["comment", "application_pages", "nofo_requirement", "nofo_pages", "impact"], "properties": {"comment": {"type": "string"}, "application_pages": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}}, "nofo_requirement": {"type": "string"}, "nofo_pages": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}}, "impact": {"type": "string"}}}
     sub = {"type": "object", "additionalProperties": False, "required": ["name", "score", "maximum_points"], "properties": {"name": {"type": "string"}, "score": {"type": "integer", "minimum": 0}, "maximum_points": {"type": "integer", "minimum": 0}}}
 
     tool = {"name": "score_criterion", "description": f"Submit score for '{name}' ({points} points).", "input_schema": {"type": "object", "additionalProperties": False,
-        "required": ["name", "score", "maximum_points", "score_rationale", "question_responses", "strengths", "mets", "weaknesses", "subcriteria"],
-        "properties": {"name": {"type": "string", "enum": [name]}, "score": {"type": "integer", "minimum": 0, "maximum": points}, "maximum_points": {"type": "integer", "enum": [points]},
+        "required": ["name", "maximum_points", "score_rationale", "requirement_assessments", "classification", "multiplier", "calculated_score", "formula_version", "question_responses", "strengths", "mets", "weaknesses", "subcriteria"],
+        "properties": {"name": {"type": "string", "enum": [name]}, "maximum_points": {"type": "integer", "enum": [points]},
             "score_rationale": {"type": "string", "description": "1-2 sentence overall summary of how well the application addresses this criterion"},
+            "requirement_assessments": {"type": "array", "items": requirement_assessment, "description": "Assess each individual NOFO requirement for this criterion"},
+            "classification": {"type": "string", "enum": ["strength", "met", "minor_weakness", "moderate_weakness", "major_weakness", "not_addressed"]},
+            "multiplier": {"type": "number", "enum": [1.0, 0.8, 0.6, 0.5, 0.25, 0.0]},
+            "calculated_score": {"type": "integer", "minimum": 0},
+            "formula_version": {"type": "string", "enum": ["equitable-v1"]},
             "question_responses": {"type": "array", "items": question_answer, "description": "Answer each NOFO evaluation question/bullet under this criterion"},
             "strengths": {"type": "array", "items": strength_met}, "mets": {"type": "array", "items": strength_met},
             "weaknesses": {"type": "array", "items": weakness}, "subcriteria": {"type": "array", "items": sub}}}}
@@ -196,7 +241,7 @@ def _score_single_criterion(client, model: str, application_text: str, criterion
     else:
         sub_instruction = ""
 
-    prompt = f"""Score this single criterion by answering each NOFO evaluation question individually.
+    prompt = f"""Score this single criterion using the Equitable Federal Grant Scoring Formula v1.
 
 CRITERION: {name}
 MAXIMUM POINTS: {points}
@@ -208,14 +253,32 @@ NOFO TEXT (find the evaluation questions/bullets for this criterion):
 APPLICATION:
 {application_text}
 
+SCORING FORMULA (Equitable Formula v1):
+- Strength (1.00): ALL requirements exceeded, documented above-and-beyond evidence
+- Met (0.80): ALL requirements adequately addressed, no gaps, no exceedance
+- Minor weakness (0.60): Most addressed, limited gaps reduce confidence
+- Moderate weakness (0.50): Multiple partial/missing requirements
+- Major weakness (0.25): Mandatory element omitted or seriously deficient
+- Not addressed (0.00): No responsive information found
+
+Score = round_half_up(maximum_points × multiplier)
+
+CRITICAL: Met = 80%, NOT 100%. Full points require EVIDENCE of exceeding requirements.
+Do not award Strength merely because no weakness was found.
+
 INSTRUCTIONS:
-1. Find all evaluation questions/bullets listed under this criterion in the NOFO.
-2. For EACH question, provide the application's answer with page citations.
-3. Assess each as strength (exceeds), met (satisfies), or weakness (falls short).
-4. For weaknesses, cite the exact NOFO requirement and page.
-5. Also provide traditional strengths/mets/weaknesses lists.
-6. Give an overall score_rationale summarizing the criterion assessment.
-7. Each comment must be one concise sentence. No unexpanded acronyms."""
+1. Break this criterion into its individual NOFO requirements.
+2. Assess each requirement individually in requirement_assessments (use response_status: exceeds/fully_addressed/partially_addressed/not_addressed/unable_to_evaluate).
+3. Classify the overall criterion (strength/met/minor_weakness/moderate_weakness/major_weakness/not_addressed).
+4. Apply the corresponding multiplier (1.0/0.8/0.6/0.5/0.25/0.0).
+5. Calculate: calculated_score = round_half_up(maximum_points × multiplier). Set formula_version to "equitable-v1".
+6. Find all evaluation questions/bullets listed under this criterion in the NOFO.
+7. For EACH question, provide the application's answer with page citations in question_responses.
+8. Assess each as strength (exceeds), met (satisfies), or weakness (falls short).
+9. For weaknesses, cite the exact NOFO requirement and page.
+10. Also provide traditional strengths/mets/weaknesses lists.
+11. Give an overall score_rationale summarizing the criterion assessment.
+12. Each comment must be one concise sentence. No unexpanded acronyms."""
 
     response = client.messages.create(model=model, max_tokens=4000, temperature=0, system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": prompt}], tools=[tool], tool_choice={"type": "tool", "name": "score_criterion"})
@@ -228,7 +291,11 @@ INSTRUCTIONS:
         result = json.loads(result)
     result["name"] = name
     result["maximum_points"] = points
-    logger.info("  Criterion '%s': %s/%s", name, result.get("score"), points)
+    # Map calculated_score → score for backward compatibility with frontend/validate
+    result["score"] = result.get("calculated_score", result.get("score", 0))
+    logger.info("  Criterion '%s': %s/%s (multiplier=%s, classification=%s)",
+                name, result.get("score"), points,
+                result.get("multiplier"), result.get("classification"))
     return result
 
 
@@ -313,7 +380,11 @@ Each overview field should be 2-3 concise sentences. Never use unexpanded acrony
         raise RuntimeError("Scoring failed: " + "; ".join(errors))
 
     # --- Assemble final review ---
-    total = sum(c.get("score", 0) for c in scored_criteria)
+    # Ensure each criterion has score mapped from calculated_score for backward compatibility
+    for item in scored_criteria:
+        if item is not None:
+            item["score"] = item.get("calculated_score", item.get("score", 0))
+    total = sum(c.get("calculated_score", c.get("score", 0)) for c in scored_criteria)
     max_total = sum(int(c["points"]) for c in criteria)
 
     review = {
@@ -325,8 +396,9 @@ Each overview field should be 2-3 concise sentences. Never use unexpanded acrony
         "overall_summary": overview_data.get("overall_summary", ""),
         "final_score": total,
         "maximum_score": max_total,
+        "formula_version": "equitable-v1",
         "review_status": "ai_draft_human_validation_required",
         "certification": "Claude-generated draft. A human reviewer must verify every finding, citation, score, and budget recommendation.",
     }
-    logger.info("Review complete: %d/%d", total, max_total)
+    logger.info("Review complete: %d/%d (formula: equitable-v1)", total, max_total)
     return review

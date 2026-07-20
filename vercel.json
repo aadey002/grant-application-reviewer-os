@@ -1,0 +1,8 @@
+{
+  "experimentalServices": {
+    "railway-worker": {
+      "entrypoint": "railway-worker",
+      "routePrefix": "/"
+    }
+  }
+}

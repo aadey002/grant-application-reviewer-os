@@ -1,0 +1,310 @@
+From fe40cf75700795a15ff20456ae5f19ed39217973 Mon Sep 17 00:00:00 2001
+From: Codex <codex@openai.com>
+Date: Sat, 18 Jul 2026 19:28:58 -0400
+Subject: [PATCH] Extract and approve scoring rubrics from NOFOs
+
+---
+ federal-grant-reviewer/backend/main.py        | 43 ++++++++++++++---
+ .../src/components/SafeReviewDashboard.tsx    | 33 +++++++++++--
+ federal-grant-reviewer/src/services/api.ts    | 23 ++++++++--
+ .../src/grant_reviewer/safe_review.py         | 46 +++++++++++++++++++
+ grant-reviewer-mcp/tests/test_safe_review.py  | 12 ++++-
+ 5 files changed, 141 insertions(+), 16 deletions(-)
+
+diff --git a/federal-grant-reviewer/backend/main.py b/federal-grant-reviewer/backend/main.py
+index 9450207..e5879bf 100644
+--- a/federal-grant-reviewer/backend/main.py
++++ b/federal-grant-reviewer/backend/main.py
+@@ -35,7 +35,7 @@ try:
+     from grant_reviewer.scoring_engine import ScoringEngine
+     from grant_reviewer.comment_generator import CommentGenerator
+     from grant_reviewer.report_generator import ReportGenerator
+-    from grant_reviewer.safe_review import review_application
++    from grant_reviewer.safe_review import extract_nofo_criteria, review_application
+     MCP_AVAILABLE = True
+     logger.info("MCP Agent components loaded successfully")
+ except ImportError as e:
+@@ -80,13 +80,33 @@ except Exception as e:
+ # Serve uploaded files
+ app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
+ 
++@app.post("/safe-reviews/extract-rubrics")
++async def extract_safe_rubrics(nofos: list[UploadFile] = File(...)):
++    if len(nofos) != 3:
++        raise HTTPException(status_code=400, detail="Exactly three NOFO files are required")
++    rubrics = []
++    for index, upload in enumerate(nofos, start=1):
++        extension = Path(upload.filename or "").suffix.lower()
++        if extension not in {".pdf", ".docx"}:
++            raise HTTPException(status_code=400, detail=f"{upload.filename}: NOFO must be PDF or DOCX")
++        directory = UPLOADS_DIR / f"grant-{index}"
++        directory.mkdir(exist_ok=True)
++        path = directory / f"nofo{extension}"
++        with open(path, "wb") as handle:
++            handle.write(await upload.read())
++        rubric = extract_nofo_criteria(path)
++        rubric["grant_index"] = index
++        rubrics.append(rubric)
++    return {"success": True, "rubrics": rubrics}
++
+ @app.post("/safe-reviews/run")
+ async def run_safe_reviews(
+     applications: list[UploadFile] = File(...),
+     nofos: list[UploadFile] = File(...),
+-    rubrics: list[UploadFile] = File(...),
+-    worksheets: list[UploadFile] = File(...),
++    rubrics: list[UploadFile] | None = File(None),
++    worksheets: list[UploadFile] | None = File(None),
+     application_counts: str = Form(...),
++    approved_criteria: str = Form(...),
+ ):
+     """Run multiple applications within each of exactly three grant competitions."""
+     import json
+@@ -96,8 +116,16 @@ async def run_safe_reviews(
+         raise HTTPException(status_code=400, detail="Invalid application counts")
+     if len(counts) != 3 or any(not isinstance(count, int) or count < 1 for count in counts):
+         raise HTTPException(status_code=400, detail="Each of the three grants requires at least one application")
+-    if len(applications) != sum(counts) or any(len(items) != 3 for items in (nofos, rubrics, worksheets)):
++    rubrics = rubrics or []
++    worksheets = worksheets or []
++    if len(applications) != sum(counts) or len(nofos) != 3 or len(rubrics) not in {0, 3} or len(worksheets) not in {0, 3}:
+         raise HTTPException(status_code=400, detail="The uploaded files do not match the three grant packages")
++    try:
++        criteria_sets = json.loads(approved_criteria)
++    except json.JSONDecodeError:
++        raise HTTPException(status_code=400, detail="Invalid approved criteria")
++    if len(criteria_sets) != 3 or any(not item.get("approved") or not item.get("criteria") for item in criteria_sets):
++        raise HTTPException(status_code=400, detail="All three NOFO rubrics must be approved before review")
+     results = []
+     allowed = {".pdf", ".doc", ".docx", ".txt"}
+     application_offset = 0
+@@ -105,7 +133,8 @@ async def run_safe_reviews(
+         grant_dir = UPLOADS_DIR / f"grant-{grant_index}"
+         grant_dir.mkdir(exist_ok=True)
+         package_files = {}
+-        for kind, items in {"nofos": nofos, "rubrics": rubrics, "worksheets": worksheets}.items():
++        optional_groups = {"rubrics": rubrics, "worksheets": worksheets}
++        for kind, items in {"nofos": nofos, **{k:v for k,v in optional_groups.items() if v}}.items():
+             document = items[grant_index - 1]
+             extension = Path(document.filename or "").suffix.lower()
+             if extension not in allowed:
+@@ -130,7 +159,9 @@ async def run_safe_reviews(
+             path = application_dir / "application.pdf"
+             with open(path, "wb") as handle:
+                 handle.write(content)
+-            result = review_application(f"grant-{grant_index}-application-{application_index}", path)
++            criteria = [{"name": item["name"], "points": item["points"], "keywords": item.get("keywords", [])}
++                        for item in criteria_sets[grant_index - 1]["criteria"]]
++            result = review_application(f"grant-{grant_index}-application-{application_index}", path, criteria)
+             result["application_file"] = upload.filename
+             result["grant_id"] = f"grant-{grant_index}"
+             result["grant_index"] = grant_index
+diff --git a/federal-grant-reviewer/src/components/SafeReviewDashboard.tsx b/federal-grant-reviewer/src/components/SafeReviewDashboard.tsx
+index 611855a..a23ae1f 100644
+--- a/federal-grant-reviewer/src/components/SafeReviewDashboard.tsx
++++ b/federal-grant-reviewer/src/components/SafeReviewDashboard.tsx
+@@ -1,6 +1,6 @@
+ import React, { useMemo, useState } from 'react';
+ import { AlertTriangle, CheckCircle2, Download, FileSearch, Loader2, LockKeyhole, Upload } from 'lucide-react';
+-import { runSafeReviews, SafeReview, ReviewPackage } from '../services/api';
++import { extractRubrics, runSafeReviews, SafeReview, ReviewPackage, ExtractedRubric } from '../services/api';
+ 
+ type PackageDraft = { applications: File[]; nofo: File | null; rubric: File | null; worksheet: File | null };
+ const emptyPackage = (): PackageDraft => ({applications:[], nofo:null, rubric:null, worksheet:null});
+@@ -8,11 +8,12 @@ const emptyPackage = (): PackageDraft => ({applications:[], nofo:null, rubric:nu
+ const SafeReviewDashboard: React.FC = () => {
+   const [packages, setPackages] = useState<PackageDraft[]>([emptyPackage(), emptyPackage(), emptyPackage()]);
+   const [reviews, setReviews] = useState<SafeReview[]>([]);
++  const [rubrics, setRubrics] = useState<ExtractedRubric[]>([]);
+   const [selected, setSelected] = useState(0);
+   const [scores, setScores] = useState<Record<string, string>>({});
+   const [busy, setBusy] = useState(false);
+   const [error, setError] = useState('');
+-  const ready = packages.every(item => item.applications.length > 0 && item.nofo && item.rubric && item.worksheet);
++  const ready = packages.every(item => item.applications.length > 0 && item.nofo);
+   const current = reviews[selected];
+   const scoreTotal = useMemo(() => current?.criteria.reduce((sum, c) => sum + Number(scores[`${current.review_id}:${c.name}`] || 0), 0) || 0, [current, scores]);
+ 
+@@ -24,10 +25,25 @@ const SafeReviewDashboard: React.FC = () => {
+   };
+   const run = async () => {
+     setBusy(true); setError('');
+-    try { setReviews(await runSafeReviews(packages as ReviewPackage[])); setSelected(0); }
++    try { setReviews(await runSafeReviews(packages as ReviewPackage[], rubrics)); setSelected(0); }
+     catch (e) { setError(e instanceof Error ? e.message : 'Review failed'); }
+     finally { setBusy(false); }
+   };
++  const extract = async () => {
++    setBusy(true); setError('');
++    try { setRubrics(await extractRubrics(packages.map(item => item.nofo as File))); }
++    catch (e) { setError(e instanceof Error ? e.message : 'Rubric extraction failed'); }
++    finally { setBusy(false); }
++  };
++  const setRubricApproval = (index:number, approved:boolean) => {
++    const next=[...rubrics]; next[index]={...next[index],approved}; setRubrics(next);
++  };
++  const setCriterionPoints = (rubricIndex:number, criterionIndex:number, points:number) => {
++    const next=[...rubrics]; const criteria=[...next[rubricIndex].criteria];
++    criteria[criterionIndex]={...criteria[criterionIndex],points};
++    next[rubricIndex]={...next[rubricIndex],criteria,total_points:criteria.reduce((sum,item)=>sum+item.points,0)};
++    setRubrics(next);
++  };
+   const exportReview = () => {
+     const completed = {...current, reviewer_scores: current.criteria.map(c => ({criterion:c.name, points:scores[`${current.review_id}:${c.name}`] || null})), reviewer_total:scoreTotal};
+     const url = URL.createObjectURL(new Blob([JSON.stringify(completed, null, 2)], {type:'application/json'}));
+@@ -59,10 +75,17 @@ const SafeReviewDashboard: React.FC = () => {
+           </label>)}</div>
+         </div>)}</div>
+         {error && <div className="mt-5 flex gap-2 rounded-xl bg-red-50 p-4 text-red-800"><AlertTriangle/>{error}</div>}
+-        <button onClick={run} disabled={!ready||busy} className="mt-7 flex items-center gap-2 rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white disabled:opacity-40">{busy?<Loader2 className="animate-spin"/>:<FileSearch/>}{busy?'Building evidence maps…':'Run three reviews'}</button>
++        {!!rubrics.length && <div className="mt-7 space-y-4">{rubrics.map((rubric,ri)=><div key={ri} className="rounded-2xl border bg-white p-6">
++          <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase text-blue-700">Grant {ri+1}</p><h3 className="text-xl font-bold">Extracted NOFO rubric</h3></div><span className={`rounded-full px-3 py-1 text-sm font-bold ${rubric.total_points===100?'bg-emerald-50 text-emerald-700':'bg-amber-50 text-amber-700'}`}>{rubric.total_points} points</span></div>
++          <div className="mt-4 divide-y">{rubric.criteria.map((c,ci)=><div key={ci} className="grid gap-2 py-3 md:grid-cols-[80px_1fr_120px]"><span className="text-sm font-bold text-slate-500">#{c.number}</span><div><p className="font-semibold">{c.name}</p><p className="text-xs text-slate-500">NOFO page {c.source_page}</p></div><label className="text-sm">Points <input className="ml-2 w-16 rounded border px-2 py-1" type="number" min="0" value={c.points} onChange={e=>setCriterionPoints(ri,ci,Number(e.target.value))}/></label></div>)}</div>
++          {!rubric.criteria.length && <p className="mt-4 rounded-lg bg-red-50 p-3 text-red-700">Criteria could not be extracted. Upload a clearer NOFO or enter the rubric manually.</p>}
++          <label className="mt-4 flex items-center gap-2 font-semibold"><input type="checkbox" checked={!!rubric.approved} disabled={!rubric.criteria.length} onChange={e=>setRubricApproval(ri,e.target.checked)}/>I verified these criteria and point values against the NOFO.</label>
++        </div>)}</div>}
++        {!rubrics.length ? <button onClick={extract} disabled={!ready||busy} className="mt-7 flex items-center gap-2 rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white disabled:opacity-40">{busy?<Loader2 className="animate-spin"/>:<FileSearch/>}{busy?'Extracting criteria…':'Extract NOFO scoring criteria'}</button>
++        : <button onClick={run} disabled={busy||!rubrics.every(r=>r.approved)} className="mt-7 flex items-center gap-2 rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white disabled:opacity-40">{busy?<Loader2 className="animate-spin"/>:<FileSearch/>}{busy?'Building evidence maps…':'Run all application reviews'}</button>}
+       </section>}
+       {!!reviews.length && <section>
+-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><h2 className="text-3xl font-bold">Review dashboard</h2><p className="mt-1 text-slate-600">Validate citations, enter reviewer scores, then export.</p></div><button onClick={()=>{setReviews([]);setScores({})}} className="rounded-lg border bg-white px-4 py-2 font-semibold">New review set</button></div>
++        <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><h2 className="text-3xl font-bold">Review dashboard</h2><p className="mt-1 text-slate-600">Validate citations, enter reviewer scores, then export.</p></div><button onClick={()=>{setReviews([]);setRubrics([]);setScores({})}} className="rounded-lg border bg-white px-4 py-2 font-semibold">New review set</button></div>
+         <div className="grid gap-4 md:grid-cols-3">{reviews.map((r,i)=><button key={r.review_id} onClick={()=>setSelected(i)} className={`rounded-xl border p-5 text-left ${selected===i?'border-blue-600 bg-blue-50 ring-2 ring-blue-100':'bg-white'}`}>
+           <div className="flex justify-between"><span className="font-bold">Grant {r.grant_index} · Application {r.application_index}</span><CheckCircle2 className="text-emerald-600" size={20}/></div><p className="mt-3 truncate text-sm font-semibold">{r.application_file}</p><p className="mt-1 text-xs text-slate-500">{r.page_count} pages · human review required</p>
+         </button>)}</div>
+diff --git a/federal-grant-reviewer/src/services/api.ts b/federal-grant-reviewer/src/services/api.ts
+index 864a2b1..e839637 100644
+--- a/federal-grant-reviewer/src/services/api.ts
++++ b/federal-grant-reviewer/src/services/api.ts
+@@ -14,16 +14,31 @@ export interface SafeReview {
+   criteria: SafeCriterion[];
+ }
+ 
+-export interface ReviewPackage { applications: File[]; nofo: File; rubric: File; worksheet: File }
+-export const runSafeReviews = async (packages: ReviewPackage[]): Promise<SafeReview[]> => {
++export interface ReviewPackage { applications: File[]; nofo: File; rubric: File | null; worksheet: File | null }
++export interface ExtractedCriterion { number:number; name:string; points:number; keywords:string[]; source_page:number; source_heading:string }
++export interface ExtractedRubric { grant_index:number; criteria:ExtractedCriterion[]; total_points:number; status:string; warnings:string[]; approved?:boolean }
++
++export const extractRubrics = async (nofos: File[]): Promise<ExtractedRubric[]> => {
++  const formData = new FormData();
++  nofos.forEach(nofo => formData.append('nofos', nofo));
++  const response = await fetch(`${API_BASE_URL}/safe-reviews/extract-rubrics`, {method:'POST', body:formData});
++  const body = await response.json();
++  if (!response.ok) throw new Error(body.detail || 'Rubric extraction failed');
++  return body.rubrics;
++};
++
++export const runSafeReviews = async (packages: ReviewPackage[], criteria: ExtractedRubric[]): Promise<SafeReview[]> => {
+   const formData = new FormData();
++  const includeRubrics = packages.every(item => item.rubric);
++  const includeWorksheets = packages.every(item => item.worksheet);
+   packages.forEach(item => {
+     item.applications.forEach(application => formData.append('applications', application));
+     formData.append('nofos', item.nofo);
+-    formData.append('rubrics', item.rubric);
+-    formData.append('worksheets', item.worksheet);
++    if (includeRubrics && item.rubric) formData.append('rubrics', item.rubric);
++    if (includeWorksheets && item.worksheet) formData.append('worksheets', item.worksheet);
+   });
+   formData.append('application_counts', JSON.stringify(packages.map(item => item.applications.length)));
++  formData.append('approved_criteria', JSON.stringify(criteria));
+   const response = await fetch(`${API_BASE_URL}/safe-reviews/run`, { method: 'POST', body: formData });
+   const body = await response.json();
+   if (!response.ok) throw new Error(body.detail || 'Review processing failed');
+diff --git a/grant-reviewer-mcp/src/grant_reviewer/safe_review.py b/grant-reviewer-mcp/src/grant_reviewer/safe_review.py
+index 8e28432..f5335e2 100644
+--- a/grant-reviewer-mcp/src/grant_reviewer/safe_review.py
++++ b/grant-reviewer-mcp/src/grant_reviewer/safe_review.py
+@@ -12,6 +12,11 @@ try:
+ except ImportError:  # pragma: no cover
+     fitz = None
+ 
++try:
++    from docx import Document
++except ImportError:  # pragma: no cover
++    Document = None
++
+ DEFAULT_HRSA_CRITERIA = [
+     {"name": "Statement of Need", "points": 20, "keywords": ["need", "population", "disparity", "data"]},
+     {"name": "Project Description", "points": 20, "keywords": ["project", "approach", "activities", "services"]},
+@@ -34,6 +39,47 @@ def extract_pdf_pages(path: Path) -> list[str]:
+     with fitz.open(path) as document:
+         return [page.get_text("text") for page in document]
+ 
++def extract_document_pages(path: Path) -> list[str]:
++    if path.suffix.lower() == ".pdf":
++        return extract_pdf_pages(path)
++    if path.suffix.lower() == ".docx" and Document:
++        text = "\n".join(paragraph.text for paragraph in Document(path).paragraphs)
++        return [text]
++    raise ValueError("NOFO must be PDF or DOCX")
++
++def extract_nofo_criteria(path: Path) -> dict[str, Any]:
++    """Extract criterion headings and point values with source-page provenance."""
++    pages = extract_document_pages(path)
++    patterns = [
++        re.compile(r"(?i)criterion\s+(\d+)\s*[:.\-–—]?\s*([^\n(]{2,100}?)\s*\(\s*(\d+)\s*points?\s*\)"),
++        re.compile(r"(?i)(?:review\s+)?criterion\s+(\d+)\s*[:.\-–—]\s*([^\n]{2,100}?)\s*[—–-]\s*(\d+)\s*points?"),
++    ]
++    found = []
++    seen = set()
++    for page_number, text in enumerate(pages, start=1):
++        for pattern in patterns:
++            for match in pattern.finditer(text):
++                number, name, points = match.groups()
++                name = " ".join(name.split()).strip(" :-–—")
++                key = (int(number), name.lower())
++                if key in seen:
++                    continue
++                seen.add(key)
++                nearby = text[match.end():match.end() + 1200]
++                keywords = [word.lower() for word in re.findall(r"[A-Za-z][A-Za-z-]{3,}", name) if word.lower() not in {"criterion", "review"}]
++                found.append({"number": int(number), "name": name, "points": int(points),
++                              "keywords": keywords or [name.lower()], "source_page": page_number,
++                              "source_heading": " ".join(match.group(0).split()),
++                              "context_preview": " ".join(nearby.split())[:500]})
++    found.sort(key=lambda item: item["number"])
++    total = sum(item["points"] for item in found)
++    return {
++        "criteria": found, "total_points": total, "source_file": path.name,
++        "status": "ready_for_approval" if found and total > 0 else "unable_to_extract",
++        "warnings": ([] if total == 100 else [f"Extracted point total is {total}, not 100; reviewer verification required."]),
++        "human_approval_required": True,
++    }
++
+ def _sentences(text: str) -> Iterable[str]:
+     for sentence in re.split(r"(?<=[.!?])\s+|\n+", text):
+         cleaned = " ".join(sentence.split())
+diff --git a/grant-reviewer-mcp/tests/test_safe_review.py b/grant-reviewer-mcp/tests/test_safe_review.py
+index dbffecc..1a43147 100644
+--- a/grant-reviewer-mcp/tests/test_safe_review.py
++++ b/grant-reviewer-mcp/tests/test_safe_review.py
+@@ -2,7 +2,7 @@ import json
+ import unittest
+ from pathlib import Path
+ from unittest.mock import patch
+-from grant_reviewer.safe_review import find_evidence, review_application, run_manifest
++from grant_reviewer.safe_review import extract_nofo_criteria, find_evidence, review_application, run_manifest
+ 
+ class SafeReviewTests(unittest.TestCase):
+     def test_page_citations_are_actual(self):
+@@ -28,5 +28,15 @@ class SafeReviewTests(unittest.TestCase):
+             with self.assertRaisesRegex(ValueError, "exactly three"):
+                 run_manifest(manifest, Path(directory) / "out")
+ 
++    @patch("grant_reviewer.safe_review.extract_document_pages", return_value=[
++        "Criterion 1: Need (20 points)\nCriterion 2: Response (30 points)",
++        "Criterion 3: Evaluation (50 points)"
++    ])
++    def test_nofo_rubric_extraction_preserves_pages_and_total(self, _):
++        result = extract_nofo_criteria(Path("nofo.pdf"))
++        self.assertEqual(result["total_points"], 100)
++        self.assertEqual([item["source_page"] for item in result["criteria"]], [1, 1, 2])
++        self.assertTrue(result["human_approval_required"])
++
+ if __name__ == "__main__":
+     unittest.main()
+-- 
+2.51.1
+

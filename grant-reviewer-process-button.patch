@@ -1,0 +1,100 @@
+From f35cd3f9f9e0cefaddedcb04639772a4a8f919b3 Mon Sep 17 00:00:00 2001
+From: Codex <codex@openai.com>
+Date: Sat, 18 Jul 2026 19:50:10 -0600
+Subject: [PATCH] Add visible processing action and single-grant test mode
+
+---
+ federal-grant-reviewer/backend/main.py          | 17 +++++++++--------
+ .../src/components/SafeReviewDashboard.tsx      | 16 +++++++++++-----
+ 2 files changed, 20 insertions(+), 13 deletions(-)
+
+diff --git a/federal-grant-reviewer/backend/main.py b/federal-grant-reviewer/backend/main.py
+index 2df1fde..32d8f15 100644
+--- a/federal-grant-reviewer/backend/main.py
++++ b/federal-grant-reviewer/backend/main.py
+@@ -82,8 +82,8 @@ app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
+ 
+ @app.post("/safe-reviews/extract-rubrics")
+ async def extract_safe_rubrics(nofos: list[UploadFile] = File(...)):
+-    if len(nofos) != 3:
+-        raise HTTPException(status_code=400, detail="Exactly three NOFO files are required")
++    if not 1 <= len(nofos) <= 3:
++        raise HTTPException(status_code=400, detail="Upload between one and three NOFO files")
+     rubrics = []
+     for index, upload in enumerate(nofos, start=1):
+         extension = Path(upload.filename or "").suffix.lower()
+@@ -114,18 +114,19 @@ async def run_safe_reviews(
+         counts = json.loads(application_counts)
+     except json.JSONDecodeError:
+         raise HTTPException(status_code=400, detail="Invalid application counts")
+-    if len(counts) != 3 or any(not isinstance(count, int) or count < 1 for count in counts):
+-        raise HTTPException(status_code=400, detail="Each of the three grants requires at least one application")
++    grant_count = len(counts)
++    if not 1 <= grant_count <= 3 or any(not isinstance(count, int) or count < 1 for count in counts):
++        raise HTTPException(status_code=400, detail="Provide one to three grants, each with at least one application")
+     rubrics = rubrics or []
+     worksheets = worksheets or []
+-    if len(applications) != sum(counts) or len(nofos) != 3 or len(rubrics) not in {0, 3} or len(worksheets) not in {0, 3}:
+-        raise HTTPException(status_code=400, detail="The uploaded files do not match the three grant packages")
++    if len(applications) != sum(counts) or len(nofos) != grant_count or len(rubrics) not in {0, grant_count} or len(worksheets) not in {0, grant_count}:
++        raise HTTPException(status_code=400, detail="The uploaded files do not match the active grant packages")
+     try:
+         criteria_sets = json.loads(approved_criteria)
+     except json.JSONDecodeError:
+         raise HTTPException(status_code=400, detail="Invalid approved criteria")
+-    if len(criteria_sets) != 3 or any(not item.get("approved") or not item.get("criteria") for item in criteria_sets):
+-        raise HTTPException(status_code=400, detail="All three NOFO rubrics must be approved before review")
++    if len(criteria_sets) != grant_count or any(not item.get("approved") or not item.get("criteria") for item in criteria_sets):
++        raise HTTPException(status_code=400, detail="Every active grant rubric must be approved before review")
+     results = []
+     allowed = {".pdf", ".doc", ".docx", ".txt"}
+     application_offset = 0
+diff --git a/federal-grant-reviewer/src/components/SafeReviewDashboard.tsx b/federal-grant-reviewer/src/components/SafeReviewDashboard.tsx
+index f883ff7..64a503d 100644
+--- a/federal-grant-reviewer/src/components/SafeReviewDashboard.tsx
++++ b/federal-grant-reviewer/src/components/SafeReviewDashboard.tsx
+@@ -13,7 +13,10 @@ const SafeReviewDashboard: React.FC = () => {
+   const [scores, setScores] = useState<Record<string, string>>({});
+   const [busy, setBusy] = useState(false);
+   const [error, setError] = useState('');
+-  const ready = packages.every(item => item.applications.length > 0 && item.nofo);
++  const started = (item: PackageDraft) => item.applications.length > 0 || !!item.nofo || !!item.rubric || !!item.worksheet;
++  const complete = (item: PackageDraft) => item.applications.length > 0 && !!item.nofo;
++  const activePackages = packages.filter(complete);
++  const ready = activePackages.length > 0 && packages.every(item => !started(item) || complete(item));
+   const current = reviews[selected];
+   const scoreTotal = useMemo(() => current?.criteria.reduce((sum, c) => sum + Number(scores[`${current.review_id}:${c.name}`] || 0), 0) || 0, [current, scores]);
+ 
+@@ -25,13 +28,13 @@ const SafeReviewDashboard: React.FC = () => {
+   };
+   const run = async () => {
+     setBusy(true); setError('');
+-    try { setReviews(await runSafeReviews(packages as ReviewPackage[], rubrics)); setSelected(0); }
++    try { setReviews(await runSafeReviews(activePackages as ReviewPackage[], rubrics)); setSelected(0); }
+     catch (e) { setError(e instanceof Error ? e.message : 'Review failed'); }
+     finally { setBusy(false); }
+   };
+   const extract = async () => {
+     setBusy(true); setError('');
+-    try { setRubrics(await extractRubrics(packages.map(item => item.nofo as File))); }
++    try { setRubrics(await extractRubrics(activePackages.map(item => item.nofo as File))); }
+     catch (e) { setError(e instanceof Error ? e.message : 'Rubric extraction failed'); }
+     finally { setBusy(false); }
+   };
+@@ -81,8 +84,11 @@ const SafeReviewDashboard: React.FC = () => {
+           {!rubric.criteria.length && <p className="mt-4 rounded-lg bg-red-50 p-3 text-red-700">Criteria could not be extracted. Upload a clearer NOFO or enter the rubric manually.</p>}
+           <label className="mt-4 flex items-center gap-2 font-semibold"><input type="checkbox" checked={!!rubric.approved} disabled={!rubric.criteria.length} onChange={e=>setRubricApproval(ri,e.target.checked)}/>I verified these criteria and point values against the NOFO.</label>
+         </div>)}</div>}
+-        {!rubrics.length ? <button onClick={extract} disabled={!ready||busy} className="mt-7 flex items-center gap-2 rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white disabled:opacity-40">{busy?<Loader2 className="animate-spin"/>:<FileSearch/>}{busy?'Extracting criteria…':'Extract NOFO scoring criteria'}</button>
+-        : <button onClick={run} disabled={busy||!rubrics.every(r=>r.approved)} className="mt-7 flex items-center gap-2 rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white disabled:opacity-40">{busy?<Loader2 className="animate-spin"/>:<FileSearch/>}{busy?'Building evidence maps…':'Run all application reviews'}</button>}
++        <div className="sticky bottom-4 mt-7 rounded-2xl border border-blue-200 bg-white/95 p-4 shadow-xl backdrop-blur"><div className="flex flex-wrap items-center justify-between gap-3">
++          <div><p className="font-bold">{activePackages.length} grant workspace(s) ready</p><p className="text-sm text-slate-500">{!ready?'Add an application and NOFO. Complete or clear any partially filled grant.':!rubrics.length?'Ready to extract the NOFO scoring criteria.':'Approve every rubric, then run the application reviews.'}</p></div>
++          {!rubrics.length ? <button onClick={extract} disabled={!ready||busy} className="flex items-center gap-2 rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white disabled:opacity-40">{busy?<Loader2 className="animate-spin"/>:<FileSearch/>}{busy?'Extracting criteria…':'Process uploaded documents'}</button>
++          : <button onClick={run} disabled={busy||!rubrics.every(r=>r.approved)} className="flex items-center gap-2 rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white disabled:opacity-40">{busy?<Loader2 className="animate-spin"/>:<FileSearch/>}{busy?'Building evidence maps…':'Run application reviews'}</button>}
++        </div></div>
+       </section>}
+       {!!reviews.length && <section>
+         <div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><h2 className="text-3xl font-bold">Review dashboard</h2><p className="mt-1 text-slate-600">Validate citations, enter reviewer scores, then export.</p></div><button onClick={()=>{setReviews([]);setRubrics([]);setScores({})}} className="rounded-lg border bg-white px-4 py-2 font-semibold">New review set</button></div>
+-- 
+2.51.1
+
