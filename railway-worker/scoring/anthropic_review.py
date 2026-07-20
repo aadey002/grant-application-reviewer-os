@@ -223,7 +223,7 @@ def _score_single_criterion(client, model: str, application_text: str, criterion
             "strengths": {"type": "array", "items": strength_met}, "mets": {"type": "array", "items": strength_met},
             "weaknesses": {"type": "array", "items": weakness},
             "subcriteria": {"type": "array", "items": sub},
-            "formula_version": {"type": "string", "enum": ["equitable-v1"]},
+            "formula_version": {"type": "string", "enum": ["equitable-v1.2"]},
             "requirement_assessments": {"type": "array", "items": requirement_assessment},
             "question_responses": {"type": "array", "items": question_answer}}}}
 
@@ -272,7 +272,7 @@ INSTRUCTIONS:
 2. Assess each requirement individually in requirement_assessments (use response_status: exceeds/fully_addressed/partially_addressed/not_addressed/unable_to_evaluate).
 3. Classify the overall criterion (strength/met/minor_weakness/moderate_weakness/major_weakness/not_addressed).
 4. Apply the corresponding multiplier (1.0/0.9/0.7/0.5/0.25/0.0).
-5. Calculate: calculated_score = round_half_up(maximum_points × multiplier). Set formula_version to "equitable-v1".
+5. Calculate: calculated_score = round_half_up(maximum_points × multiplier). Set formula_version to "equitable-v1.2".
 6. Find all evaluation questions/bullets listed under this criterion in the NOFO.
 7. For EACH question, provide the application's answer with page citations in question_responses.
 8. Assess each as strength (exceeds), met (satisfies), or weakness (falls short).
@@ -300,7 +300,7 @@ INSTRUCTIONS:
         mult = MULTIPLIER_MAP.get(result["classification"], 0.9)
         result["multiplier"] = mult
         result["calculated_score"] = round(points * mult)
-        result["formula_version"] = "equitable-v1"
+        result["formula_version"] = "equitable-v1.2"
     elif not result.get("calculated_score") and result.get("score"):
         # Legacy: Claude returned a raw score — infer classification
         raw = result["score"]
@@ -313,7 +313,7 @@ INSTRUCTIONS:
         else: result["classification"] = "not_addressed"
         result["multiplier"] = MULTIPLIER_MAP[result["classification"]]
         result["calculated_score"] = round(points * result["multiplier"])
-        result["formula_version"] = "equitable-v1"
+        result["formula_version"] = "equitable-v1.2"
     # Map calculated_score → score for backward compatibility with frontend/validate
     result["score"] = result.get("calculated_score", result.get("score", 0))
     logger.info("  Criterion '%s': %s/%s (multiplier=%s, classification=%s)",
@@ -411,9 +411,9 @@ Each overview field should be 2-3 concise sentences. Never use unexpanded acrony
         "overall_summary": overview_data.get("overall_summary", ""),
         "final_score": total,
         "maximum_score": max_total,
-        "formula_version": "equitable-v1",
+        "formula_version": "equitable-v1.2",
         "review_status": "ai_draft_human_validation_required",
         "certification": "Claude-generated draft. A human reviewer must verify every finding, citation, score, and budget recommendation.",
     }
-    logger.info("Review complete: %d/%d (formula: equitable-v1)", total, max_total)
+    logger.info("Review complete: %d/%d (formula: equitable-v1.2)", total, max_total)
     return review
