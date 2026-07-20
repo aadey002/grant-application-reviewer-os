@@ -1560,7 +1560,7 @@ const SafeReviewDashboard: React.FC = () => {
                     const matchedReview = reviews.find(
                       r => r.applicant_name === p.applicationName || r.review_id === p.jobId
                     );
-                    const appId = matchedReview?.review_id;
+                    const appId = matchedReview?.application_id;
                     if (!appId || !currentReviewId) return null;
                     return (
                       <div className="flex gap-2 mt-3">
@@ -1665,9 +1665,9 @@ const SafeReviewDashboard: React.FC = () => {
                                 const url = await getNofoBriefDownload(brief.id);
                                 window.open(url, '_blank');
                               } else {
-                                setError('NOFO Brief not yet generated. It will be available after the first review.');
+                                alert('NOFO Brief has not been generated yet for this review.');
                               }
-                            } catch { setError('NOFO Brief not available'); }
+                            } catch { /* brief not available — silent */ }
                           }}
                           className="flex items-center gap-2 rounded-lg border bg-white px-3 py-1.5 text-sm font-semibold text-blue-700 hover:bg-blue-50"
                         >
@@ -1736,7 +1736,7 @@ const SafeReviewDashboard: React.FC = () => {
                                     <button
                                       onClick={async () => {
                                         try {
-                                          const { url } = await getApplicationViewUrl(currentReviewId!, current.review_id);
+                                          const { url } = await getApplicationViewUrl(currentReviewId!, current.application_id);
                                           window.open(url + '#page=' + (qr.application_pages || [])[0], '_blank');
                                         } catch (e) { setError(e instanceof Error ? e.message : 'Failed to open'); }
                                       }}
@@ -1775,7 +1775,7 @@ const SafeReviewDashboard: React.FC = () => {
                                               <button
                                                 onClick={async () => {
                                                   try {
-                                                    const { url } = await getApplicationViewUrl(currentReviewId!, current.review_id);
+                                                    const { url } = await getApplicationViewUrl(currentReviewId!, current.application_id);
                                                     window.open(url + '#page=' + pages[0], '_blank');
                                                   } catch (e) { setError(e instanceof Error ? e.message : 'Failed to open'); }
                                                 }}
@@ -1803,7 +1803,7 @@ const SafeReviewDashboard: React.FC = () => {
                                           <button
                                             onClick={async () => {
                                               try {
-                                                const { url } = await getApplicationViewUrl(currentReviewId!, current.review_id);
+                                                const { url } = await getApplicationViewUrl(currentReviewId!, current.application_id);
                                                 window.open(url + '#page=' + pages[0], '_blank');
                                               } catch (e) { setError(e instanceof Error ? e.message : 'Failed to open'); }
                                             }}

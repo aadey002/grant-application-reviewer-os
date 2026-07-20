@@ -19,7 +19,7 @@ export interface SafeCriterion {
   subcriteria?: Array<{name:string;score:number;maximum_points:number}>;
 }
 export interface SafeReview {
-  review_id: string; application_file: string; page_count: number; word_count: number;
+  review_id: string; application_id: string; application_file: string; page_count: number; word_count: number;
   agency: string; application_index: number;
   review_status: string; final_score: number | null; certification: string;
   maximum_score?: number; applicant_name?: string; application_number?: string;
@@ -226,6 +226,7 @@ export const getReviewResults = async (reviewId: string): Promise<ReviewResults>
     if (!result) continue;
     reviews.push({
       review_id: result.review_id || app.review_id,
+      application_id: app.id,
       application_file: app.filename,
       page_count: result.page_count || app.page_count || 0,
       word_count: result.word_count || app.word_count || 0,
