@@ -375,29 +375,21 @@ Each overview field should be 2-3 concise sentences. Never use unexpanded acrony
             result = json.loads(result)
         return result
 
-    with ThreadPoolExecutor(max_workers=3) as pool:
-        # Submit all 6 criteria + 1 overview
-        criterion_futures = {
-            pool.submit(_score_single_criterion, client, model, application_text, crit, agency, nofo_text, len(pages)): i
-            for i, crit in enumerate(criteria)
-        }
-        overview_future = pool.submit(_get_overview)
+    # Score criteria sequentially to avoid memory exhaustion on Render Starter
+    for i, crit in enumerate(criteria):
+        try:
+            scored_criteria[i] = _score_single_criterion(client, model, application_text, crit, agency, nofo_text, len(pages))
+        except Exception as exc:
+            logger.error("Criterion %d (%s) failed: %s", i, crit['name'], exc)
+            errors.append(f"{crit['name']}: {exc}")
 
-        for future in as_completed(list(criterion_futures.keys()) + [overview_future]):
-            if future == overview_future:
-                try:
-                    overview_data = future.result()
-                    logger.info("  Overview extracted: %s", overview_data.get("applicant_name", "?"))
-                except Exception as exc:
-                    logger.error("Overview failed: %s", exc)
-                    errors.append(f"Overview: {exc}")
-            else:
-                idx = criterion_futures[future]
-                try:
-                    scored_criteria[idx] = future.result()
-                except Exception as exc:
-                    logger.error("Criterion %d failed: %s", idx, exc)
-                    errors.append(f"{criteria[idx]['name']}: {exc}")
+    # Overview call after criteria
+    try:
+        overview_data = _get_overview()
+        logger.info("  Overview extracted: %s", overview_data.get("applicant_name", "?"))
+    except Exception as exc:
+        logger.error("Overview failed: %s", exc)
+        errors.append(f"Overview: {exc}")
 
     if errors:
         raise RuntimeError("Scoring failed: " + "; ".join(errors))
