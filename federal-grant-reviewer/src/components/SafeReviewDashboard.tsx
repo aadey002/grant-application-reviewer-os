@@ -721,25 +721,27 @@ const SafeReviewDashboard: React.FC = () => {
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [polling, currentReviewId, stopPolling]);
 
-  // When all jobs reach terminal state, fetch results (stay on processing step)
+  // When all jobs reach terminal state, fetch results automatically
   useEffect(() => {
-    if (!polling || appProgress.length === 0) return;
+    if (appProgress.length === 0) return;
     const allDone = appProgress.every(p => p.status === 'completed' || p.status === 'failed');
-    if (allDone) {
-      stopPolling();
-      if (currentReviewId) {
-        getReviewResults(currentReviewId)
-          .then(fetched => {
+    if (!allDone) return;
+    // All done — stop polling and fetch results
+    if (polling) stopPolling();
+    setProcessingStartTime(null);
+    if (currentReviewId && reviews.length === 0) {
+      getReviewResults(currentReviewId)
+        .then(fetched => {
+          if (fetched.reviews?.length > 0) {
             setReviews(fetched.reviews);
             setSelected(0);
-            // Stay on step='processing' — results render inline
             updateStoredReviewStatus(currentReviewId, 'completed');
             setStoredReviews(loadStoredReviews());
-          })
-          .catch(e => setError(e instanceof Error ? e.message : 'Failed to fetch results'));
-      }
+          }
+        })
+        .catch(e => setError(e instanceof Error ? e.message : 'Failed to fetch results'));
     }
-  }, [appProgress, polling, currentReviewId, stopPolling]);
+  }, [appProgress, currentReviewId]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---------------------------------------------------------------------------
   // Helpers
