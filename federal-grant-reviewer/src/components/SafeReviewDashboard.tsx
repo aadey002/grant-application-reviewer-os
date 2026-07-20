@@ -77,7 +77,7 @@ interface AppProgress {
 
 const POLL_INTERVAL_MS = 5000;
 
-type Step = 'upload' | 'rubric' | 'brief' | 'processing' | 'results' | 'history';
+type Step = 'upload' | 'rubric' | 'brief' | 'processing' | 'history';
 
 // ---------------------------------------------------------------------------
 // Status helpers
@@ -157,8 +157,15 @@ const SafeReviewDashboard: React.FC = () => {
   // History
   const [storedReviews, setStoredReviews] = useState<StoredReview[]>(loadStoredReviews);
 
-  const current = reviews[selected];
+  const current = reviews[selected] ?? reviews[0] ?? null;
   const scoreTotal = useMemo(() => current?.final_score ?? null, [current]);
+
+  // Auto-select first review if current is null but reviews exist
+  useEffect(() => {
+    if (reviews.length > 0 && selected >= reviews.length) {
+      setSelected(0);
+    }
+  }, [reviews, selected]);
 
   // ---------------------------------------------------------------------------
   // Route handling — respond to #/reviews/{id} on mount and hash changes
@@ -210,6 +217,21 @@ const SafeReviewDashboard: React.FC = () => {
     if (stored) setAgency(stored.agency);
     setError('');
     setBusy(true);
+    setStep('processing');
+    window.location.hash = '#/reviews/' + reviewId;
+
+    // Build initial appProgress from stored data so the screen is never blank
+    if (stored && stored.job_ids.length > 0) {
+      setAppProgress(stored.job_ids.map((id, i) => ({
+        jobId: id,
+        applicationName: stored.app_names[i] ?? 'Application ' + (i + 1),
+        status: 'queued' as const,
+        progress: 0,
+        message: 'Loading...',
+        score: null,
+        errorMessage: null,
+      })));
+    }
 
     // Try to get results from Supabase (works even without localStorage)
     try {
@@ -217,12 +239,22 @@ const SafeReviewDashboard: React.FC = () => {
       if (fetched.reviews?.length > 0) {
         setReviews(fetched.reviews);
         setSelected(0);
-        setStep('results');
+        // Build completed appProgress from the fetched reviews
+        setAppProgress(fetched.reviews.map((r: SafeReview, i: number) => ({
+          jobId: r.review_id ?? 'result-' + i,
+          applicationName: r.applicant_name || stored?.app_names[i] || 'Application ' + (i + 1),
+          status: 'completed' as const,
+          progress: 100,
+          message: 'Score: ' + (r.final_score ?? '—'),
+          score: r.final_score ?? null,
+          errorMessage: null,
+        })));
         if (stored) {
           updateStoredReviewStatus(reviewId, 'completed');
           setStoredReviews(loadStoredReviews());
         }
         setBusy(false);
+        // Stay on step='processing' — results render inline
         return;
       }
     } catch {
@@ -231,24 +263,13 @@ const SafeReviewDashboard: React.FC = () => {
     setBusy(false);
 
     if (!stored) {
-      setError('Review has no completed results yet.');
+      setError('Review not found. It may still be processing — check My Reviews.');
       return;
     }
 
-    // Resume polling
+    // Resume polling for in-progress reviews
     if (stored.job_ids.length > 0) {
-      const initial: AppProgress[] = stored.job_ids.map((id, i) => ({
-        jobId: id,
-        applicationName: stored.app_names[i] ?? 'Application ' + (i + 1),
-        status: 'queued' as const,
-        progress: 0,
-        message: 'Resuming check...',
-        score: null,
-        errorMessage: null,
-      }));
-      setAppProgress(initial);
       setPolling(true);
-      setStep('processing');
     }
   }, []);
 
@@ -497,6 +518,7 @@ const SafeReviewDashboard: React.FC = () => {
 
       savedReviewId = result.review_id;
       setCurrentReviewId(result.review_id);
+      window.location.hash = '#/reviews/' + result.review_id;
 
       const stored: StoredReview = {
         review_id: result.review_id,
@@ -522,12 +544,21 @@ const SafeReviewDashboard: React.FC = () => {
         }));
         setAppProgress(initial);
         setPolling(true);
-        setStep('processing');
+        // step is already 'processing'
       } else {
         const fetched = await getReviewResults(result.review_id);
         setReviews(fetched.reviews);
         setSelected(0);
-        setStep('results');
+        // Stay on processing — results render inline
+        setAppProgress(fetched.reviews.map((r: SafeReview, i: number) => ({
+          jobId: r.review_id ?? 'result-' + i,
+          applicationName: r.applicant_name || applications[i]?.name || 'Application ' + (i + 1),
+          status: 'completed' as const,
+          progress: 100,
+          message: 'Score: ' + (r.final_score ?? '—'),
+          score: r.final_score ?? null,
+          errorMessage: null,
+        })));
         updateStoredReviewStatus(result.review_id, 'completed');
         setStoredReviews(loadStoredReviews());
       }
@@ -607,7 +638,7 @@ const SafeReviewDashboard: React.FC = () => {
             const fetched = await getReviewResults(currentReviewId);
             setReviews(fetched.reviews);
             setSelected(0);
-            setStep('results');
+            // Stay on step='processing' — results render inline
             updateStoredReviewStatus(currentReviewId, 'completed');
             setStoredReviews(loadStoredReviews());
           } catch (e) {
@@ -656,7 +687,7 @@ const SafeReviewDashboard: React.FC = () => {
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [polling, currentReviewId, stopPolling]);
 
-  // When all jobs reach terminal state, fetch results
+  // When all jobs reach terminal state, fetch results (stay on processing step)
   useEffect(() => {
     if (!polling || appProgress.length === 0) return;
     const allDone = appProgress.every(p => p.status === 'completed' || p.status === 'failed');
@@ -667,7 +698,7 @@ const SafeReviewDashboard: React.FC = () => {
           .then(fetched => {
             setReviews(fetched.reviews);
             setSelected(0);
-            setStep('results');
+            // Stay on step='processing' — results render inline
             updateStoredReviewStatus(currentReviewId, 'completed');
             setStoredReviews(loadStoredReviews());
           })
@@ -854,16 +885,16 @@ const SafeReviewDashboard: React.FC = () => {
           <span className={step === 'upload' ? 'text-blue-700' : 'text-emerald-700'}>
             <Upload className="mr-2 inline" size={20} />Upload
           </span>
-          <span className={step === 'rubric' ? 'text-blue-700' : (step === 'brief' || step === 'processing' || step === 'results') ? 'text-emerald-700' : 'text-slate-400'}>
+          <span className={step === 'rubric' ? 'text-blue-700' : (step === 'brief' || step === 'processing') ? 'text-emerald-700' : 'text-slate-400'}>
             <BarChart3 className="mr-2 inline" size={20} />Rubric
           </span>
-          <span className={step === 'brief' ? 'text-blue-700' : (step === 'processing' || step === 'results') ? 'text-emerald-700' : 'text-slate-400'}>
+          <span className={step === 'brief' ? 'text-blue-700' : step === 'processing' ? 'text-emerald-700' : 'text-slate-400'}>
             <FileText className="mr-2 inline" size={20} />NOFO Brief
           </span>
-          <span className={step === 'processing' ? 'text-blue-700' : step === 'results' ? 'text-emerald-700' : 'text-slate-400'}>
-            <Loader2 className={'mr-2 inline' + (step === 'processing' ? ' animate-spin' : '')} size={20} />Processing
+          <span className={step === 'processing' && (polling || appProgress.some(p => p.status !== 'completed' && p.status !== 'failed')) ? 'text-blue-700' : step === 'processing' ? 'text-emerald-700' : 'text-slate-400'}>
+            <Loader2 className={'mr-2 inline' + (step === 'processing' && polling ? ' animate-spin' : '')} size={20} />Processing
           </span>
-          <span className={step === 'results' ? 'text-blue-700' : 'text-slate-400'}>
+          <span className={step === 'processing' && reviews.length > 0 && !polling ? 'text-emerald-700' : 'text-slate-400'}>
             <CheckCircle2 className="mr-2 inline" size={20} />Results
           </span>
         </div>
@@ -1340,8 +1371,11 @@ const SafeReviewDashboard: React.FC = () => {
               <div>
                 <h2 className="text-2xl font-bold">
                   {busy && completedJobs === 0 && failedJobs === 0 ? 'Submitting review...' :
-                   completedJobs === totalJobs && totalJobs > 0 ? 'Review complete' :
-                   'Applications being reviewed'}
+                   reviews.length > 0 && completedJobs === totalJobs && totalJobs > 0
+                     ? 'Review complete \u2014 ' + reviews.length + ' application' + (reviews.length === 1 ? '' : 's') + ' scored'
+                     : completedJobs === totalJobs && totalJobs > 0 ? 'Review complete'
+                     : totalJobs > 0 ? 'Processing ' + (completedJobs + failedJobs) + ' of ' + totalJobs + ' applications'
+                     : 'Applications being reviewed'}
                 </h2>
                 <p className="mt-1 text-slate-500">
                   {currentReviewId
@@ -1403,7 +1437,18 @@ const SafeReviewDashboard: React.FC = () => {
                       if (fetched.reviews?.length > 0) {
                         setReviews(fetched.reviews);
                         setSelected(0);
-                        setStep('results');
+                        // Build completed appProgress from fetched reviews
+                        setAppProgress(fetched.reviews.map((r: SafeReview, i: number) => ({
+                          jobId: r.review_id ?? 'result-' + i,
+                          applicationName: r.applicant_name || 'Application ' + (i + 1),
+                          status: 'completed' as const,
+                          progress: 100,
+                          message: 'Score: ' + (r.final_score ?? '—'),
+                          score: r.final_score ?? null,
+                          errorMessage: null,
+                        })));
+                        updateStoredReviewStatus(currentReviewId, 'completed');
+                        setStoredReviews(loadStoredReviews());
                       } else {
                         setError('No completed results yet. The review may still be processing.');
                       }
@@ -1478,199 +1523,236 @@ const SafeReviewDashboard: React.FC = () => {
                 onClick={reset}
                 className="flex items-center gap-2 rounded-lg border bg-white px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
               >
-                <XCircle size={16} /> Cancel Review
+                <XCircle size={16} /> {reviews.length > 0 ? 'New Review' : 'Cancel Review'}
               </button>
-              {polling && (
-                <span className="flex items-center gap-2 text-sm text-slate-500">
-                  <Loader2 size={14} className="animate-spin" /> Polling every 5s…
-                </span>
-              )}
-            </div>
-          </section>
-        )}
-
-        {/* ------------------------------------------------------------------ */}
-        {/* STEP: RESULTS                                                       */}
-        {/* ------------------------------------------------------------------ */}
-        {step === 'results' && current && (
-          <section>
-            <div className="mb-6 flex items-end justify-between">
-              <div>
-                <h2 className="text-3xl font-bold">Application reviews</h2>
-                <p className="text-slate-600">{agency} · {reviews.length} application(s) scored independently by Claude</p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleDeleteAndReset}
-                  className="flex items-center gap-2 rounded-lg border bg-white px-4 py-2 font-semibold text-red-600 hover:bg-red-50"
-                >
-                  <Trash2 size={16} /> Delete Review
-                </button>
-                <button onClick={reset} className="rounded-lg border bg-white px-4 py-2 font-semibold">
-                  New grant review
-                </button>
+              <div className="flex items-center gap-3">
+                {reviews.length > 0 && (
+                  <button
+                    onClick={handleDeleteAndReset}
+                    className="flex items-center gap-2 rounded-lg border bg-white px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 size={16} /> Delete Review
+                  </button>
+                )}
+                {polling && (
+                  <span className="flex items-center gap-2 text-sm text-slate-500">
+                    <Loader2 size={14} className="animate-spin" /> Polling every 5s…
+                  </span>
+                )}
               </div>
             </div>
 
-            {/* NOFO Brief + Overview section */}
-            {current.applicant_name && (
-              <div className="mb-6 rounded-xl border bg-slate-50 p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-bold text-lg">Overview Presentation Information</h3>
-                  {currentReviewId && (
-                    <button
-                      onClick={async () => {
-                        try {
-                          const brief = await getNofoBrief(currentReviewId!);
-                          if (brief?.docx_storage_path) {
-                            const url = await getNofoBriefDownload(brief.id);
-                            window.open(url, '_blank');
-                          } else {
-                            setError('NOFO Brief not yet generated. It will be available after the first review.');
-                          }
-                        } catch { setError('NOFO Brief not available'); }
-                      }}
-                      className="flex items-center gap-2 rounded-lg border bg-white px-3 py-1.5 text-sm font-semibold text-blue-700 hover:bg-blue-50"
-                    >
-                      <Download size={14} /> NOFO Brief
-                    </button>
-                  )}
-                </div>
-                <div className="grid gap-3 text-sm">
-                  {current.applicant_name && <div><span className="font-semibold text-slate-500">Applicant:</span> {current.applicant_name}</div>}
-                  {current.application_number && <div><span className="font-semibold text-slate-500">Application #:</span> {current.application_number}</div>}
+            {/* ------------------------------------------------------------ */}
+            {/* Completed results appear inline below the progress cards      */}
+            {/* ------------------------------------------------------------ */}
+            {reviews.length > 0 && !polling && completedJobs === totalJobs && totalJobs > 0 && (
+              <div className="mt-6 rounded-xl border-2 border-emerald-300 bg-emerald-50 p-4 flex items-center gap-3">
+                <CheckCircle2 size={24} className="text-emerald-600 shrink-0" />
+                <div>
+                  <p className="font-bold text-emerald-800">All applications scored successfully</p>
+                  <p className="text-sm text-emerald-700">Select an application below to view detailed results.</p>
                 </div>
               </div>
             )}
 
-            <div className="mb-6 flex flex-wrap gap-2">
-              {reviews.map((r, i) => (
-                <button
-                  key={r.review_id}
-                  onClick={() => setSelected(i)}
-                  className={'rounded-lg border px-4 py-2 text-sm font-semibold ' + (selected === i ? 'border-blue-600 bg-blue-600 text-white' : 'bg-white')}
-                >
-                  {r.applicant_name || 'Application ' + (i + 1)}
-                </button>
-              ))}
-            </div>
+            {reviews.length > 0 && current && (
+              <div className="mt-8">
+                <div className="mb-6 flex items-end justify-between">
+                  <div>
+                    <h2 className="text-3xl font-bold">Application reviews</h2>
+                    <p className="text-slate-600">{agency} · {reviews.length} application(s) scored independently by Claude</p>
+                  </div>
+                </div>
 
-            {error && <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-800">{error}</div>}
-
-            <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
-              <div className="space-y-4">
-                {current.criteria.map(c => (
-                  <article key={c.name} className="rounded-xl border bg-white p-6">
-                    <div className="flex justify-between gap-3">
-                      <div>
-                        <h3 className="font-bold">{c.name}</h3>
-                        <p className="mt-1 text-sm text-slate-600">{c.score_rationale}</p>
-                      </div>
-                      <div className="shrink-0 rounded-lg bg-blue-50 px-4 py-2 font-bold text-blue-800">
-                        {c.score !== undefined && c.score !== null ? c.score : '—'} / {c.maximum_points}
-                      </div>
+                {/* NOFO Brief + Overview section */}
+                {current.applicant_name && (
+                  <div className="mb-6 rounded-xl border bg-slate-50 p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-bold text-lg">Overview Presentation Information</h3>
+                      {currentReviewId && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              const brief = await getNofoBrief(currentReviewId!);
+                              if (brief?.docx_storage_path) {
+                                const url = await getNofoBriefDownload(brief.id);
+                                window.open(url, '_blank');
+                              } else {
+                                setError('NOFO Brief not yet generated. It will be available after the first review.');
+                              }
+                            } catch { setError('NOFO Brief not available'); }
+                          }}
+                          className="flex items-center gap-2 rounded-lg border bg-white px-3 py-1.5 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+                        >
+                          <Download size={14} /> NOFO Brief
+                        </button>
+                      )}
                     </div>
-                    {/* NOFO Question Responses */}
-                    {(c as any).question_responses?.length > 0 && (
-                      <div className="mt-5">
-                        <p className="text-xs font-bold uppercase tracking-wide text-slate-500 mb-3">NOFO Evaluation Questions</p>
-                        <div className="space-y-3">
-                          {(c as any).question_responses.map((qr: any, qi: number) => (
-                            <div key={qi} className="rounded-lg border p-4">
-                              <p className="text-sm font-semibold text-slate-700">Q: {qr.nofo_question}</p>
-                              <p className="mt-2 text-sm leading-6">{qr.answer}</p>
-                              <div className="mt-2 flex items-center gap-3">
-                                <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
-                                  qr.assessment === 'strength' ? 'bg-emerald-100 text-emerald-800' :
-                                  qr.assessment === 'weakness' ? 'bg-red-100 text-red-800' :
-                                  'bg-blue-100 text-blue-800'
-                                }`}>{qr.assessment}</span>
-                                <span className="text-xs font-bold text-blue-700">Application p. {(qr.application_pages || []).join(', ')}</span>
-                              </div>
-                              {qr.assessment === 'weakness' && qr.nofo_requirement && (
-                                <div className="mt-2 rounded border-l-4 border-amber-400 bg-amber-50 p-2">
-                                  <p className="text-xs text-amber-800"><span className="font-bold">NOFO:</span> {qr.nofo_requirement} (p. {(qr.nofo_pages || []).join(', ')})</p>
-                                  {qr.impact && <p className="text-xs text-amber-700 mt-1"><span className="font-bold">Impact:</span> {qr.impact}</p>}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {(['strengths', 'mets', 'weaknesses'] as const).map(group => (
-                      <div key={group} className="mt-5">
-                        <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{group}</p>
-                        <div className="mt-2 space-y-2">
-                          {(c[group] || []).length ? (
-                            (c[group] || []).map((finding: any, fi: number) => (
-                              <div key={fi} className="rounded-lg bg-slate-50 p-4">
-                                <p className="text-sm leading-6">{finding.comment}</p>
-                                {group === 'weaknesses' ? (
-                                  <>
-                                    {finding.nofo_requirement && (
-                                      <div className="mt-2 rounded-lg border-l-4 border-amber-400 bg-amber-50 p-3">
-                                        <p className="text-xs font-bold uppercase text-amber-700">NOFO Requirement</p>
-                                        <p className="text-sm">{finding.nofo_requirement}</p>
-                                        <p className="text-xs font-bold text-amber-600 mt-1">NOFO p. {(finding.nofo_pages || []).join(', ')}</p>
-                                      </div>
-                                    )}
-                                    <div className="mt-1">
-                                      <p className="text-xs font-bold text-blue-700">
-                                        Application p. {(finding.application_pages || finding.pages || []).join(', ')}
-                                      </p>
-                                    </div>
-                                    {finding.impact && (
-                                      <div className="mt-2 text-sm text-slate-600 italic">
-                                        <span className="font-semibold not-italic">Impact: </span>{finding.impact}
-                                      </div>
-                                    )}
-                                  </>
-                                ) : (
-                                  <p className="mt-1 text-xs font-bold text-blue-700">
-                                    Application p. {(finding.application_pages || finding.pages || []).join(', ')}
-                                  </p>
-                                )}
-                              </div>
-                            ))
-                          ) : (
-                            <p className="text-sm text-slate-400">None identified.</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </article>
-                ))}
-              </div>
-
-              <aside className="h-fit rounded-xl bg-slate-900 p-6 text-white lg:sticky lg:top-5">
-                <p className="text-slate-300">Claude draft score</p>
-                <p className="mt-2 text-4xl font-bold">
-                  {scoreTotal !== null ? scoreTotal : '—'}
-                  <span className="text-lg text-slate-400">
-                    {' / ' + (current.maximum_score || current.criteria.reduce((s, c) => s + c.maximum_points, 0))}
-                  </span>
-                </p>
-                <p className="mt-4 text-xs leading-5 text-slate-300">{current.certification}</p>
-
-                {(current.completed_worksheet_url || currentReviewId) && (
-                  <button
-                    onClick={downloadWorksheet}
-                    className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-400 px-4 py-3 font-bold text-slate-950"
-                  >
-                    <Download size={18} /> Download worksheet
-                  </button>
+                    <div className="grid gap-3 text-sm">
+                      {current.applicant_name && <div><span className="font-semibold text-slate-500">Applicant:</span> {current.applicant_name}</div>}
+                      {current.application_number && <div><span className="font-semibold text-slate-500">Application #:</span> {current.application_number}</div>}
+                    </div>
+                  </div>
                 )}
 
+                <div className="mb-6 flex flex-wrap gap-2">
+                  {reviews.map((r, i) => (
+                    <button
+                      key={r.review_id}
+                      onClick={() => setSelected(i)}
+                      className={'rounded-lg border px-4 py-2 text-sm font-semibold ' + (selected === i ? 'border-blue-600 bg-blue-600 text-white' : 'bg-white')}
+                    >
+                      {r.applicant_name || 'Application ' + (i + 1)}
+                    </button>
+                  ))}
+                </div>
+
+                {error && <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-800">{error}</div>}
+
+                <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+                  <div className="space-y-4">
+                    {current.criteria.map(c => (
+                      <article key={c.name} className="rounded-xl border bg-white p-6">
+                        <div className="flex justify-between gap-3">
+                          <div>
+                            <h3 className="font-bold">{c.name}</h3>
+                            <p className="mt-1 text-sm text-slate-600">{c.score_rationale}</p>
+                          </div>
+                          <div className="shrink-0 rounded-lg bg-blue-50 px-4 py-2 font-bold text-blue-800">
+                            {c.score !== undefined && c.score !== null ? c.score : '—'} / {c.maximum_points}
+                          </div>
+                        </div>
+                        {/* NOFO Question Responses */}
+                        {(c as any).question_responses?.length > 0 && (
+                          <div className="mt-5">
+                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500 mb-3">NOFO Evaluation Questions</p>
+                            <div className="space-y-3">
+                              {(c as any).question_responses.map((qr: any, qi: number) => (
+                                <div key={qi} className="rounded-lg border p-4">
+                                  <p className="text-sm font-semibold text-slate-700">Q: {qr.nofo_question}</p>
+                                  <p className="mt-2 text-sm leading-6">{qr.answer}</p>
+                                  <div className="mt-2 flex items-center gap-3">
+                                    <span className={'rounded-full px-2 py-0.5 text-xs font-bold ' + (
+                                      qr.assessment === 'strength' ? 'bg-emerald-100 text-emerald-800' :
+                                      qr.assessment === 'weakness' ? 'bg-red-100 text-red-800' :
+                                      'bg-blue-100 text-blue-800'
+                                    )}>{qr.assessment}</span>
+                                    <span className="text-xs font-bold text-blue-700">Application p. {(qr.application_pages || []).join(', ')}</span>
+                                  </div>
+                                  {qr.assessment === 'weakness' && qr.nofo_requirement && (
+                                    <div className="mt-2 rounded border-l-4 border-amber-400 bg-amber-50 p-2">
+                                      <p className="text-xs text-amber-800"><span className="font-bold">NOFO:</span> {qr.nofo_requirement} (p. {(qr.nofo_pages || []).join(', ')})</p>
+                                      {qr.impact && <p className="text-xs text-amber-700 mt-1"><span className="font-bold">Impact:</span> {qr.impact}</p>}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {(['strengths', 'mets', 'weaknesses'] as const).map(group => (
+                          <div key={group} className="mt-5">
+                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{group}</p>
+                            <div className="mt-2 space-y-2">
+                              {(c[group] || []).length ? (
+                                (c[group] || []).map((finding: any, fi: number) => (
+                                  <div key={fi} className="rounded-lg bg-slate-50 p-4">
+                                    <p className="text-sm leading-6">{finding.comment}</p>
+                                    {group === 'weaknesses' ? (
+                                      <>
+                                        {finding.nofo_requirement && (
+                                          <div className="mt-2 rounded-lg border-l-4 border-amber-400 bg-amber-50 p-3">
+                                            <p className="text-xs font-bold uppercase text-amber-700">NOFO Requirement</p>
+                                            <p className="text-sm">{finding.nofo_requirement}</p>
+                                            <p className="text-xs font-bold text-amber-600 mt-1">NOFO p. {(finding.nofo_pages || []).join(', ')}</p>
+                                          </div>
+                                        )}
+                                        <div className="mt-1">
+                                          <p className="text-xs font-bold text-blue-700">
+                                            Application p. {(finding.application_pages || finding.pages || []).join(', ')}
+                                          </p>
+                                        </div>
+                                        {finding.impact && (
+                                          <div className="mt-2 text-sm text-slate-600 italic">
+                                            <span className="font-semibold not-italic">Impact: </span>{finding.impact}
+                                          </div>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <p className="mt-1 text-xs font-bold text-blue-700">
+                                        Application p. {(finding.application_pages || finding.pages || []).join(', ')}
+                                      </p>
+                                    )}
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="text-sm text-slate-400">None identified.</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </article>
+                    ))}
+                  </div>
+
+                  <aside className="h-fit rounded-xl bg-slate-900 p-6 text-white lg:sticky lg:top-5">
+                    <p className="text-slate-300">Claude draft score</p>
+                    <p className="mt-2 text-4xl font-bold">
+                      {scoreTotal !== null ? scoreTotal : '—'}
+                      <span className="text-lg text-slate-400">
+                        {' / ' + (current.maximum_score || current.criteria.reduce((s, c) => s + c.maximum_points, 0))}
+                      </span>
+                    </p>
+                    <p className="mt-4 text-xs leading-5 text-slate-300">{current.certification}</p>
+
+                    {(current.completed_worksheet_url || currentReviewId) && (
+                      <button
+                        onClick={downloadWorksheet}
+                        className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-400 px-4 py-3 font-bold text-slate-950"
+                      >
+                        <Download size={18} /> Download worksheet
+                      </button>
+                    )}
+
+                    <button
+                      onClick={exportReview}
+                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-white px-4 py-3 font-bold text-slate-900"
+                    >
+                      <Download size={18} /> Export JSON
+                    </button>
+                  </aside>
+                </div>
+              </div>
+            )}
+
+            {/* Fallback: no currentReviewId */}
+            {!currentReviewId && appProgress.length === 0 && reviews.length === 0 && (
+              <div className="mt-6 rounded-xl border bg-slate-50 p-8 text-center">
+                <FileSearch size={32} className="mx-auto text-slate-400 mb-3" />
+                <p className="text-slate-600 font-semibold">No active review</p>
                 <button
-                  onClick={exportReview}
-                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-white px-4 py-3 font-bold text-slate-900"
+                  onClick={() => { setStep('history'); setStoredReviews(loadStoredReviews()); window.location.hash = '#/reviews'; }}
+                  className="mt-3 text-sm font-semibold text-blue-700 hover:underline"
                 >
-                  <Download size={18} /> Export JSON
+                  Go to My Reviews
                 </button>
-              </aside>
-            </div>
+              </div>
+            )}
+
+            {/* Fallback: have reviewId but nothing loaded yet */}
+            {currentReviewId && appProgress.length === 0 && reviews.length === 0 && !busy && (
+              <div className="mt-6 rounded-xl border bg-slate-50 p-8 text-center">
+                <Loader2 size={32} className="mx-auto text-blue-500 animate-spin mb-3" />
+                <p className="text-slate-600 font-semibold">Loading review...</p>
+                <button
+                  onClick={() => openReview(currentReviewId)}
+                  className="mt-3 text-sm font-semibold text-blue-700 hover:underline"
+                >
+                  Retry loading
+                </button>
+              </div>
+            )}
           </section>
         )}
 
