@@ -273,8 +273,10 @@ const SafeReviewDashboard: React.FC = () => {
   // ---------------------------------------------------------------------------
   const proceedToBrief = async () => {
     if (!nofo || !rubric) return;
-    // Skip brief step — go directly to scoring
-    // Brief generation runs in background and can be viewed later
+    // Clear any stale duplicate detection
+    const all = loadStoredReviews().filter(r => r.status !== 'processing');
+    saveStoredReviews(all);
+    // Go directly to scoring
     await run();
   };
 
@@ -824,15 +826,16 @@ const SafeReviewDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Processing status bar */}
-      {busy && step !== 'processing' && (
+      {/* Processing status bar — always visible when busy */}
+      {busy && (
         <div className="border-b bg-blue-50 border-blue-200 px-6 py-2">
           <div className="mx-auto flex max-w-7xl items-center gap-3">
             <Loader2 className="animate-spin text-blue-600" size={16} />
             <p className="text-sm font-medium text-blue-800">
               {step === 'upload' ? 'Extracting NOFO scoring criteria...' :
-               step === 'rubric' ? 'Preparing review...' :
+               step === 'rubric' ? 'Uploading documents and submitting review...' :
                step === 'brief' ? 'Generating NOFO brief...' :
+               step === 'processing' ? 'Claude is scoring the application...' :
                'Processing...'}
             </p>
           </div>
@@ -1000,7 +1003,7 @@ const SafeReviewDashboard: React.FC = () => {
                 className="flex items-center gap-2 rounded-xl bg-blue-700 px-7 py-3 font-bold text-white disabled:opacity-40"
               >
                 {busy ? <Loader2 className="animate-spin" /> : <FileSearch />}
-                {busy ? 'Loading…' : 'Continue to NOFO Brief'}
+                {busy ? 'Submitting review...' : 'Run Application Review'}
               </button>
             </div>
           </section>
