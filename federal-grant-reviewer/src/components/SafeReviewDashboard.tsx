@@ -1791,6 +1791,66 @@ const SafeReviewDashboard: React.FC = () => {
 
                 <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
                   <div className="space-y-4">
+                    {/* Overview Presentation Information */}
+                    {current.overview && Object.keys(current.overview).length > 0 && (
+                      <div className="rounded-xl border bg-white p-5 mb-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="font-bold text-lg">Overview Presentation Information</h3>
+                          <button
+                            onClick={() => {
+                              const ov = current.overview || {};
+                              const lines = [
+                                'OVERVIEW PRESENTATION INFORMATION',
+                                `Applicant: ${current.applicant_name || ''}`,
+                                `Application Number: ${current.application_number || ''}`,
+                                '',
+                                'Applicant information:',
+                                ov.applicant_information || '',
+                                '',
+                                'Target population, service area, appropriateness of budget, etc.:',
+                                ov.target_population || '',
+                                '',
+                                'Proposed project/program description:',
+                                ov.project_description || '',
+                                '',
+                                'Major goals and objectives:',
+                                ov.goals_objectives || '',
+                                '',
+                                'Any significant strength and/or weakness:',
+                                ov.significant_findings || '',
+                                '',
+                                'Any other pertinent information:',
+                                ov.other_information || '',
+                              ];
+                              const blob = new Blob([lines.join('\n')], {type: 'text/plain'});
+                              const url = URL.createObjectURL(blob);
+                              const a = document.createElement('a');
+                              a.href = url;
+                              a.download = (current.applicant_name || 'Application') + ' - Overview.txt';
+                              a.click();
+                              URL.revokeObjectURL(url);
+                            }}
+                            className="flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+                          >
+                            <Download size={14} /> Download Overview
+                          </button>
+                        </div>
+                        {[
+                          ['Applicant information', current.overview.applicant_information],
+                          ['Target population, service area, appropriateness of budget', current.overview.target_population],
+                          ['Proposed project/program description', current.overview.project_description],
+                          ['Major goals and objectives', current.overview.goals_objectives],
+                          ['Any significant strength and/or weakness', current.overview.significant_findings],
+                          ['Any other pertinent information', current.overview.other_information],
+                        ].map(([label, value]) => value ? (
+                          <div key={label as string} className="mb-3">
+                            <p className="text-xs font-bold uppercase text-slate-500 mb-1">{label}</p>
+                            <p className="text-sm text-slate-700 leading-relaxed">{value}</p>
+                          </div>
+                        ) : null)}
+                      </div>
+                    )}
+
                     {/* Review Scorecard */}
                     <div className="rounded-xl border bg-white p-5 mb-4">
                       <h3 className="font-bold text-lg mb-3">Review Scorecard</h3>
