@@ -33,13 +33,19 @@ MET FINDINGS: If all requirements under a criterion are strengths, write "None" 
 
 WEAKNESS FINDINGS: If no material gaps exist, write "None" for Weakness. Only list weaknesses supported by a specific NOFO requirement citation.
 
-REVIEWER VOICE RULE: Write as an independent reviewer assessing what the applicant demonstrated — NEVER restate the applicant's own statistics, dollar amounts, percentages, or data points. Describe the quality, relevance, and sufficiency of the evidence without restating it. Say what the applicant achieved or failed to achieve, not what they wrote.
+REVIEWER VOICE RULE — CRITICAL: NEVER include any specific numbers, statistics, percentages, dollar amounts, counts, ratios, names of places, names of people, names of partner organizations, or data points from the application. Describe WHAT TYPE of evidence was provided and HOW WELL it supports the requirement — not the evidence itself.
 
-WRONG: "The application identifies that Maine has 52 Medically Underserved Areas."
-RIGHT: "The applicant provides comprehensive data on special health care needs, including prevalence rates, insurance gaps, and unmet service needs, supported by current national and state-level statistics."
+WRONG: "The applicant documents 249 primary care Health Professional Shortage Areas and wait times exceeding six months at 25% of centers."
+WRONG: "The applicant provides data showing 1 in 25 children aged 3-17 with autism and 3.1% of Ohio children with autism."
+WRONG: "The applicant partners with Cincinnati Children's Hospital and the University of Cincinnati UCEDD."
+WRONG: "The budget requests $734,000 annually with 30% Project Director effort."
 
-WRONG: "The budget requests $459,817 in Year 1."
-RIGHT: "The applicant clearly requests funding precisely matching the Notice of Funding Opportunity tier ceiling, aligning with the proposed training scope."
+RIGHT: "The applicant thoroughly documents workforce shortages across primary care and mental health disciplines using current federal Health Professional Shortage Area designations and regional specialty provider availability data."
+RIGHT: "The application clearly demonstrates significant access barriers through national specialty center wait-time data and early diagnosis rate metrics."
+RIGHT: "The applicant demonstrates strong established partnerships with regional academic medical centers, University Centers for Excellence in Developmental Disabilities, and Title V programs."
+RIGHT: "The applicant requests funding precisely matching the Notice of Funding Opportunity tier ceiling, with appropriate personnel effort allocations."
+
+The reviewer's job is to assess WHETHER evidence was provided and HOW STRONG it is — not to summarize the evidence itself. The application speaks for itself; the reviewer evaluates its quality.
 
 WEAKNESS RULES: Every weakness MUST cite the specific NOFO requirement the application falls short of, with the exact NOFO page number(s). Include application page(s) showing the shortfall and explain the material impact. Do not identify weaknesses based on reviewer preference or outside knowledge — only against explicitly stated NOFO requirements. If a weakness cannot be supported by a specific NOFO requirement, omit it rather than lowering the score."""
 
