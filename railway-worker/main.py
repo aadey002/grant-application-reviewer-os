@@ -582,7 +582,7 @@ def _generate_nofo_brief_docx(brief: dict[str, Any]) -> bytes:
     return buf.getvalue()
 
 
-async def _run_nofo_brief(brief_id: str, review_id: str, nofo_storage_path: str, agency: str, criteria_json: str) -> None:
+def _run_nofo_brief(brief_id: str, review_id: str, nofo_storage_path: str, agency: str, criteria_json: str) -> None:
     """Background task: generate NOFO brief with Claude, store result."""
     sb = get_supabase()
     logger.info("NOFO brief %s starting", brief_id)
@@ -667,7 +667,6 @@ async def _run_nofo_brief(brief_id: str, review_id: str, nofo_storage_path: str,
 
 @app.post("/nofo-brief/generate", status_code=202)
 async def generate_nofo_brief(
-    background_tasks: BackgroundTasks,
     review_id: str = Form(...),
     nofo_storage_path: str = Form(...),
     agency: str = Form("HRSA"),
@@ -686,9 +685,18 @@ async def generate_nofo_brief(
         "created_at": datetime.now(timezone.utc).isoformat(),
     })
 
-    background_tasks.add_task(
-        _run_nofo_brief, brief_id, review_id, nofo_storage_path, agency, criteria_json,
-    )
+    import threading
+    def _run_brief_thread():
+        try:
+            _run_nofo_brief(brief_id, review_id, nofo_storage_path, agency, criteria_json)
+        except Exception as exc:
+            logger.error("NOFO brief %s failed: %s", brief_id, exc)
+            try:
+                sb2 = get_supabase()
+                _update(sb2, "nofo_briefs", {"id": brief_id}, {"status": "failed", "error_message": str(exc)[:2000]})
+            except Exception:
+                pass
+    threading.Thread(target=_run_brief_thread, daemon=True).start()
 
     return JSONResponse(status_code=202, content={
         "brief_id": brief_id,
