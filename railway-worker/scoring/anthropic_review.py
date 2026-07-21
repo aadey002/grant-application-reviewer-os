@@ -276,17 +276,16 @@ SCORING FORMULA (Equitable Formula v1):
 Score = round_half_up(maximum_points × multiplier)
 
 CRITICAL SCORING CALIBRATION:
-- Met (90%) is the DEFAULT for a well-written application that addresses all requirements. Most criteria in a strong application should be Met, not Strength.
-- Strength (100%) is RARE — expect 0-2 criteria per application at most. It requires the applicant to demonstrably GO BEYOND the NOFO requirement with something the NOFO did not ask for but that materially strengthens the proposal.
-- Do NOT award Strength merely because the application is well-written, thorough, or has no weakness. That is Met.
-- Do NOT award "exceeds" on a requirement merely because the applicant addressed it well. "exceeds" means the applicant provided something the NOFO did not require that materially adds value.
-- "fully_addressed" is the correct status for a requirement that is completely and adequately addressed. This is the expected outcome for a strong application.
-- A realistic strong application scores ~90/100 (all Met). A 100/100 (all Strength) is almost never justified.
+- Met (90%) is the expected score when all requirements are fully and adequately addressed. This is a strong score.
+- Strength (100%) is earned when the applicant provides documented evidence of meaningfully exceeding the NOFO requirement — not merely addressing it thoroughly. Strength is legitimate when earned but should be justified by specific above-and-beyond evidence.
+- "fully_addressed" is the correct requirement status when the applicant adequately addresses what was asked. "exceeds" requires the applicant to provide something the NOFO did not require that materially adds value.
+- Do NOT award Strength merely because the writing is polished or no weakness was found. That is Met.
+- Do NOT confuse thoroughness with exceedance. A complete, well-organized response to exactly what was asked is Met.
 
 INSTRUCTIONS:
 1. If this criterion has subcriteria, group your requirement_assessments by subcriterion. Tag each assessment with the subcriterion name it belongs to in the explanation field (e.g., "[Overall methodology] The applicant...").
-2. Assess each NOFO requirement individually. DEFAULT to "fully_addressed" when the requirement is met. Only use "exceeds" when the applicant provides something genuinely beyond what was asked.
-3. Classify the overall criterion. DEFAULT to "met" when all requirements are addressed. Only classify as "strength" when multiple requirements are genuinely exceeded with documented above-and-beyond evidence.
+2. Assess each NOFO requirement individually in requirement_assessments (use response_status: exceeds/fully_addressed/partially_addressed/not_addressed/unable_to_evaluate).
+3. Classify the overall criterion (strength/met/minor_weakness/moderate_weakness/major_weakness/not_addressed). Strength requires at least some requirements genuinely exceeded.
 4. Apply the corresponding multiplier (1.0/0.9/0.7/0.5/0.25/0.0).
 5. For strengths, use professional superlative language that signals the finding exceeds the requirement — e.g., "thoroughly documents," "comprehensively addresses," "clearly demonstrates exceptional," "provides well-integrated and robust," "establishes a notably strong framework." Do not use generic or flat language for strengths.
 5. Calculate: calculated_score = round_half_up(maximum_points × multiplier). Set formula_version to "equitable-v1.2".
