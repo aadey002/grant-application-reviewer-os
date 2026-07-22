@@ -1994,83 +1994,77 @@ const SafeReviewDashboard: React.FC = () => {
                             {c.score !== undefined && c.score !== null ? c.score : '—'} / {c.maximum_points}
                           </div>
                         </div>
-                        {/* Requirement Assessment Table */}
-                        {(c as any).requirement_assessments?.length > 0 && (
+                        {/* Consolidated NOFO Requirements & Evaluation Table */}
+                        {(((c as any).requirement_assessments?.length > 0) || (Array.isArray((c as any).question_responses) && (c as any).question_responses.length > 0)) && (
                           <div className="mt-4 overflow-x-auto">
-                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500 mb-2">Requirement Assessment</p>
+                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500 mb-2">NOFO Requirements & Evaluation</p>
                             <table className="w-full text-sm border">
                               <thead>
                                 <tr className="bg-slate-100">
-                                  <th className="text-left p-2 border">NOFO Requirement</th>
-                                  <th className="text-left p-2 border">Application Response</th>
-                                  <th className="text-left p-2 border w-32">Status</th>
+                                  <th className="text-left p-2 border w-1/3">NOFO Requirement / Question</th>
+                                  <th className="text-left p-2 border w-1/3">Application Response</th>
+                                  <th className="text-left p-2 border w-20">Status</th>
+                                  <th className="text-left p-2 border w-24">Pages</th>
                                 </tr>
                               </thead>
                               <tbody>
-                                {(c as any).requirement_assessments.map((ra: any, ri: number) => (
-                                  <tr key={ri} className="border-t">
+                                {/* Requirement assessments */}
+                                {((c as any).requirement_assessments || []).map((ra: any, ri: number) => (
+                                  <tr key={'ra-' + ri} className="border-t">
                                     <td className="p-2 border align-top">
                                       <p className="text-sm">{ra.requirement_text}</p>
-                                      <p className="text-xs text-amber-600 mt-1">NOFO p. {(ra.nofo_pages || []).join(', ')}</p>
+                                      <button onClick={async () => { try { const url = await getNofoViewUrl(currentReviewId!); window.open(url + '#page=' + (ra.nofo_pages?.[0] || 1), '_blank'); } catch {} }} className="text-xs text-amber-600 mt-1 hover:underline cursor-pointer">NOFO p. {(ra.nofo_pages || []).join(', ')}</button>
+                                      {ra.audit_flag && <span className="ml-1 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-700">UNVERIFIED</span>}
                                     </td>
                                     <td className="p-2 border align-top">
                                       <p className="text-sm">{ra.explanation}</p>
-                                      <p className="text-xs text-blue-600 mt-1">App p. {(ra.application_pages || []).join(', ')}</p>
                                     </td>
                                     <td className="p-2 border align-top">
-                                      <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                                      <span className={'rounded-full px-2 py-0.5 text-xs font-bold ' + (
                                         ra.response_status === 'exceeds' ? 'bg-emerald-100 text-emerald-800' :
                                         ra.response_status === 'fully_addressed' ? 'bg-blue-100 text-blue-800' :
                                         ra.response_status === 'partially_addressed' ? 'bg-amber-100 text-amber-800' :
                                         ra.response_status === 'not_addressed' ? 'bg-red-100 text-red-800' :
                                         'bg-slate-100 text-slate-600'
-                                      }`}>{(ra.response_status || '').replace(/_/g, ' ')}</span>
+                                      )}>{(ra.response_status || '').replace(/_/g, ' ')}</span>
+                                    </td>
+                                    <td className="p-2 border align-top">
+                                      <button onClick={async () => { try { const { url } = await getApplicationViewUrl(currentReviewId!, current.application_id); window.open(url + '#page=' + (ra.application_pages?.[0] || 1), '_blank'); } catch {} }} className="text-xs font-bold text-blue-700 hover:underline cursor-pointer">App p. {(ra.application_pages || []).join(', ')}</button>
+                                    </td>
+                                  </tr>
+                                ))}
+                                {/* Question responses */}
+                                {(Array.isArray((c as any).question_responses) ? (c as any).question_responses : []).map((qr: any, qi: number) => (
+                                  <tr key={'qr-' + qi} className={'border-t ' + (qr.assessment === 'weakness' ? 'bg-red-50' : '')}>
+                                    <td className="p-2 border align-top">
+                                      <p className="text-sm font-semibold">{qr.nofo_question}</p>
+                                      {qr.nofo_pages && qr.nofo_pages.length > 0 && (
+                                        <button onClick={async () => { try { const url = await getNofoViewUrl(currentReviewId!); window.open(url + '#page=' + (qr.nofo_pages?.[0] || 1), '_blank'); } catch {} }} className="text-xs text-amber-600 mt-1 hover:underline cursor-pointer">NOFO p. {(qr.nofo_pages || []).join(', ')}</button>
+                                      )}
+                                    </td>
+                                    <td className="p-2 border align-top">
+                                      <p className="text-sm">{qr.answer}</p>
+                                      {qr.assessment === 'weakness' && qr.nofo_requirement && (
+                                        <div className="mt-2 rounded border-l-4 border-amber-400 bg-amber-50 p-2">
+                                          <p className="text-xs text-amber-800"><span className="font-bold">NOFO Requirement:</span> {qr.nofo_requirement}</p>
+                                          {qr.impact && <p className="text-xs text-amber-700 mt-1"><span className="font-bold">Impact:</span> {qr.impact}</p>}
+                                        </div>
+                                      )}
+                                    </td>
+                                    <td className="p-2 border align-top">
+                                      <span className={'rounded-full px-2 py-0.5 text-xs font-bold ' + (
+                                        qr.assessment === 'strength' ? 'bg-emerald-100 text-emerald-800' :
+                                        qr.assessment === 'weakness' ? 'bg-red-100 text-red-800' :
+                                        'bg-blue-100 text-blue-800'
+                                      )}>{qr.assessment}</span>
+                                    </td>
+                                    <td className="p-2 border align-top">
+                                      <button onClick={async () => { try { const { url } = await getApplicationViewUrl(currentReviewId!, current.application_id); window.open(url + '#page=' + (qr.application_pages?.[0] || 1), '_blank'); } catch {} }} className="text-xs font-bold text-blue-700 hover:underline cursor-pointer">App p. {(qr.application_pages || []).join(', ')}</button>
                                     </td>
                                   </tr>
                                 ))}
                               </tbody>
                             </table>
-                          </div>
-                        )}
-                        {/* NOFO Question Responses */}
-                        {Array.isArray((c as any).question_responses) && (c as any).question_responses.length > 0 && (
-                          <div className="mt-5">
-                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500 mb-3">NOFO Evaluation Questions</p>
-                            <div className="space-y-3">
-                              {(c as any).question_responses.map((qr: any, qi: number) => (
-                                <div key={qi} className="rounded-lg border p-4">
-                                  <p className="text-sm font-semibold text-slate-700">Q: {qr.nofo_question}</p>
-                                  <p className="mt-2 text-sm leading-6">{qr.answer}</p>
-                                  <div className="mt-2 flex items-center gap-3">
-                                    <span className={'rounded-full px-2 py-0.5 text-xs font-bold ' + (
-                                      qr.assessment === 'strength' ? 'bg-emerald-100 text-emerald-800' :
-                                      qr.assessment === 'weakness' ? 'bg-red-100 text-red-800' :
-                                      'bg-blue-100 text-blue-800'
-                                    )}>{qr.assessment}</span>
-                                    <span className="text-xs font-bold text-blue-700">Application p. {(qr.application_pages || []).join(', ')}</span>
-                                  </div>
-                                  {qr.assessment === 'weakness' && qr.nofo_requirement && (
-                                    <div className="mt-2 rounded border-l-4 border-amber-400 bg-amber-50 p-2">
-                                      <p className="text-xs text-amber-800"><span className="font-bold">NOFO:</span> {qr.nofo_requirement} <button onClick={async () => { try { const url = await getNofoViewUrl(currentReviewId!); window.open(url + '#page=' + (qr.nofo_pages?.[0] || 1), '_blank'); } catch {} }} className="font-bold text-amber-700 hover:underline cursor-pointer">(NOFO p. {(qr.nofo_pages || []).join(', ')})</button></p>
-                                      {qr.impact && <p className="text-xs text-amber-700 mt-1"><span className="font-bold">Impact:</span> {qr.impact}</p>}
-                                    </div>
-                                  )}
-                                  {(qr.application_pages || []).length > 0 && currentReviewId && current && (
-                                    <button
-                                      onClick={async () => {
-                                        try {
-                                          const { url } = await getApplicationViewUrl(currentReviewId!, current.application_id);
-                                          window.open(url + '#page=' + (qr.application_pages || [])[0], '_blank');
-                                        } catch (e) { setError(e instanceof Error ? e.message : 'Failed to open'); }
-                                      }}
-                                      className="text-xs font-bold text-blue-700 hover:underline cursor-pointer mt-1 block"
-                                    >
-                                      Application p. {(qr.application_pages || []).join(', ')}
-                                    </button>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
                           </div>
                         )}
 
