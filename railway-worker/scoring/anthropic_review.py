@@ -813,7 +813,16 @@ def score_application_with_claude(application: Path, criteria: list[dict[str, An
         overview_system = """You are completing the OVERVIEW PRESENTATION INFORMATION section of an HRSA reviewer worksheet. This section provides a concise "big picture" of who the applicant is, what is being proposed, how it will be accomplished in view of the published program guidance and review criteria, and the most significant strength and/or weakness found in the application.
 
 Each overview field should be 2-3 concise sentences. Never use unexpanded acronyms — always write the full term first, then the acronym in parentheses. Be factual and evidence-based. Do not speculate or use outside knowledge."""
-        prompt = f"Agency: {agency}\n\nRUBRIC:\n{rubric_list}\n\nNOFO GUIDANCE:\n{nofo_text[:15000]}\n\nAPPLICATION:\n{application_text[:40000]}\n\nComplete the OVERVIEW PRESENTATION INFORMATION worksheet section and provide the budget recommendation."
+        # Include beginning (cover/narrative) + end (budget pages) of application
+        app_start = application_text[:40000]
+        app_end = application_text[-25000:] if len(application_text) > 65000 else ""
+        app_combined = app_start + ("\n\n[...middle pages omitted for brevity...]\n\n" + app_end if app_end else "")
+        prompt = (f"Agency: {agency}\n\nRUBRIC:\n{rubric_list}\n\nNOFO GUIDANCE:\n{nofo_text[:15000]}\n\n"
+                  f"APPLICATION (beginning + budget/end pages):\n{app_combined}\n\n"
+                  "Complete the OVERVIEW PRESENTATION INFORMATION worksheet section and provide the budget recommendation.\n\n"
+                  "BUDGET INSTRUCTIONS: Extract the EXACT annual budget amounts for ALL years of the project period from the SF-424A or budget justification. "
+                  "The project period length is stated in the NOFO. If the NOFO says 5 years, you must provide 5 annual amounts. "
+                  "Do NOT leave years as null unless the application truly omits them. Budget data is typically in the last pages of the application.")
         resp = client.messages.create(model=model, max_tokens=4000, temperature=0, system=overview_system,
             messages=[{"role": "user", "content": prompt}], tools=[overview_tool], tool_choice={"type": "tool", "name": "submit_overview"})
         tu = next((b for b in resp.content if b.type == "tool_use"), None)
