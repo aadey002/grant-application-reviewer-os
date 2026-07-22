@@ -1994,170 +1994,131 @@ const SafeReviewDashboard: React.FC = () => {
                             {c.score !== undefined && c.score !== null ? c.score : '—'} / {c.maximum_points}
                           </div>
                         </div>
-                        {/* Consolidated NOFO Requirements & Evaluation Table */}
-                        {(((c as any).requirement_assessments?.length > 0) || (Array.isArray((c as any).question_responses) && (c as any).question_responses.length > 0)) && (
+                        {/* Unified Criterion Review Table */}
+                        {(() => {
+                          // Build unified rows from all sources
+                          const rows: any[] = [];
+                          // Requirement assessments
+                          ((c as any).requirement_assessments || []).forEach((ra: any, ri: number) => {
+                            rows.push({ key: 'ra-' + ri, type: 'requirement', source: ra });
+                          });
+                          // Question responses
+                          (Array.isArray((c as any).question_responses) ? (c as any).question_responses : []).forEach((qr: any, qi: number) => {
+                            rows.push({ key: 'qr-' + qi, type: 'question', source: qr });
+                          });
+                          // Strengths
+                          (c.strengths || []).forEach((f: any, fi: number) => {
+                            const match = f.comment?.match(/^\[([^\]]+)\]\s*/);
+                            rows.push({ key: 's-' + fi, type: 'strength', source: {...f, comment: match ? f.comment.replace(match[0], '') : f.comment, subcriterion: match ? match[1] : ''} });
+                          });
+                          // Mets
+                          (c.mets || []).forEach((f: any, fi: number) => {
+                            const match = f.comment?.match(/^\[([^\]]+)\]\s*/);
+                            rows.push({ key: 'm-' + fi, type: 'met', source: {...f, comment: match ? f.comment.replace(match[0], '') : f.comment, subcriterion: match ? match[1] : ''} });
+                          });
+                          // Weaknesses
+                          (c.weaknesses || []).forEach((f: any, fi: number) => {
+                            const match = f.comment?.match(/^\[([^\]]+)\]\s*/);
+                            rows.push({ key: 'w-' + fi, type: 'weakness', source: {...f, comment: match ? f.comment.replace(match[0], '') : f.comment, subcriterion: match ? match[1] : ''} });
+                          });
+                          const hasContent = rows.length > 0;
+                          return hasContent ? (
                           <div className="mt-4 overflow-x-auto">
-                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500 mb-2">NOFO Requirements & Evaluation</p>
                             <table className="w-full text-sm border">
                               <thead>
                                 <tr className="bg-slate-100">
-                                  <th className="text-left p-2 border w-1/3">NOFO Requirement / Question</th>
-                                  <th className="text-left p-2 border w-1/3">Application Response</th>
-                                  <th className="text-left p-2 border w-20">Status</th>
+                                  <th className="text-left p-2 border w-20">Type</th>
+                                  <th className="text-left p-2 border">Finding / NOFO Requirement</th>
+                                  <th className="text-left p-2 border w-24">Status</th>
                                   <th className="text-left p-2 border w-24">Pages</th>
                                 </tr>
                               </thead>
                               <tbody>
-                                {/* Requirement assessments */}
-                                {((c as any).requirement_assessments || []).map((ra: any, ri: number) => (
-                                  <tr key={'ra-' + ri} className="border-t">
-                                    <td className="p-2 border align-top">
-                                      <p className="text-sm">{ra.requirement_text}</p>
-                                      <button onClick={async () => { try { const url = await getNofoViewUrl(currentReviewId!); window.open(url + '#page=' + (ra.nofo_pages?.[0] || 1), '_blank'); } catch {} }} className="text-xs text-amber-600 mt-1 hover:underline cursor-pointer">NOFO p. {(ra.nofo_pages || []).join(', ')}</button>
-                                      {ra.audit_flag && <span className="ml-1 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-700">UNVERIFIED</span>}
-                                    </td>
-                                    <td className="p-2 border align-top">
-                                      <p className="text-sm">{ra.explanation}</p>
-                                    </td>
-                                    <td className="p-2 border align-top">
-                                      <span className={'rounded-full px-2 py-0.5 text-xs font-bold ' + (
-                                        ra.response_status === 'exceeds' ? 'bg-emerald-100 text-emerald-800' :
-                                        ra.response_status === 'fully_addressed' ? 'bg-blue-100 text-blue-800' :
-                                        ra.response_status === 'partially_addressed' ? 'bg-amber-100 text-amber-800' :
-                                        ra.response_status === 'not_addressed' ? 'bg-red-100 text-red-800' :
-                                        'bg-slate-100 text-slate-600'
-                                      )}>{(ra.response_status || '').replace(/_/g, ' ')}</span>
-                                    </td>
-                                    <td className="p-2 border align-top">
-                                      <button onClick={async () => { try { const { url } = await getApplicationViewUrl(currentReviewId!, current.application_id); window.open(url + '#page=' + (ra.application_pages?.[0] || 1), '_blank'); } catch {} }} className="text-xs font-bold text-blue-700 hover:underline cursor-pointer">App p. {(ra.application_pages || []).join(', ')}</button>
-                                    </td>
-                                  </tr>
-                                ))}
-                                {/* Question responses */}
-                                {(Array.isArray((c as any).question_responses) ? (c as any).question_responses : []).map((qr: any, qi: number) => (
-                                  <tr key={'qr-' + qi} className={'border-t ' + (qr.assessment === 'weakness' ? 'bg-red-50' : '')}>
-                                    <td className="p-2 border align-top">
-                                      <p className="text-sm font-semibold">{qr.nofo_question}</p>
-                                      {qr.nofo_pages && qr.nofo_pages.length > 0 && (
-                                        <button onClick={async () => { try { const url = await getNofoViewUrl(currentReviewId!); window.open(url + '#page=' + (qr.nofo_pages?.[0] || 1), '_blank'); } catch {} }} className="text-xs text-amber-600 mt-1 hover:underline cursor-pointer">NOFO p. {(qr.nofo_pages || []).join(', ')}</button>
-                                      )}
-                                    </td>
-                                    <td className="p-2 border align-top">
-                                      <p className="text-sm">{qr.answer}</p>
-                                      {qr.assessment === 'weakness' && qr.nofo_requirement && (
-                                        <div className="mt-2 rounded border-l-4 border-amber-400 bg-amber-50 p-2">
-                                          <p className="text-xs text-amber-800"><span className="font-bold">NOFO Requirement:</span> {qr.nofo_requirement}</p>
-                                          {qr.impact && <p className="text-xs text-amber-700 mt-1"><span className="font-bold">Impact:</span> {qr.impact}</p>}
-                                        </div>
-                                      )}
-                                    </td>
-                                    <td className="p-2 border align-top">
-                                      <span className={'rounded-full px-2 py-0.5 text-xs font-bold ' + (
-                                        qr.assessment === 'strength' ? 'bg-emerald-100 text-emerald-800' :
-                                        qr.assessment === 'weakness' ? 'bg-red-100 text-red-800' :
-                                        'bg-blue-100 text-blue-800'
-                                      )}>{qr.assessment}</span>
-                                    </td>
-                                    <td className="p-2 border align-top">
-                                      <button onClick={async () => { try { const { url } = await getApplicationViewUrl(currentReviewId!, current.application_id); window.open(url + '#page=' + (qr.application_pages?.[0] || 1), '_blank'); } catch {} }} className="text-xs font-bold text-blue-700 hover:underline cursor-pointer">App p. {(qr.application_pages || []).join(', ')}</button>
-                                    </td>
-                                  </tr>
-                                ))}
+                                {rows.map(row => {
+                                  const s = row.source;
+                                  if (row.type === 'requirement') {
+                                    return (
+                                      <tr key={row.key} className="border-t bg-slate-50">
+                                        <td className="p-2 border align-top"><span className="rounded-full px-2 py-0.5 text-xs font-bold bg-indigo-100 text-indigo-800">Requirement</span></td>
+                                        <td className="p-2 border align-top">
+                                          <p className="text-sm font-semibold text-slate-700">{s.requirement_text}</p>
+                                          <p className="text-sm mt-1">{s.explanation}</p>
+                                          <button onClick={async () => { try { const url = await getNofoViewUrl(currentReviewId!); window.open(url + '#page=' + (s.nofo_pages?.[0] || 1), '_blank'); } catch {} }} className="text-xs text-amber-600 mt-1 hover:underline cursor-pointer">NOFO p. {(s.nofo_pages || []).join(', ')}</button>
+                                          {s.audit_flag && <span className="ml-1 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-700">UNVERIFIED</span>}
+                                        </td>
+                                        <td className="p-2 border align-top">
+                                          <span className={'rounded-full px-2 py-0.5 text-xs font-bold ' + (s.response_status === 'exceeds' ? 'bg-emerald-100 text-emerald-800' : s.response_status === 'fully_addressed' ? 'bg-blue-100 text-blue-800' : s.response_status === 'partially_addressed' ? 'bg-amber-100 text-amber-800' : s.response_status === 'not_addressed' ? 'bg-red-100 text-red-800' : 'bg-slate-100 text-slate-600')}>{(s.response_status || '').replace(/_/g, ' ')}</span>
+                                        </td>
+                                        <td className="p-2 border align-top">
+                                          <button onClick={async () => { try { const { url } = await getApplicationViewUrl(currentReviewId!, current.application_id); window.open(url + '#page=' + (s.application_pages?.[0] || 1), '_blank'); } catch {} }} className="text-xs font-bold text-blue-700 hover:underline cursor-pointer">App p. {(s.application_pages || []).join(', ')}</button>
+                                        </td>
+                                      </tr>
+                                    );
+                                  }
+                                  if (row.type === 'question') {
+                                    return (
+                                      <tr key={row.key} className={'border-t ' + (s.assessment === 'weakness' ? 'bg-red-50' : 'bg-slate-50')}>
+                                        <td className="p-2 border align-top"><span className="rounded-full px-2 py-0.5 text-xs font-bold bg-violet-100 text-violet-800">Question</span></td>
+                                        <td className="p-2 border align-top">
+                                          <p className="text-sm font-semibold text-slate-700">{s.nofo_question}</p>
+                                          <p className="text-sm mt-1">{s.answer}</p>
+                                          {s.assessment === 'weakness' && s.nofo_requirement && (
+                                            <div className="mt-2 rounded border-l-4 border-amber-400 bg-amber-50 p-2">
+                                              <p className="text-xs text-amber-800"><span className="font-bold">NOFO:</span> {s.nofo_requirement}</p>
+                                              {s.impact && <p className="text-xs text-amber-700 mt-1"><span className="font-bold">Impact:</span> {s.impact}</p>}
+                                            </div>
+                                          )}
+                                          {s.nofo_pages && s.nofo_pages.length > 0 && (
+                                            <button onClick={async () => { try { const url = await getNofoViewUrl(currentReviewId!); window.open(url + '#page=' + (s.nofo_pages?.[0] || 1), '_blank'); } catch {} }} className="text-xs text-amber-600 mt-1 hover:underline cursor-pointer">NOFO p. {(s.nofo_pages || []).join(', ')}</button>
+                                          )}
+                                        </td>
+                                        <td className="p-2 border align-top">
+                                          <span className={'rounded-full px-2 py-0.5 text-xs font-bold ' + (s.assessment === 'strength' ? 'bg-emerald-100 text-emerald-800' : s.assessment === 'weakness' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800')}>{s.assessment}</span>
+                                        </td>
+                                        <td className="p-2 border align-top">
+                                          <button onClick={async () => { try { const { url } = await getApplicationViewUrl(currentReviewId!, current.application_id); window.open(url + '#page=' + (s.application_pages?.[0] || 1), '_blank'); } catch {} }} className="text-xs font-bold text-blue-700 hover:underline cursor-pointer">App p. {(s.application_pages || []).join(', ')}</button>
+                                        </td>
+                                      </tr>
+                                    );
+                                  }
+                                  // Strength / Met / Weakness finding
+                                  const typeBadge = row.type === 'strength' ? 'bg-emerald-100 text-emerald-800' : row.type === 'met' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800';
+                                  const typeLabel = row.type.charAt(0).toUpperCase() + row.type.slice(1);
+                                  const pages = s.application_pages || s.pages || [];
+                                  return (
+                                    <tr key={row.key} className={'border-t ' + (row.type === 'weakness' ? 'bg-red-50' : '')}>
+                                      <td className="p-2 border align-top"><span className={'rounded-full px-2 py-0.5 text-xs font-bold ' + typeBadge}>{typeLabel}</span></td>
+                                      <td className="p-2 border align-top">
+                                        {s.subcriterion && <p className="text-xs font-semibold text-indigo-700 mb-1">{s.subcriterion}</p>}
+                                        <p className="text-sm leading-6">{s.comment}</p>
+                                        {row.type === 'weakness' && s.nofo_requirement && (
+                                          <div className="mt-2 rounded border-l-4 border-amber-400 bg-amber-50 p-2">
+                                            <p className="text-xs text-amber-800"><span className="font-bold">NOFO:</span> {s.nofo_requirement}</p>
+                                            <button onClick={async () => { try { const url = await getNofoViewUrl(currentReviewId!); window.open(url + '#page=' + (s.nofo_pages?.[0] || 1), '_blank'); } catch {} }} className="text-xs font-bold text-amber-600 mt-1 hover:underline cursor-pointer">NOFO p. {(s.nofo_pages || []).join(', ')}</button>
+                                            {s.audit_flag === 'nofo_citation_not_verified' && <span className="ml-1 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-700">UNVERIFIED</span>}
+                                            {s.audit_flag === 'claim_not_supported_by_cited_pages' && <span className="ml-1 rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold text-orange-700">UNSUPPORTED</span>}
+                                          </div>
+                                        )}
+                                        {row.type === 'weakness' && s.impact && (
+                                          <p className="mt-1 text-xs text-slate-600 italic"><span className="font-semibold not-italic">Impact: </span>{s.impact}</p>
+                                        )}
+                                      </td>
+                                      <td className="p-2 border align-top"><span className={'rounded-full px-2 py-0.5 text-xs font-bold ' + typeBadge}>{typeLabel}</span></td>
+                                      <td className="p-2 border align-top">
+                                        {pages.length > 0 ? (
+                                          <button onClick={async () => { try { const { url } = await getApplicationViewUrl(currentReviewId!, current.application_id); window.open(url + '#page=' + pages[0], '_blank'); } catch (e) { setError(e instanceof Error ? e.message : 'Failed to open'); } }} className="text-xs font-bold text-blue-700 hover:underline cursor-pointer">App p. {pages.join(', ')}</button>
+                                        ) : null}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
                               </tbody>
                             </table>
                           </div>
-                        )}
-
-                        {(['strengths', 'mets', 'weaknesses'] as const).map(group => {
-                          const findings = c[group] || [];
-                          // Group findings by subcriterion tag [Name] in comment
-                          const grouped: Record<string, any[]> = {};
-                          const hasSubs = (c.subcriteria || []).length > 0;
-                          findings.forEach((f: any) => {
-                            const match = f.comment?.match(/^\[([^\]]+)\]\s*/);
-                            const subName = match ? match[1] : (hasSubs ? 'General' : '');
-                            if (!grouped[subName]) grouped[subName] = [];
-                            grouped[subName].push({...f, comment: match ? f.comment.replace(match[0], '') : f.comment});
-                          });
-                          return (
-                          <div key={group} className="mt-5">
-                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{group}</p>
-                            <div className="mt-2 space-y-2">
-                              {findings.length ? (
-                                Object.entries(grouped).map(([subName, subFindings]) => (
-                                <div key={subName}>
-                                  {subName && <p className="text-xs font-semibold text-indigo-700 mt-3 mb-1 border-b border-indigo-100 pb-1">{subName}</p>}
-                                  {subFindings.map((finding: any, fi: number) => (
-                                  <div key={fi} className="rounded-lg bg-slate-50 p-4">
-                                    <p className="text-sm leading-6">{finding.comment}</p>
-                                    {group === 'weaknesses' ? (
-                                      <>
-                                        {finding.nofo_requirement && (
-                                          <div className="mt-2 rounded-lg border-l-4 border-amber-400 bg-amber-50 p-3">
-                                            <p className="text-xs font-bold uppercase text-amber-700">NOFO Requirement</p>
-                                            <p className="text-sm">{finding.nofo_requirement}</p>
-                                            <button onClick={async () => { try { const url = await getNofoViewUrl(currentReviewId!); window.open(url + '#page=' + (finding.nofo_pages?.[0] || 1), '_blank'); } catch {} }} className="text-xs font-bold text-amber-600 mt-1 hover:underline cursor-pointer">NOFO p. {(finding.nofo_pages || []).join(', ')}</button>
-                                          </div>
-                                        )}
-                                        <div className="mt-1">
-                                          {(() => {
-                                            const pages = finding.application_pages || finding.pages || [];
-                                            return pages.length > 0 && currentReviewId && current ? (
-                                              <button
-                                                onClick={async () => {
-                                                  try {
-                                                    const { url } = await getApplicationViewUrl(currentReviewId!, current.application_id);
-                                                    window.open(url + '#page=' + pages[0], '_blank');
-                                                  } catch (e) { setError(e instanceof Error ? e.message : 'Failed to open'); }
-                                                }}
-                                                className="text-xs font-bold text-blue-700 hover:underline cursor-pointer"
-                                              >
-                                                Application p. {pages.join(', ')}
-                                              </button>
-                                            ) : (
-                                              <p className="text-xs font-bold text-blue-700">
-                                                Application p. {pages.join(', ')}
-                                              </p>
-                                            );
-                                          })()}
-                                        </div>
-                                        {finding.impact && (
-                                          <div className="mt-2 text-sm text-slate-600 italic">
-                                            <span className="font-semibold not-italic">Impact: </span>{finding.impact}
-                                          </div>
-                                        )}
-                                      </>
-                                    ) : (
-                                      (() => {
-                                        const pages = finding.application_pages || finding.pages || [];
-                                        return pages.length > 0 && currentReviewId && current ? (
-                                          <button
-                                            onClick={async () => {
-                                              try {
-                                                const { url } = await getApplicationViewUrl(currentReviewId!, current.application_id);
-                                                window.open(url + '#page=' + pages[0], '_blank');
-                                              } catch (e) { setError(e instanceof Error ? e.message : 'Failed to open'); }
-                                            }}
-                                            className="mt-1 text-xs font-bold text-blue-700 hover:underline cursor-pointer"
-                                          >
-                                            Application p. {pages.join(', ')}
-                                          </button>
-                                        ) : (
-                                          <p className="mt-1 text-xs font-bold text-blue-700">
-                                            Application p. {pages.join(', ')}
-                                          </p>
-                                        );
-                                      })()
-                                    )}
-                                  </div>
-                                ))}
-                                </div>))
-                              ) : (
-                                <p className="text-sm text-slate-400">None identified.</p>
-                              )}
-                            </div>
-                          </div>
-                        )})}
+                          ) : (
+                            <p className="mt-4 text-sm text-slate-400">No findings generated for this criterion.</p>
+                          );
+                        })()}
                       </article>
                     ))}
                   </div>
