@@ -198,7 +198,7 @@ def _score_single_criterion(client, model: str, application_text: str, criterion
     question_answer = {"type": "object", "additionalProperties": False,
         "required": ["nofo_question", "answer", "application_pages", "assessment"],
         "properties": {
-            "nofo_question": {"type": "string", "description": "The exact evaluation question or bullet point from the NOFO"},
+            "nofo_question": {"type": "string", "description": "The VERBATIM evaluation question or bullet copied exactly from the NOFO text. Do not paraphrase or invent."},
             "answer": {"type": "string", "description": "How the application addresses this question — one concise sentence"},
             "application_pages": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}},
             "assessment": {"type": "string", "enum": ["strength", "met", "weakness"], "description": "Whether the response exceeds (strength), satisfies (met), or falls short (weakness) of the requirement"},
@@ -289,8 +289,8 @@ INSTRUCTIONS:
 4. Apply the corresponding multiplier (1.0/0.9/0.7/0.5/0.25/0.0).
 5. For strengths, use professional superlative language that signals the finding exceeds the requirement — e.g., "thoroughly documents," "comprehensively addresses," "clearly demonstrates exceptional," "provides well-integrated and robust," "establishes a notably strong framework." Do not use generic or flat language for strengths.
 5. Calculate: calculated_score = round_half_up(maximum_points × multiplier). Set formula_version to "equitable-v1.2".
-6. Find all evaluation questions/bullets listed under this criterion in the NOFO.
-7. For EACH question, provide the application's answer with page citations in question_responses.
+6. Look for EXPLICIT evaluation questions or numbered/bulleted sub-questions listed under this criterion in the NOFO text provided above. Only include questions that appear VERBATIM in the NOFO — copy the exact wording. If the criterion has no explicit evaluation questions (only narrative requirements), return an EMPTY question_responses array. Do NOT invent, paraphrase, or synthesize questions that are not literally written in the NOFO.
+7. For EACH verbatim question found, provide the application's answer with page citations in question_responses.
 8. Assess each as strength (exceeds), met (satisfies), or weakness (falls short).
 9. For weaknesses, cite the exact NOFO requirement and page.
 10. Also provide traditional strengths/mets/weaknesses lists.

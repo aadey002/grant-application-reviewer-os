@@ -2028,7 +2028,7 @@ const SafeReviewDashboard: React.FC = () => {
                           </div>
                         )}
                         {/* NOFO Question Responses */}
-                        {(c as any).question_responses?.length > 0 && (
+                        {Array.isArray((c as any).question_responses) && (c as any).question_responses.length > 0 && (
                           <div className="mt-5">
                             <p className="text-xs font-bold uppercase tracking-wide text-slate-500 mb-3">NOFO Evaluation Questions</p>
                             <div className="space-y-3">
