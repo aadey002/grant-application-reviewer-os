@@ -1177,6 +1177,9 @@ def _process_job(
             logger.warning("Could not extract NOFO guidance text: %s", exc)
 
         # -- Pre-scoring audit: verify NOFO / Application / Worksheet match --
+        _update(sb, "processing_jobs", {"id": job_id}, {
+            "error_message": "Verifying NOFO / Application / Worksheet match...",
+        })
         try:
             _prescore_document_audit(sb, job_id, application_id, review_id,
                                      app_bytes, nofo_bytes,
@@ -1195,6 +1198,10 @@ def _process_job(
             return
         except Exception as audit_exc:
             logger.warning("Pre-scoring audit warning (non-blocking): %s", audit_exc)
+
+        _update(sb, "processing_jobs", {"id": job_id}, {
+            "error_message": "Document audit passed. Scoring with Claude...",
+        })
 
         # -- Score with Claude --
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as atmp:
@@ -1256,6 +1263,9 @@ def _process_job(
         # -- Populate reviewer worksheet (if template provided) --
         worksheet_doc_id: Optional[str] = None
         if worksheet_storage_path:
+            _update(sb, "processing_jobs", {"id": job_id}, {
+                "error_message": "Scoring complete. Generating reviewer worksheet...",
+            })
             try:
                 ws_bytes = _download_bytes(sb, BUCKET_WORKSHEETS, worksheet_storage_path)
                 ws_suffix = Path(worksheet_storage_path).suffix or ".docx"
@@ -1323,6 +1333,7 @@ def _process_job(
             "status": "completed",
             "completed_at": datetime.now(timezone.utc).isoformat(),
             "worksheet_document_id": worksheet_doc_id,
+            "error_message": None,
         })
 
         logger.info("Job %s completed — score %s/%s", job_id,

@@ -705,8 +705,10 @@ const SafeReviewDashboard: React.FC = () => {
                 ? extractScoreFromMessage(val.message ?? '') ?? p.score
                 : p.score,
               errorMessage: val.status === 'failed'
-                ? (val.message ?? 'Processing failed')
-                : p.errorMessage,
+                ? (val.error_message ?? val.message ?? 'Processing failed')
+                : val.status === 'processing'
+                ? (val.error_message ?? p.errorMessage)
+                : (val.error_message === null ? null : p.errorMessage),
             };
           } else {
             // Network error during poll — don't kill status, just show warning
@@ -1632,8 +1634,11 @@ const SafeReviewDashboard: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Status message */}
-                  {p.message && p.status !== 'failed' && (
+                  {/* Status message — show progress step from error_message during processing */}
+                  {p.status === 'processing' && p.errorMessage && (
+                    <p className="mt-1 text-xs text-blue-600 font-medium">{p.errorMessage}</p>
+                  )}
+                  {p.message && p.status !== 'failed' && p.status !== 'processing' && (
                     <p className="mt-1 text-xs text-slate-500">{p.message}</p>
                   )}
 
