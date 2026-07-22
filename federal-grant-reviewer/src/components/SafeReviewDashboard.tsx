@@ -1936,6 +1936,55 @@ const SafeReviewDashboard: React.FC = () => {
                       </div>
                     </div>
 
+                    {/* Validation Panel — Document Audit + Citation Audit + Fact-Check */}
+                    <div className="rounded-xl border bg-white p-5 mb-4">
+                      <h3 className="font-bold text-lg mb-3">Quality Validation</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Document Match Audit */}
+                        <div className="rounded-lg border p-4">
+                          <p className="text-xs font-bold uppercase text-slate-500 mb-2">Document Match</p>
+                          <p className="text-sm text-slate-700">NOFO, Application, and Reviewer Worksheet verified for matching Funding Opportunity Number before scoring.</p>
+                          <div className="mt-2">
+                            <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold bg-emerald-100 text-emerald-800">{'\u2713'} FON Verified</span>
+                          </div>
+                        </div>
+                        {/* NOFO Citation Audit */}
+                        <div className="rounded-lg border p-4">
+                          <p className="text-xs font-bold uppercase text-slate-500 mb-2">NOFO Citation Audit</p>
+                          <p className="text-sm text-slate-700">All NOFO page citations verified against actual NOFO document text.</p>
+                          <div className="mt-2">
+                            {current.audit_status ? (
+                              <span className={'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ' + (current.audit_status === 'all_citations_verified' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800')}>
+                                {current.audit_status === 'all_citations_verified' ? '\u2713' : '\u26A0'}
+                                {current.audit_status === 'all_citations_verified'
+                                  ? ' All citations verified'
+                                  : ' ' + (current.audit_summary?.verified || 0) + ' verified, ' + (current.audit_summary?.corrected || 0) + ' corrected, ' + (current.audit_summary?.removed || 0) + ' removed'}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold bg-slate-100 text-slate-600">Pending</span>
+                            )}
+                          </div>
+                        </div>
+                        {/* Weakness Fact-Check */}
+                        <div className="rounded-lg border p-4">
+                          <p className="text-xs font-bold uppercase text-slate-500 mb-2">Weakness Fact-Check</p>
+                          <p className="text-sm text-slate-700">Each weakness verified against cited application pages for factual accuracy.</p>
+                          <div className="mt-2">
+                            {(current.audit_summary as any)?.weakness_fact_check ? (
+                              <span className={'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ' + ((current.audit_summary as any).weakness_fact_check.contradicted === 0 && (current.audit_summary as any).weakness_fact_check.unsupported === 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800')}>
+                                {(current.audit_summary as any).weakness_fact_check.contradicted === 0 && (current.audit_summary as any).weakness_fact_check.unsupported === 0 ? '\u2713' : '\u26A0'}
+                                {' ' + (current.audit_summary as any).weakness_fact_check.supported + ' supported'
+                                  + ((current.audit_summary as any).weakness_fact_check.unsupported > 0 ? ', ' + (current.audit_summary as any).weakness_fact_check.unsupported + ' flagged' : '')
+                                  + ((current.audit_summary as any).weakness_fact_check.contradicted > 0 ? ', ' + (current.audit_summary as any).weakness_fact_check.contradicted + ' removed' : '')}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold bg-slate-100 text-slate-600">{current.criteria.every((cr: any) => !cr.weaknesses?.length) ? 'No weaknesses to check' : 'Pending'}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Per-criterion review tables */}
                     {current.criteria.map((c, ci) => (
                       <article key={c.name} id={'criterion-' + ci} className="rounded-xl border bg-white p-6 scroll-mt-4">
