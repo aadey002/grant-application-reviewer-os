@@ -23,7 +23,7 @@ EQUITABLE SCORING FORMULA v1 — SCORING BANDS:
 Score = round_half_up(maximum_points × multiplier)
 
 COMMENT FORMAT — HRSA ARMS STYLE:
-Each finding should be 1-3 concise sentences (not a single sentence, not a full paragraph). Each finding covers one substantive observation. Limit to 2-4 findings per criterion or subcriterion — quality over quantity. Cite multiple relevant application pages per finding (e.g., "App p. 32, 33, 34").
+Each finding should be 1-3 concise sentences (not a single sentence, not a full paragraph). Each finding covers one substantive observation. Limit to 2-4 findings per criterion or subcriterion — quality over quantity. Cite only the 1-3 most relevant application pages where the core evidence appears (e.g., "App p. 33, 34"). Do NOT list every page that tangentially mentions the topic — cite only the pages where the primary supporting evidence is found. Broad page ranges (5+ pages) weaken the citation.
 
 Never use unexpanded acronyms — always write the full term first, followed by the acronym in parentheses on first use. Example: "Leadership Education in Neurodevelopmental and Related Disabilities (LEND)" then "LEND" thereafter.
 
