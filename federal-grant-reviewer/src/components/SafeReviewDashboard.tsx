@@ -992,7 +992,7 @@ const SafeReviewDashboard: React.FC = () => {
         </div>
       </nav>
 
-      <main className="mx-auto max-w-6xl px-6 pb-12">
+      <main className="mx-auto max-w-full px-4 pb-12">
 
         {/* ------------------------------------------------------------------ */}
         {/* STEP: UPLOAD                                                        */}
@@ -1794,7 +1794,7 @@ const SafeReviewDashboard: React.FC = () => {
 
                 {error && <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-800">{error}</div>}
 
-                <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+                <div className="grid gap-4 lg:grid-cols-[1fr_250px]">
                   <div className="space-y-4">
                     {/* Overview Presentation Information */}
                     {current.overview && Object.keys(current.overview).length > 0 && (
@@ -1840,19 +1840,27 @@ const SafeReviewDashboard: React.FC = () => {
                             <Download size={14} /> Download Overview
                           </button>
                         </div>
-                        {[
-                          ['Applicant information', current.overview.applicant_information],
-                          ['Target population, service area, appropriateness of budget', current.overview.target_population],
-                          ['Proposed project/program description', current.overview.project_description],
-                          ['Major goals and objectives', current.overview.goals_objectives],
-                          ['Any significant strength and/or weakness', current.overview.significant_findings],
-                          ['Any other pertinent information', current.overview.other_information],
-                        ].map(([label, value]) => value ? (
-                          <div key={label as string} className="mb-3">
-                            <p className="text-xs font-bold uppercase text-slate-500 mb-1">{label}</p>
-                            <p className="text-sm text-slate-700 leading-relaxed">{value}</p>
-                          </div>
-                        ) : null)}
+                        {(() => {
+                          const fields = [
+                            ['Applicant information', current.overview.applicant_information],
+                            ['Target population & budget', current.overview.target_population],
+                            ['Project description', current.overview.project_description],
+                            ['Goals & objectives', current.overview.goals_objectives],
+                            ['Significant strength/weakness', current.overview.significant_findings],
+                            ['Other information', current.overview.other_information],
+                          ];
+                          // Compact: show all fields in a 2-column grid, truncated
+                          return (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {fields.map(([label, value]) => value ? (
+                                <div key={label as string}>
+                                  <p className="text-xs font-bold uppercase text-slate-500 mb-0.5">{label}</p>
+                                  <p className="text-xs text-slate-700 leading-snug line-clamp-3">{value}</p>
+                                </div>
+                              ) : null)}
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
 

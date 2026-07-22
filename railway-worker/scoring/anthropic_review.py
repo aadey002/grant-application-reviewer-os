@@ -807,12 +807,12 @@ def score_application_with_claude(application: Path, criteria: list[dict[str, An
                 "overview": {"type": "object", "additionalProperties": False,
                     "required": ["applicant_information", "target_population", "project_description", "goals_objectives", "significant_findings", "other_information"],
                     "properties": {
-                        "applicant_information": {"type": "string", "description": "Who the applicant is: organization type, location, mission, relevant experience. 2-3 sentences."},
-                        "target_population": {"type": "string", "description": "Target population, service area, and appropriateness of the budget for the proposed scope. 2-3 sentences."},
-                        "project_description": {"type": "string", "description": "Proposed project/program description: what is being proposed and how it will be accomplished. 2-3 sentences."},
-                        "goals_objectives": {"type": "string", "description": "Major goals and objectives of the proposed project. 2-3 sentences."},
-                        "significant_findings": {"type": "string", "description": "The most significant strength and/or weakness found in the application. 2-3 sentences citing specific evidence."},
-                        "other_information": {"type": "string", "description": "Any other pertinent information relevant to the review. 1-2 sentences or 'None identified.'"},
+                        "applicant_information": {"type": "string", "description": "1-2 sentences ONLY. Organization name, type, location. Keep brief."},
+                        "target_population": {"type": "string", "description": "1-2 sentences ONLY. Target population, service area, tier level and budget amount."},
+                        "project_description": {"type": "string", "description": "1-2 sentences ONLY. What is being proposed and the training model."},
+                        "goals_objectives": {"type": "string", "description": "1-2 sentences ONLY. List the major goals as a brief summary, not full objectives."},
+                        "significant_findings": {"type": "string", "description": "1-2 sentences ONLY. The single most significant strength and/or weakness."},
+                        "other_information": {"type": "string", "description": "1 sentence or 'None identified.' Only note supplements or unusual features."},
                     }},
                 "budget": {"type": "object", "additionalProperties": False, "required": ["recommendation", "annual_recommended_funding", "reduction_rationale"], "properties": {
                     "recommendation": {"type": "string", "enum": ["as_requested", "as_reduced", "unable_to_determine"]},
