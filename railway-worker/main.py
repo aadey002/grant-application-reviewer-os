@@ -976,6 +976,134 @@ def _create_application_job(
 
 
 # ---------------------------------------------------------------------------
+# Pre-scoring document audit
+# ---------------------------------------------------------------------------
+
+class DocumentMismatchError(Exception):
+    """Raised when NOFO, application, and worksheet funding opportunity numbers don't match."""
+    pass
+
+
+def _extract_funding_opportunity_number(pdf_bytes: bytes, label: str) -> str | None:
+    """Extract Funding Opportunity Number from the first few pages of a PDF."""
+    import fitz
+    try:
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        # Check first 5 pages for the FON
+        text = ""
+        for i in range(min(5, len(doc))):
+            text += doc[i].get_text() + "\n"
+        doc.close()
+
+        # Common patterns for Funding Opportunity Number
+        patterns = [
+            r'(?:Funding\s+Opportunity\s+Number|NOFO\s+Number|FON|Opportunity\s+Number)\s*[:\-]?\s*([\w\-]+\-\d+\-\d+)',
+            r'(HRSA-\d{2}-\d{3})',
+            r'(SM-\d{2}-\d{3})',
+            r'(TI-\d{2}-\d{3})',
+            r'(SP-\d{2}-\d{3})',
+            r'(CDC-\d{4}-\d+)',
+            r'(NIH-\w+-\d{2}-\d{3})',
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                return match.group(1).strip()
+        return None
+    except Exception as exc:
+        logger.warning("Could not extract FON from %s: %s", label, exc)
+        return None
+
+
+def _extract_fon_from_worksheet(ws_bytes: bytes) -> str | None:
+    """Extract Funding Opportunity Number from a DOCX worksheet."""
+    try:
+        from docx import Document as DocxDocument
+        doc = DocxDocument(io.BytesIO(ws_bytes))
+        text = "\n".join(p.text for p in doc.paragraphs[:30])
+        # Also check tables (HRSA worksheets often use tables)
+        for table in doc.tables[:5]:
+            for row in table.rows:
+                for cell in row.cells:
+                    text += "\n" + cell.text
+
+        patterns = [
+            r'(?:Funding\s+Opportunity\s+Number|NOFO\s+Number|FON|Grant\s+Number)\s*[:\-]?\s*([\w\-]+\-\d+\-\d+)',
+            r'(HRSA-\d{2}-\d{3})',
+            r'(SM-\d{2}-\d{3})',
+            r'(TI-\d{2}-\d{3})',
+            r'(SP-\d{2}-\d{3})',
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                return match.group(1).strip()
+        return None
+    except Exception as exc:
+        logger.warning("Could not extract FON from worksheet: %s", exc)
+        return None
+
+
+def _prescore_document_audit(
+    sb: Any,
+    job_id: str,
+    application_id: str,
+    review_id: str,
+    app_bytes: bytes,
+    nofo_bytes: bytes | None,
+    worksheet_storage_path: str | None,
+) -> None:
+    """Verify NOFO, application, and worksheet all reference the same Funding Opportunity Number.
+
+    Raises DocumentMismatchError if they clearly don't match.
+    Logs warnings for soft mismatches (e.g., one document missing the FON).
+    """
+    fon_nofo = _extract_funding_opportunity_number(nofo_bytes, "NOFO") if nofo_bytes else None
+    fon_app = _extract_funding_opportunity_number(app_bytes, "Application")
+
+    fon_worksheet = None
+    if worksheet_storage_path:
+        try:
+            ws_bytes = _download_bytes(sb, BUCKET_WORKSHEETS, worksheet_storage_path)
+            fon_worksheet = _extract_fon_from_worksheet(ws_bytes)
+        except Exception as exc:
+            logger.warning("Could not download worksheet for audit: %s", exc)
+
+    logger.info("Document audit — NOFO FON: %s, Application FON: %s, Worksheet FON: %s",
+                fon_nofo, fon_app, fon_worksheet)
+
+    # Collect all non-None FONs
+    fons = {}
+    if fon_nofo:
+        fons["NOFO"] = fon_nofo.upper()
+    if fon_app:
+        fons["Application"] = fon_app.upper()
+    if fon_worksheet:
+        fons["Worksheet"] = fon_worksheet.upper()
+
+    if len(fons) < 2:
+        # Can't compare if we only have one or zero FONs
+        if not fons:
+            logger.warning("Could not extract Funding Opportunity Number from any document — skipping audit")
+        else:
+            logger.info("Only extracted FON from %s (%s) — cannot cross-verify", list(fons.keys())[0], list(fons.values())[0])
+        return
+
+    # Check if all extracted FONs match
+    unique_fons = set(fons.values())
+    if len(unique_fons) == 1:
+        logger.info("Document audit PASSED — all documents reference %s", list(unique_fons)[0])
+        return
+
+    # Mismatch detected — build error message
+    details = ", ".join(f"{doc}: {fon}" for doc, fon in fons.items())
+    raise DocumentMismatchError(
+        f"Funding Opportunity Number mismatch across documents. {details}. "
+        "Please ensure the NOFO, application, and reviewer worksheet all reference the same grant opportunity."
+    )
+
+
+# ---------------------------------------------------------------------------
 # Background: _process_job
 # ---------------------------------------------------------------------------
 
@@ -1025,6 +1153,7 @@ def _process_job(
 
         # -- Download NOFO for guidance text --
         guidance_text = ""
+        nofo_bytes = None
         try:
             nofo_bytes = _download_bytes(sb, BUCKET_NOFO, nofo_storage_path)
             try:
@@ -1046,6 +1175,26 @@ def _process_job(
                 ntmp_path.unlink(missing_ok=True)
         except Exception as exc:
             logger.warning("Could not extract NOFO guidance text: %s", exc)
+
+        # -- Pre-scoring audit: verify NOFO / Application / Worksheet match --
+        try:
+            _prescore_document_audit(sb, job_id, application_id, review_id,
+                                     app_bytes, nofo_bytes,
+                                     worksheet_storage_path)
+        except DocumentMismatchError as dme:
+            logger.error("Document mismatch for job %s: %s", job_id, dme)
+            _update(sb, "processing_jobs", {"id": job_id}, {
+                "status": "failed",
+                "error_message": f"Document mismatch: {dme}",
+                "completed_at": datetime.now(timezone.utc).isoformat(),
+            })
+            _update(sb, "applications", {"id": application_id}, {
+                "status": "failed",
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            })
+            return
+        except Exception as audit_exc:
+            logger.warning("Pre-scoring audit warning (non-blocking): %s", audit_exc)
 
         # -- Score with Claude --
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as atmp:

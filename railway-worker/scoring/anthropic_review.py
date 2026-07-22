@@ -345,6 +345,229 @@ INSTRUCTIONS:
     return result
 
 
+def _audit_nofo_citations(client, model: str, review: dict[str, Any], nofo_text: str) -> dict[str, Any]:
+    """Post-scoring audit: verify every NOFO citation against actual NOFO pages.
+
+    Collects all NOFO page citations from question_responses, requirement_assessments,
+    and weaknesses, then asks Claude to verify each against the real NOFO page text.
+    Strips or flags hallucinated citations.
+    """
+    import logging
+    logger = logging.getLogger("grant_worker")
+
+    if not nofo_text:
+        logger.warning("No NOFO text available for citation audit — skipping")
+        return review
+
+    # --- Collect all NOFO citations to verify ---
+    citations_to_verify = []
+    for crit in review.get("criteria", []):
+        crit_name = crit.get("name", "unknown")
+
+        # question_responses
+        for qr in (crit.get("question_responses") or []):
+            if not isinstance(qr, dict):
+                continue
+            citations_to_verify.append({
+                "criterion": crit_name,
+                "source": "question_response",
+                "claimed_text": qr.get("nofo_question", ""),
+                "claimed_pages": qr.get("nofo_pages") or [],
+                "field": "nofo_question",
+            })
+
+        # requirement_assessments
+        for ra in (crit.get("requirement_assessments") or []):
+            if not isinstance(ra, dict):
+                continue
+            citations_to_verify.append({
+                "criterion": crit_name,
+                "source": "requirement_assessment",
+                "claimed_text": ra.get("requirement_text", ""),
+                "claimed_pages": ra.get("nofo_pages", []),
+                "field": "requirement_text",
+            })
+
+        # weaknesses
+        for w in (crit.get("weaknesses") or []):
+            if not isinstance(w, dict):
+                continue
+            if w.get("nofo_requirement"):
+                citations_to_verify.append({
+                    "criterion": crit_name,
+                    "source": "weakness",
+                    "claimed_text": w.get("nofo_requirement", ""),
+                    "claimed_pages": w.get("nofo_pages", []),
+                    "field": "nofo_requirement",
+                })
+
+    if not citations_to_verify:
+        logger.info("No NOFO citations to audit")
+        return review
+
+    logger.info("Auditing %d NOFO citations", len(citations_to_verify))
+
+    # --- Build citation list for Claude ---
+    citation_lines = []
+    for i, c in enumerate(citations_to_verify):
+        pages_str = ", ".join(str(p) for p in c["claimed_pages"]) if c["claimed_pages"] else "none"
+        citation_lines.append(
+            "CITATION " + str(i) + ":\n"
+            "  Criterion: " + c["criterion"] + "\n"
+            "  Type: " + c["source"] + "\n"
+            "  Claimed text: " + c["claimed_text"] + "\n"
+            "  Claimed NOFO pages: " + pages_str
+        )
+
+    audit_tool = {
+        "name": "submit_audit",
+        "description": "Submit the NOFO citation audit results.",
+        "input_schema": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["results"],
+            "properties": {
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "required": ["citation_index", "verified", "corrected_pages", "explanation"],
+                        "properties": {
+                            "citation_index": {"type": "integer", "minimum": 0},
+                            "verified": {"type": "boolean", "description": "true if the claimed text exists on or near the claimed NOFO pages"},
+                            "corrected_pages": {"type": "array", "items": {"type": "integer", "minimum": 1}, "description": "Correct NOFO page numbers where this text actually appears, or empty if not found anywhere"},
+                            "explanation": {"type": "string", "description": "Brief explanation of verification result"},
+                        },
+                    },
+                },
+            },
+        },
+    }
+
+    audit_prompt = (
+        "You are auditing NOFO citations from a grant review for accuracy.\n\n"
+        "For each citation below, verify whether the claimed text actually appears "
+        "(verbatim or as a close paraphrase) on the claimed NOFO pages. Check the "
+        "actual NOFO page text provided.\n\n"
+        "Rules:\n"
+        "- A citation is VERIFIED if the text (or a close faithful paraphrase) appears on "
+        "the claimed page or within 1-2 pages of it.\n"
+        "- If the text exists but on different pages, mark verified=false and provide corrected_pages.\n"
+        "- If the text does not exist anywhere in the NOFO, mark verified=false with empty corrected_pages.\n"
+        "- Be strict: fabricated requirements that sound plausible but don't appear in the NOFO should fail.\n\n"
+        "NOFO TEXT:\n" + nofo_text[:80000] + "\n\n"
+        "CITATIONS TO VERIFY:\n" + "\n\n".join(citation_lines)
+    )
+
+    try:
+        response = client.messages.create(
+            model=model,
+            max_tokens=4000,
+            temperature=0,
+            system="You are a precise citation auditor. Your only job is to verify whether claimed NOFO text exists on the claimed pages. Be strict and factual.",
+            messages=[{"role": "user", "content": [
+                {"type": "text", "text": "NOFO TEXT:\n" + nofo_text[:80000], "cache_control": {"type": "ephemeral"}},
+                {"type": "text", "text": "CITATIONS TO VERIFY:\n" + "\n\n".join(citation_lines)},
+            ]}],
+            tools=[audit_tool],
+            tool_choice={"type": "tool", "name": "submit_audit"},
+        )
+        tool_use = next((b for b in response.content if b.type == "tool_use"), None)
+        if not tool_use:
+            logger.warning("Audit did not return structured results — skipping")
+            return review
+        audit_results = tool_use.input
+        if isinstance(audit_results, str):
+            audit_results = json.loads(audit_results)
+    except Exception as exc:
+        logger.warning("NOFO citation audit failed: %s — returning review unmodified", exc)
+        return review
+
+    # --- Apply audit results ---
+    failed_indices = set()
+    corrections = {}
+    for result in audit_results.get("results", []):
+        idx = result.get("citation_index")
+        if idx is None or idx < 0 or idx >= len(citations_to_verify):
+            continue
+        if not result.get("verified"):
+            corrected = result.get("corrected_pages", [])
+            if corrected:
+                corrections[idx] = corrected
+                logger.info("  Citation %d: page corrected to %s — %s", idx, corrected, result.get("explanation", ""))
+            else:
+                failed_indices.add(idx)
+                logger.warning("  Citation %d FAILED audit: %s", idx, result.get("explanation", ""))
+
+    if not failed_indices and not corrections:
+        logger.info("All %d NOFO citations verified", len(citations_to_verify))
+        review["audit_status"] = "all_citations_verified"
+        return review
+
+    # --- Strip or correct citations in the review ---
+    # Build lookup: (criterion_name, source_type, claimed_text) -> citation index
+    citation_lookup = {}
+    for i, c in enumerate(citations_to_verify):
+        citation_lookup[(c["criterion"], c["source"], c["claimed_text"])] = i
+
+    for crit in review.get("criteria", []):
+        crit_name = crit.get("name", "unknown")
+
+        # Filter question_responses
+        if isinstance(crit.get("question_responses"), list):
+            filtered_qr = []
+            for qr in crit["question_responses"]:
+                if not isinstance(qr, dict):
+                    continue
+                key = (crit_name, "question_response", qr.get("nofo_question", ""))
+                idx = citation_lookup.get(key)
+                if idx in failed_indices:
+                    logger.info("  Removing hallucinated question_response from %s: %s", crit_name, qr.get("nofo_question", "")[:80])
+                    continue
+                if idx in corrections:
+                    qr["nofo_pages"] = corrections[idx]
+                filtered_qr.append(qr)
+            crit["question_responses"] = filtered_qr
+
+        # Correct requirement_assessments pages (don't remove — they affect scoring)
+        if isinstance(crit.get("requirement_assessments"), list):
+            for ra in crit["requirement_assessments"]:
+                if not isinstance(ra, dict):
+                    continue
+                key = (crit_name, "requirement_assessment", ra.get("requirement_text", ""))
+                idx = citation_lookup.get(key)
+                if idx in corrections:
+                    ra["nofo_pages"] = corrections[idx]
+                if idx in failed_indices:
+                    ra["audit_flag"] = "nofo_citation_not_verified"
+
+        # Correct weakness NOFO pages (don't remove — they affect scoring)
+        if isinstance(crit.get("weaknesses"), list):
+            for w in crit["weaknesses"]:
+                if not isinstance(w, dict):
+                    continue
+                key = (crit_name, "weakness", w.get("nofo_requirement", ""))
+                idx = citation_lookup.get(key)
+                if idx in corrections:
+                    w["nofo_pages"] = corrections[idx]
+                if idx in failed_indices:
+                    w["audit_flag"] = "nofo_citation_not_verified"
+
+    removed = len(failed_indices)
+    corrected = len(corrections)
+    logger.info("Audit complete: %d citations removed, %d corrected, %d verified",
+                removed, corrected, len(citations_to_verify) - removed - corrected)
+    review["audit_status"] = "completed"
+    review["audit_summary"] = {
+        "total_citations": len(citations_to_verify),
+        "verified": len(citations_to_verify) - removed - corrected,
+        "corrected": corrected,
+        "removed": removed,
+    }
+    return review
+
+
 def score_application_with_claude(application: Path, criteria: list[dict[str, Any]], agency: str, guidance: str = "") -> dict[str, Any]:
     api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
     if not api_key:
@@ -449,5 +672,8 @@ Each overview field should be 2-3 concise sentences. Never use unexpanded acrony
         "review_status": "ai_draft_human_validation_required",
         "certification": "Claude-generated draft. A human reviewer must verify every finding, citation, score, and budget recommendation.",
     }
-    logger.info("Review complete: %d/%d (formula: equitable-v1.2)", total, max_total)
+    # --- Post-scoring audit: verify NOFO citations ---
+    logger.info("Running NOFO citation audit...")
+    review = _audit_nofo_citations(client, model, review, nofo_text)
+    logger.info("Review complete: %d/%d (formula: equitable-v1.2, audit: %s)", total, max_total, review.get("audit_status", "skipped"))
     return review

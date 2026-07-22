@@ -1964,7 +1964,7 @@ const SafeReviewDashboard: React.FC = () => {
                                   <td className="p-2 border align-top font-semibold text-slate-700">{c.name}<br/><span className="text-xs text-slate-400">{c.score}/{c.maximum_points}</span></td>
                                   <td className="p-2 border align-top">{finding.comment}</td>
                                   <td className="p-2 border align-top text-xs text-blue-700">p. {(finding.application_pages || finding.pages || []).join(', ')}</td>
-                                  {findingsFilter === 'weaknesses' && <td className="p-2 border align-top text-xs">{finding.nofo_requirement || ''}<br/><span className="text-amber-600">NOFO p. {(finding.nofo_pages || []).join(', ')}</span></td>}
+                                  {findingsFilter === 'weaknesses' && <td className="p-2 border align-top text-xs">{finding.nofo_requirement || ''}<br/><span className="text-amber-600">NOFO p. {(finding.nofo_pages || []).join(', ')}</span>{finding.audit_flag && <span className="ml-1 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-700" title="This NOFO citation could not be verified against the actual NOFO document">UNVERIFIED</span>}</td>}
                                   {findingsFilter === 'weaknesses' && <td className="p-2 border align-top text-xs italic">{finding.impact || ''}</td>}
                                 </tr>
                               ))
@@ -2172,6 +2172,16 @@ const SafeReviewDashboard: React.FC = () => {
                       </span>
                     </p>
                     <p className="mt-4 text-xs leading-5 text-slate-300">{current.certification}</p>
+                    {current.audit_status && (
+                      <div className={'mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ' + (current.audit_status === 'all_citations_verified' ? 'bg-emerald-900/50 text-emerald-300' : 'bg-amber-900/50 text-amber-300')}>
+                        <span>{current.audit_status === 'all_citations_verified' ? '\u2713' : '\u26A0'}</span>
+                        <span>
+                          {current.audit_status === 'all_citations_verified'
+                            ? 'All NOFO citations verified'
+                            : ('NOFO Audit: ' + (current.audit_summary?.verified || 0) + ' verified, ' + (current.audit_summary?.corrected || 0) + ' corrected, ' + (current.audit_summary?.removed || 0) + ' removed')}
+                        </span>
+                      </div>
+                    )}
 
                     {/* Reviewer Validation Controls */}
                     {(() => {

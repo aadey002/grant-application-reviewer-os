@@ -28,6 +28,8 @@ export interface SafeReview {
   budget?: { recommendation: string; annual_recommended_funding: (number | null)[]; reduction_rationale: string };
   overview?: Record<string, string>;
   overall_summary?: string;
+  audit_status?: string;
+  audit_summary?: { total_citations: number; verified: number; corrected: number; removed: number };
 }
 
 export interface ReviewPackage { applications: File[]; nofo: File; rubric: File | null; worksheet: File | null; agency: string }
@@ -262,6 +264,8 @@ export const getReviewResults = async (reviewId: string): Promise<ReviewResults>
       budget: result.budget || undefined,
       overview: result.overview || undefined,
       overall_summary: result.overall_summary || undefined,
+      audit_status: result.audit_status || undefined,
+      audit_summary: result.audit_summary || undefined,
     });
   }
   return { review_id: reviewId, reviews };
