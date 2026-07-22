@@ -47,7 +47,15 @@ RIGHT: "The applicant requests funding precisely matching the Notice of Funding 
 
 The reviewer's job is to assess WHETHER evidence was provided and HOW STRONG it is — not to summarize the evidence itself. The application speaks for itself; the reviewer evaluates its quality.
 
-WEAKNESS RULES: Every weakness MUST cite the specific NOFO requirement the application falls short of, with the exact NOFO page number(s). Include application page(s) showing the shortfall and explain the material impact. Do not identify weaknesses based on reviewer preference or outside knowledge — only against explicitly stated NOFO requirements. If a weakness cannot be supported by a specific NOFO requirement, omit it rather than lowering the score."""
+WEAKNESS RULES: Every weakness MUST cite the specific NOFO requirement the application falls short of, with the exact NOFO page number(s). Include application page(s) showing the shortfall and explain the material impact. Do not identify weaknesses based on reviewer preference or outside knowledge — only against explicitly stated NOFO requirements. If a weakness cannot be supported by a specific NOFO requirement, omit it rather than lowering the score.
+
+FACTUAL ACCURACY — CRITICAL:
+Before asserting any weakness, RE-READ the cited application pages and verify your claim is factually correct:
+- The APPLICANT ORGANIZATION is the entity that submitted the application (named on SF-424 / cover page). All personnel listed in the application are presumed to be employed by or affiliated with the applicant unless the application explicitly states otherwise.
+- Do NOT claim a person is employed elsewhere unless the application explicitly says so. If the application names someone as Project Director, they are the applicant's PD.
+- Do NOT confuse the applicant organization with partner organizations, subrecipients, or consortium members. The applicant is the lead entity.
+- Do NOT assume a person lacks a qualification (faculty status, licensure, credentials) unless the application clearly omits it or states they lack it.
+- If you are uncertain whether a weakness is factually supported by the application text, omit it. A false weakness is worse than a missed one."""
 
 
 def _application_text(path: Path, max_chars: int = 175_000) -> tuple[list[str], str]:
@@ -568,6 +576,199 @@ def _audit_nofo_citations(client, model: str, review: dict[str, Any], nofo_text:
     return review
 
 
+def _audit_weakness_facts(client, model: str, review: dict[str, Any], pages: list[str]) -> dict[str, Any]:
+    """Post-scoring audit: verify each weakness claim is factually supported by the cited application pages.
+
+    For each weakness, extracts the actual text from the cited application pages
+    and asks Claude whether the claim is supported, contradicted, or unsupported.
+    Removes findings that are contradicted by the evidence.
+    """
+    import logging
+    logger = logging.getLogger("grant_worker")
+
+    # Collect all weaknesses with their cited application page text
+    weaknesses_to_verify = []
+    for crit in review.get("criteria", []):
+        crit_name = crit.get("name", "unknown")
+        for wi, w in enumerate(crit.get("weaknesses") or []):
+            if not isinstance(w, dict):
+                continue
+            app_pages = w.get("application_pages", w.get("pages", []))
+            if not app_pages:
+                continue
+
+            # Extract the actual text from cited pages
+            cited_text_blocks = []
+            for p in app_pages:
+                if isinstance(p, int) and 1 <= p <= len(pages):
+                    cited_text_blocks.append("--- APPLICATION PAGE " + str(p) + " ---\n" + pages[p - 1].strip())
+            if not cited_text_blocks:
+                continue
+
+            weaknesses_to_verify.append({
+                "criterion": crit_name,
+                "weakness_index": wi,
+                "comment": w.get("comment", ""),
+                "nofo_requirement": w.get("nofo_requirement", ""),
+                "impact": w.get("impact", ""),
+                "cited_app_pages": app_pages,
+                "cited_text": "\n\n".join(cited_text_blocks),
+            })
+
+    if not weaknesses_to_verify:
+        logger.info("No weaknesses to fact-check")
+        return review
+
+    logger.info("Fact-checking %d weakness findings against application text", len(weaknesses_to_verify))
+
+    # Build the verification prompt
+    weakness_entries = []
+    for i, w in enumerate(weaknesses_to_verify):
+        weakness_entries.append(
+            "WEAKNESS " + str(i) + ":\n"
+            "  Criterion: " + w["criterion"] + "\n"
+            "  Claim: " + w["comment"] + "\n"
+            "  NOFO requirement cited: " + w["nofo_requirement"] + "\n"
+            "  Impact stated: " + w["impact"] + "\n"
+            "  Application pages cited: " + ", ".join(str(p) for p in w["cited_app_pages"]) + "\n"
+            "  ACTUAL TEXT FROM THOSE PAGES:\n" + w["cited_text"]
+        )
+
+    fact_check_tool = {
+        "name": "submit_fact_check",
+        "description": "Submit factual accuracy audit results for weakness findings.",
+        "input_schema": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["results"],
+            "properties": {
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "required": ["weakness_index", "verdict", "explanation"],
+                        "properties": {
+                            "weakness_index": {"type": "integer", "minimum": 0},
+                            "verdict": {
+                                "type": "string",
+                                "enum": ["supported", "unsupported", "contradicted"],
+                                "description": "supported = application text confirms the claim; unsupported = text doesn't address it; contradicted = text directly disproves the claim",
+                            },
+                            "explanation": {"type": "string", "description": "Brief explanation citing specific text from the application pages"},
+                        },
+                    },
+                },
+            },
+        },
+    }
+
+    # Limit total text to avoid token overflow
+    combined_entries = "\n\n".join(weakness_entries)
+    if len(combined_entries) > 100000:
+        combined_entries = combined_entries[:100000] + "\n\n[TRUNCATED]"
+
+    try:
+        response = client.messages.create(
+            model=model,
+            max_tokens=4000,
+            temperature=0,
+            system=(
+                "You are a factual accuracy auditor for federal grant reviews. "
+                "For each weakness finding, you are given the reviewer's claim AND the actual application text from the cited pages. "
+                "Your job is to determine whether the application text SUPPORTS, does NOT SUPPORT, or CONTRADICTS the claim.\n\n"
+                "Rules:\n"
+                "- SUPPORTED: The application text on the cited pages confirms what the reviewer claimed.\n"
+                "- UNSUPPORTED: The cited pages don't contain enough information to confirm or deny the claim. The reviewer may be inferring beyond what's written.\n"
+                "- CONTRADICTED: The application text directly disproves the reviewer's claim. For example, the reviewer says a person lacks a qualification but the text shows they have it, "
+                "or the reviewer says a person is employed elsewhere but the application identifies them as staff of the applicant organization.\n\n"
+                "Be strict about CONTRADICTED — only use it when the text clearly disproves the claim. "
+                "Pay special attention to:\n"
+                "- Who the applicant organization is (the entity on the cover page / SF-424)\n"
+                "- Whether named personnel are employed by the applicant vs. a partner\n"
+                "- Whether qualifications (faculty status, licensure, etc.) are actually missing or just not mentioned in the cited pages\n"
+                "- Whether the reviewer confused the applicant with a subrecipient or consortium member"
+            ),
+            messages=[{"role": "user", "content": [
+                {"type": "text", "text": combined_entries, "cache_control": {"type": "ephemeral"}},
+            ]}],
+            tools=[fact_check_tool],
+            tool_choice={"type": "tool", "name": "submit_fact_check"},
+        )
+        tool_use = next((b for b in response.content if b.type == "tool_use"), None)
+        if not tool_use:
+            logger.warning("Fact-check did not return structured results — skipping")
+            return review
+        fact_results = tool_use.input
+        if isinstance(fact_results, str):
+            fact_results = json.loads(fact_results)
+    except Exception as exc:
+        logger.warning("Weakness fact-check failed: %s — returning review unmodified", exc)
+        return review
+
+    # Apply results
+    contradicted_keys = set()  # (criterion_name, weakness_index)
+    unsupported_keys = set()
+    for result in fact_results.get("results", []):
+        idx = result.get("weakness_index")
+        if idx is None or idx < 0 or idx >= len(weaknesses_to_verify):
+            continue
+        w_info = weaknesses_to_verify[idx]
+        verdict = result.get("verdict", "")
+        if verdict == "contradicted":
+            contradicted_keys.add((w_info["criterion"], w_info["weakness_index"]))
+            logger.warning("  Weakness %d (%s) CONTRADICTED by application text: %s",
+                           idx, w_info["criterion"], result.get("explanation", ""))
+        elif verdict == "unsupported":
+            unsupported_keys.add((w_info["criterion"], w_info["weakness_index"]))
+            logger.warning("  Weakness %d (%s) UNSUPPORTED by application text: %s",
+                           idx, w_info["criterion"], result.get("explanation", ""))
+
+    if not contradicted_keys and not unsupported_keys:
+        logger.info("All %d weakness findings fact-checked — all supported", len(weaknesses_to_verify))
+        if "audit_summary" not in review:
+            review["audit_summary"] = {}
+        review["audit_summary"]["weakness_fact_check"] = {
+            "total": len(weaknesses_to_verify),
+            "supported": len(weaknesses_to_verify),
+            "unsupported": 0,
+            "contradicted": 0,
+        }
+        return review
+
+    # Remove contradicted weaknesses, flag unsupported ones
+    for crit in review.get("criteria", []):
+        crit_name = crit.get("name", "unknown")
+        if not isinstance(crit.get("weaknesses"), list):
+            continue
+        filtered = []
+        for wi, w in enumerate(crit["weaknesses"]):
+            key = (crit_name, wi)
+            if key in contradicted_keys:
+                logger.info("  REMOVING contradicted weakness from %s: %s",
+                            crit_name, (w.get("comment", ""))[:80])
+                continue  # drop it
+            if key in unsupported_keys:
+                w["audit_flag"] = "claim_not_supported_by_cited_pages"
+            filtered.append(w)
+        crit["weaknesses"] = filtered
+
+    removed = len(contradicted_keys)
+    flagged = len(unsupported_keys)
+    supported = len(weaknesses_to_verify) - removed - flagged
+    logger.info("Fact-check complete: %d supported, %d unsupported (flagged), %d contradicted (removed)",
+                supported, flagged, removed)
+    if "audit_summary" not in review:
+        review["audit_summary"] = {}
+    review["audit_summary"]["weakness_fact_check"] = {
+        "total": len(weaknesses_to_verify),
+        "supported": supported,
+        "unsupported": flagged,
+        "contradicted": removed,
+    }
+    return review
+
+
 def score_application_with_claude(application: Path, criteria: list[dict[str, Any]], agency: str, guidance: str = "") -> dict[str, Any]:
     api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
     if not api_key:
@@ -672,8 +873,12 @@ Each overview field should be 2-3 concise sentences. Never use unexpanded acrony
         "review_status": "ai_draft_human_validation_required",
         "certification": "Claude-generated draft. A human reviewer must verify every finding, citation, score, and budget recommendation.",
     }
-    # --- Post-scoring audit: verify NOFO citations ---
+    # --- Post-scoring audits ---
     logger.info("Running NOFO citation audit...")
     review = _audit_nofo_citations(client, model, review, nofo_text)
+
+    logger.info("Running weakness factual accuracy audit...")
+    review = _audit_weakness_facts(client, model, review, pages)
+
     logger.info("Review complete: %d/%d (formula: equitable-v1.2, audit: %s)", total, max_total, review.get("audit_status", "skipped"))
     return review
