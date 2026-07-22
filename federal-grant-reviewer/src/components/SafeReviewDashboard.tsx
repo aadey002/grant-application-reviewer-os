@@ -1928,62 +1928,8 @@ const SafeReviewDashboard: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Findings Filter Bar */}
-                    <div className="flex gap-2 mb-4">
-                      {(['all', 'strengths', 'mets', 'weaknesses'] as const).map(f => (
-                        <button key={f} onClick={() => setFindingsFilter(f)}
-                          className={`rounded-lg px-4 py-2 text-sm font-semibold ${
-                            findingsFilter === f
-                              ? f === 'strengths' ? 'bg-emerald-600 text-white' :
-                                f === 'mets' ? 'bg-blue-600 text-white' :
-                                f === 'weaknesses' ? 'bg-red-600 text-white' :
-                                'bg-slate-800 text-white'
-                              : 'bg-white border text-slate-600 hover:bg-slate-50'
-                          }`}>
-                          {f === 'all' ? 'All Criteria' : f.charAt(0).toUpperCase() + f.slice(1)}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Findings summary table when a filter is active */}
-                    {findingsFilter !== 'all' && current && (
-                      <div className="rounded-xl border bg-white p-6">
-                        <h3 className="font-bold text-lg mb-4">
-                          {findingsFilter === 'strengths' ? 'All Strengths' : findingsFilter === 'mets' ? 'All Met Criteria' : 'All Weaknesses'}
-                          {' \u2014 '}{current.applicant_name || 'Application'}
-                        </h3>
-                        <table className="w-full text-sm border">
-                          <thead>
-                            <tr className="bg-slate-100">
-                              <th className="text-left p-2 border">Criterion</th>
-                              <th className="text-left p-2 border">Finding</th>
-                              <th className="text-left p-2 border w-28">App Pages</th>
-                              {findingsFilter === 'weaknesses' && <th className="text-left p-2 border">NOFO Requirement</th>}
-                              {findingsFilter === 'weaknesses' && <th className="text-left p-2 border">Impact</th>}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {current.criteria.flatMap((c: any) =>
-                              (c[findingsFilter] || []).map((finding: any, fi: number) => (
-                                <tr key={c.name + fi} className="border-t">
-                                  <td className="p-2 border align-top font-semibold text-slate-700">{c.name}<br/><span className="text-xs text-slate-400">{c.score}/{c.maximum_points}</span></td>
-                                  <td className="p-2 border align-top">{finding.comment}</td>
-                                  <td className="p-2 border align-top text-xs text-blue-700">p. {(finding.application_pages || finding.pages || []).join(', ')}</td>
-                                  {findingsFilter === 'weaknesses' && <td className="p-2 border align-top text-xs">{finding.nofo_requirement || ''}<br/><span className="text-amber-600">NOFO p. {(finding.nofo_pages || []).join(', ')}</span>{finding.audit_flag === 'nofo_citation_not_verified' && <span className="ml-1 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-700" title="This NOFO citation could not be verified against the actual NOFO document">UNVERIFIED</span>}{finding.audit_flag === 'claim_not_supported_by_cited_pages' && <span className="ml-1 rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold text-orange-700" title="This claim could not be confirmed by the text on the cited application pages">UNSUPPORTED</span>}</td>}
-                                  {findingsFilter === 'weaknesses' && <td className="p-2 border align-top text-xs italic">{finding.impact || ''}</td>}
-                                </tr>
-                              ))
-                            )}
-                          </tbody>
-                        </table>
-                        {current.criteria.flatMap((c: any) => c[findingsFilter] || []).length === 0 && (
-                          <p className="text-slate-400 text-sm mt-4">No {findingsFilter} identified.</p>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Per-criterion cards — shown only when filter is 'all' */}
-                    {findingsFilter === 'all' && current.criteria.map((c, ci) => (
+                    {/* Per-criterion review tables */}
+                    {current.criteria.map((c, ci) => (
                       <article key={c.name} id={'criterion-' + ci} className="rounded-xl border bg-white p-6 scroll-mt-4">
                         <div className="flex justify-between gap-3">
                           <div>
