@@ -215,16 +215,19 @@ def _score_single_criterion(client, model: str, application_text: str, criterion
             "impact": {"type": "string", "description": "For weaknesses only: material impact of the shortfall"},
         }}
 
-    # Requirement-level assessment
+    # Requirement-level assessment — primary output, one per NOFO bullet
     requirement_assessment = {
         "type": "object", "additionalProperties": False,
-        "required": ["requirement_text", "nofo_pages", "response_status", "application_pages", "explanation"],
+        "required": ["requirement_text", "nofo_pages", "response_status", "finding_type", "application_pages", "explanation"],
         "properties": {
-            "requirement_text": {"type": "string"},
+            "requirement_text": {"type": "string", "description": "The NOFO requirement bullet or evaluation question being assessed"},
             "nofo_pages": {"type": "array", "items": {"type": "integer", "minimum": 1}},
             "response_status": {"type": "string", "enum": ["exceeds", "fully_addressed", "partially_addressed", "not_addressed", "unable_to_evaluate"]},
+            "finding_type": {"type": "string", "enum": ["strength", "met", "weakness"], "description": "Whether this requirement is a strength (exceeds), met (adequately addressed), or weakness (falls short)"},
             "application_pages": {"type": "array", "items": {"type": "integer", "minimum": 1}},
-            "explanation": {"type": "string"},
+            "explanation": {"type": "string", "description": "1-3 sentence reviewer comment describing how the applicant addressed this requirement"},
+            "nofo_requirement": {"type": "string", "description": "For weaknesses only: the exact NOFO requirement text the application falls short of"},
+            "impact": {"type": "string", "description": "For weaknesses only: material impact of the shortfall"},
         }
     }
 
@@ -290,20 +293,27 @@ CRITICAL SCORING CALIBRATION:
 - Do NOT award Strength merely because the writing is polished or no weakness was found. That is Met.
 - Do NOT confuse thoroughness with exceedance. A complete, well-organized response to exactly what was asked is Met.
 
-INSTRUCTIONS:
-1. If this criterion has subcriteria, group your requirement_assessments by subcriterion. Tag each assessment with the subcriterion name it belongs to in the explanation field (e.g., "[Overall methodology] The applicant...").
-2. Assess each NOFO requirement individually in requirement_assessments (use response_status: exceeds/fully_addressed/partially_addressed/not_addressed/unable_to_evaluate).
-3. Classify the overall criterion (strength/met/minor_weakness/moderate_weakness/major_weakness/not_addressed). Strength requires at least some requirements genuinely exceeded.
-4. Apply the corresponding multiplier (1.0/0.9/0.7/0.5/0.25/0.0).
-5. For strengths, use professional superlative language that signals the finding exceeds the requirement — e.g., "thoroughly documents," "comprehensively addresses," "clearly demonstrates exceptional," "provides well-integrated and robust," "establishes a notably strong framework." Do not use generic or flat language for strengths.
-5. Calculate: calculated_score = round_half_up(maximum_points × multiplier). Set formula_version to "equitable-v1.2".
-6. Look for EXPLICIT evaluation questions or numbered/bulleted sub-questions listed under this criterion in the NOFO text provided above. Only include questions that appear VERBATIM in the NOFO — copy the exact wording. If the criterion has no explicit evaluation questions (only narrative requirements), return an EMPTY question_responses array. Do NOT invent, paraphrase, or synthesize questions that are not literally written in the NOFO.
-7. For EACH verbatim question found, provide the application's answer with page citations in question_responses.
-8. Assess each as strength (exceeds), met (satisfies), or weakness (falls short).
-9. For weaknesses, cite the exact NOFO requirement and page.
-10. Also provide traditional strengths/mets/weaknesses lists.
-11. Give an overall score_rationale summarizing the criterion assessment.
-12. Each comment must be one concise sentence. No unexpanded acronyms."""
+INSTRUCTIONS — WORKSHEET-ALIGNED OUTPUT:
+The PRIMARY output is requirement_assessments. Create ONE entry for EACH NOFO evaluation bullet/requirement listed under this criterion. This is how the reviewer worksheet is structured — one row per NOFO requirement.
+
+1. Find EVERY evaluation bullet listed under this criterion in the NOFO text. Each bullet that starts with a bullet point or describes what the panel will review becomes one requirement_assessment entry.
+2. For EACH requirement bullet, assess:
+   - requirement_text: Copy the NOFO bullet text (faithful paraphrase OK if very long)
+   - response_status: exceeds / fully_addressed / partially_addressed / not_addressed / unable_to_evaluate
+   - finding_type: strength (if exceeds), met (if fully_addressed), weakness (if partially/not addressed)
+   - explanation: 1-3 sentence reviewer comment on how the applicant addressed this requirement
+   - application_pages: 1-3 most relevant pages where evidence is found
+   - nofo_pages: NOFO page(s) where this requirement appears
+   - For weaknesses: include nofo_requirement (exact text) and impact
+3. If this criterion has subcriteria, prefix each explanation with the subcriterion name in brackets (e.g., "[Overall methodology] The applicant...").
+4. Classify the overall criterion (strength/met/minor_weakness/moderate_weakness/major_weakness/not_addressed).
+5. Apply the corresponding multiplier (1.0/0.9/0.7/0.5/0.25/0.0).
+6. For strengths, use professional superlative language — "thoroughly documents," "comprehensively addresses," "clearly demonstrates exceptional." Do not use generic language.
+7. Calculate: calculated_score = round_half_up(maximum_points × multiplier). Set formula_version to "equitable-v1.2".
+8. Also provide traditional strengths/mets/weaknesses lists for backward compatibility. Each finding in these lists should correspond to a requirement_assessment entry.
+9. Look for EXPLICIT evaluation questions in the NOFO. Only include VERBATIM questions. If none exist, return an EMPTY question_responses array.
+10. Give an overall score_rationale summarizing the criterion assessment.
+11. Each comment must be one concise sentence. No unexpanded acronyms."""
 
     # Larger criteria (35 pts with subcriteria) need more output tokens
     needed_tokens = 8000 if points >= 25 or subcriteria_defs else 5000
