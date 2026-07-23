@@ -221,10 +221,27 @@ INSTRUCTIONS:
     return result
 
 
-def _score_cpp(client, model: str, application_text: str, nofo_text: str) -> dict[str, Any]:
-    """Score the Confidentiality and Participant Protection section."""
+def _score_cpp(client, model: str, application_text: str, nofo_text: str, pages: list[str] = None) -> dict[str, Any]:
+    """Score the Confidentiality and Participant Protection section.
+
+    Uses full application text to ensure attachments (especially Attachment 6) are included.
+    """
     import logging
     logger = logging.getLogger("grant_worker")
+
+    # Build text focusing on attachment pages where CPP content lives
+    # Include full app text or at minimum the last 40% where attachments are
+    if pages and len(pages) > 10:
+        # Include first 5 pages (cover/TOC) + last 40% of pages (attachments)
+        attachment_start = max(5, int(len(pages) * 0.5))
+        cpp_text_blocks = []
+        for i in range(min(5, len(pages))):
+            cpp_text_blocks.append(f"--- APPLICATION PAGE {i+1} ---\n{pages[i].strip()}")
+        for i in range(attachment_start, len(pages)):
+            cpp_text_blocks.append(f"--- APPLICATION PAGE {i+1} ---\n{pages[i].strip()}")
+        cpp_app_text = "\n\n".join(cpp_text_blocks)
+    else:
+        cpp_app_text = application_text
 
     tool = {
         "name": "score_cpp",
@@ -293,8 +310,8 @@ OVERALL ASSESSMENT:
 - CONCERN: One or more areas are inadequate — raises concern about participant protection.
 The overall assessment must reflect the most serious level of any individual rating.
 
-APPLICATION:
-{application_text[:40000]}"""
+APPLICATION (including attachments):
+{cpp_app_text[:60000]}"""
 
     response = client.messages.create(
         model=model, max_tokens=2000, temperature=0,
@@ -351,7 +368,7 @@ def score_samhsa_application(
             ): i
             for i, crit in enumerate(criteria)
         }
-        cpp_future = pool.submit(_score_cpp, client, model, application_text, nofo_text)
+        cpp_future = pool.submit(_score_cpp, client, model, application_text, nofo_text, pages)
 
         for future in as_completed(list(section_futures.keys()) + [cpp_future]):
             if future == cpp_future:
