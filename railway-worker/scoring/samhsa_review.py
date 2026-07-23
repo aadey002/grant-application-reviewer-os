@@ -409,8 +409,18 @@ def score_samhsa_application(
     first_pages = "\n".join(pages[:5])
     for line in first_pages.split("\n"):
         if "organization" in line.lower() or "applicant" in line.lower():
-            # Simple heuristic — will be refined
             pass
 
-    logger.info("SAMHSA review complete: %d/%d", total_score, max_total)
+    # --- Post-scoring audits (same as HRSA) ---
+    try:
+        from .anthropic_review import _audit_nofo_citations, _audit_weakness_facts
+        logger.info("Running NOFO citation audit...")
+        review = _audit_nofo_citations(client, model, review, nofo_text)
+        logger.info("Running weakness factual accuracy audit...")
+        review = _audit_weakness_facts(client, model, review, pages)
+    except Exception as audit_exc:
+        logger.warning("Post-scoring audits failed (non-blocking): %s", audit_exc)
+
+    logger.info("SAMHSA review complete: %d/%d (audit: %s)", total_score, max_total,
+                review.get("audit_status", "skipped"))
     return review
