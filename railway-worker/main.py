@@ -45,6 +45,10 @@ def _lazy_scoring():
     from scoring.worksheet_writer import populate_reviewer_worksheet
     return extract_nofo_criteria, safe_extract_application_zip, score_application_with_claude, populate_reviewer_worksheet
 
+def _lazy_samhsa_scoring():
+    from scoring.samhsa_review import score_samhsa_application
+    return score_samhsa_application
+
 # Supabase client — only imported when needed
 _supabase_client: Any = None
 
@@ -1209,13 +1213,22 @@ def _process_job(
             app_tmp_path = Path(atmp.name)
 
         try:
-            _, _, score_application_with_claude, _ = _lazy_scoring()
-            review_result = score_application_with_claude(
-                application=app_tmp_path,
-                criteria=criteria,
-                agency=agency,
-                guidance=guidance_text,
-            )
+            if agency.upper() == "SAMHSA":
+                score_samhsa = _lazy_samhsa_scoring()
+                review_result = score_samhsa(
+                    application=app_tmp_path,
+                    criteria=criteria,
+                    agency=agency,
+                    guidance=guidance_text,
+                )
+            else:
+                _, _, score_application_with_claude, _ = _lazy_scoring()
+                review_result = score_application_with_claude(
+                    application=app_tmp_path,
+                    criteria=criteria,
+                    agency=agency,
+                    guidance=guidance_text,
+                )
         finally:
             app_tmp_path.unlink(missing_ok=True)
 

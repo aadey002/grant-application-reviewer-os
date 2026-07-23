@@ -1887,11 +1887,11 @@ const SafeReviewDashboard: React.FC = () => {
                                   <td className="p-2 border text-center font-bold">{c.score ?? '—'}/{c.maximum_points}</td>
                                   <td className="p-2 border text-center">
                                     <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
-                                      c.classification === 'strength' ? 'bg-emerald-100 text-emerald-800' :
-                                      c.classification === 'met' ? 'bg-blue-100 text-blue-800' :
-                                      c.classification === 'minor_weakness' ? 'bg-amber-100 text-amber-800' :
-                                      c.classification === 'moderate_weakness' ? 'bg-orange-100 text-orange-800' :
-                                      c.classification === 'major_weakness' ? 'bg-red-100 text-red-800' :
+                                      c.classification === 'strength' || c.classification === 'outstanding' ? 'bg-emerald-100 text-emerald-800' :
+                                      c.classification === 'met' || c.classification === 'very_good' ? 'bg-blue-100 text-blue-800' :
+                                      c.classification === 'minor_weakness' || c.classification === 'acceptable' ? 'bg-amber-100 text-amber-800' :
+                                      c.classification === 'moderate_weakness' || c.classification === 'marginal' ? 'bg-orange-100 text-orange-800' :
+                                      c.classification === 'major_weakness' || c.classification === 'unacceptable' ? 'bg-red-100 text-red-800' :
                                       'bg-slate-100 text-slate-600'
                                     }`}>{(c.classification || '—').replace(/_/g, ' ')}</span>
                                   </td>
@@ -2092,6 +2092,35 @@ const SafeReviewDashboard: React.FC = () => {
                         })()}
                       </article>
                     ))}
+
+                    {/* Confidentiality & Participant Protection — SAMHSA only */}
+                    {(current as any).cpp && (
+                      <article className="rounded-xl border bg-white p-5">
+                        <h3 className="font-bold text-lg mb-3">Confidentiality & Participant Protection</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                          {[
+                            ['Fair Selection of Participants', (current as any).cpp.fair_selection],
+                            ['Data Collection', (current as any).cpp.data_collection],
+                            ['Privacy and Confidentiality', (current as any).cpp.privacy_confidentiality],
+                          ].map(([label, data]: any) => data ? (
+                            <div key={label} className="rounded-lg border p-3">
+                              <p className="text-xs font-bold uppercase text-slate-500 mb-1">{label}</p>
+                              <span className={'rounded-full px-2.5 py-1 text-xs font-bold ' + (data.rating === 'adequate' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800')}>{data.rating}</span>
+                              {data.comment && <p className="text-sm text-slate-700 mt-2">{data.comment}</p>}
+                            </div>
+                          ) : null)}
+                        </div>
+                        <div className="rounded-lg border p-3">
+                          <p className="text-xs font-bold uppercase text-slate-500 mb-1">Overall Assessment</p>
+                          <span className={'rounded-full px-2.5 py-1 text-xs font-bold ' + (
+                            (current as any).cpp.overall_assessment === 'adequate' ? 'bg-emerald-100 text-emerald-800' :
+                            (current as any).cpp.overall_assessment === 'comment' ? 'bg-amber-100 text-amber-800' :
+                            'bg-red-100 text-red-800'
+                          )}>{(current as any).cpp.overall_assessment}</span>
+                          {(current as any).cpp.overall_comment && <p className="text-sm text-slate-700 mt-2">{(current as any).cpp.overall_comment}</p>}
+                        </div>
+                      </article>
+                    )}
                   </div>
 
                   <aside className="h-fit rounded-xl bg-slate-900 p-6 text-white lg:sticky lg:top-5">
