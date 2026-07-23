@@ -35,8 +35,14 @@ SPECIAL RULE FOR SECTION B.2 (Required Activities):
 If the applicant has NOT included ALL required activities, Section B can ONLY receive a MAXIMUM score of Acceptable.
 If required activities are described but without sufficient detail, Section B CANNOT receive a rating higher than Acceptable.
 
+SECTION PLACEMENT RULE — CRITICAL (SAMHSA STRICT ENFORCEMENT):
+SAMHSA requires that each evaluation question (A.1, A.2, B.1, etc.) be answered in its CORRECT section of the Project Narrative. Reviewers will ONLY consider information included in the appropriate numbered section.
+- If an applicant answers A.1 in Section B instead of Section A, it MUST be noted as a weakness for A.1: the information was not provided in the required section.
+- If you find the answer in a different section, note it: "The applicant addresses this requirement in Section [X] rather than in the required Section [Y]. Per NOFO instructions, reviewers will only consider information included in the appropriate numbered criterion."
+- Do NOT give credit for information placed in the wrong section. This is a scorable weakness.
+
 FACTUAL ACCURACY — CRITICAL:
-Before asserting any weakness, verify your claim against the cited application pages. Do NOT claim something is missing if it appears elsewhere in the application. If uncertain whether a weakness is factually supported, omit it. A false weakness is worse than a missed one.
+Before asserting any weakness, verify your claim against the cited application pages. Do NOT claim something is missing if it appears elsewhere in the application — but DO note if it appears in the WRONG section. If uncertain whether a weakness is factually supported, omit it. A false weakness is worse than a missed one.
 
 Never use unexpanded acronyms — always write the full term first, followed by the acronym in parentheses on first use."""
 
@@ -261,15 +267,31 @@ def _score_cpp(client, model: str, application_text: str, nofo_text: str) -> dic
         },
     }
 
-    prompt = f"""Assess the Confidentiality and Participant Protection for this SAMHSA application.
+    prompt = f"""Assess the Confidentiality and Participant Protection (Attachment 6) for this SAMHSA capacity building grant application.
 
-Evaluate three areas:
-1. Fair Selection of Participants — How the applicant will recruit/select participants, any exclusions and reasons
-2. Data Collection — From whom data will be collected, procedures, sources
-3. Privacy and Confidentiality — How identity will be kept private, where data stored, who has access
+This is a CAPACITY BUILDING grant (Section E of the Application Guide). Evaluate these three required elements:
 
-Rate each as Adequate or Inadequate.
-Overall assessment must reflect the most serious level of any individual rating.
+1. FAIR SELECTION OF PARTICIPANTS
+   - Does the applicant explain how it will recruit and select individuals for capacity building activities (work group members, individuals with lived experience, consumers)?
+   - If providing external trainings, does it explain eligibility criteria and why they are appropriate?
+   INADEQUATE IF: Not explaining recruitment/selection process, or if providing trainings without explaining eligibility criteria.
+
+2. DATA COLLECTION
+   - Does the applicant describe data collection procedures and specify data sources?
+   - Are data collection instruments or interview protocols provided in Attachment 2, or web links to standardized instruments?
+   INADEQUATE IF: Not including data collection instruments (or links) in Attachment 2.
+
+3. PRIVACY AND CONFIDENTIALITY
+   - Does the applicant explain where collected data will be stored?
+   - Does it specify who will have access to collected data?
+   - Does it explain how it will keep the identity of individuals private, particularly consumers and those with lived experience (e.g., coding system, limited access, separate storage of identifiers)?
+   INADEQUATE IF: Not explaining data storage, not specifying who has access, not explaining how identities are kept private.
+
+OVERALL ASSESSMENT:
+- ADEQUATE: All three areas are adequately addressed.
+- COMMENT: Minor issues that should be noted but don't compromise protection.
+- CONCERN: One or more areas are inadequate — raises concern about participant protection.
+The overall assessment must reflect the most serious level of any individual rating.
 
 APPLICATION:
 {application_text[:40000]}"""
