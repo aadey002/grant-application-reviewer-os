@@ -87,11 +87,20 @@ def extract_nofo_criteria(path: Path) -> dict[str, Any]:
     """Extract criterion headings, subcriteria, and point values with source-page provenance."""
     pages = extract_document_pages(path)
 
-    # Main criteria patterns: "Criterion 1: Name (20 points)"
+    # Main criteria patterns: "Criterion 1: Name (20 points)" (HRSA)
     main_patterns = [
         re.compile(r"(?i)criterion\s+(\d+)\s*[:.\-–—]?\s*([^\n(]{2,100}?)\s*\(\s*(\d+)\s*points?\s*\)"),
         re.compile(r"(?i)(?:review\s+)?criterion\s+(\d+)\s*[:.\-–—]\s*([^\n]{2,100}?)\s*[—–-]\s*(\d+)\s*points?"),
     ]
+
+    # SAMHSA section patterns: "A: Population of focus (35 points ...)" or "A: Name (Up to 35 points ...)"
+    samhsa_section_pattern = re.compile(
+        r"\n\s*([A-D])\s*[:.\-–—]\s*([^\n(]{2,100}?)\s*\(\s*(?:Up\s+to\s+)?(\d+)\s*points?"
+    )
+    # SAMHSA sub-question patterns: "1. Describe..." or "A.1" numbered items within sections
+    samhsa_question_pattern = re.compile(
+        r"\n\s*(\d+)\.\s+([A-Z][^\n]{10,300})"
+    )
 
     # Subcriterion patterns: numbered "2.1 Name (10 points)"
     sub_numbered_patterns = [
@@ -186,6 +195,63 @@ def extract_nofo_criteria(path: Path) -> dict[str, Any]:
         c.pop("_page", None)
 
     found.sort(key=lambda item: item["number"])
+
+    # If HRSA patterns found nothing, try SAMHSA section patterns
+    if not found:
+        letter_to_number = {"A": 1, "B": 2, "C": 3, "D": 4, "E": 5}
+        samhsa_sections: list[dict] = []
+        seen_letters: set[str] = set()
+        for page_number, text in enumerate(pages, start=1):
+            for match in samhsa_section_pattern.finditer(text):
+                letter, name, points = match.groups()
+                letter = letter.upper()
+                if letter in seen_letters:
+                    continue
+                seen_letters.add(letter)
+                name = " ".join(name.split()).strip(" :-–—")
+                # Extract sub-questions for this section
+                # Look at text after this match until the next section header
+                remaining = text[match.end():]
+                # Truncate at next section header (e.g., "\nB:" or "\nC:")
+                next_section = re.search(r"\n\s*[A-E]\s*[:.]", remaining)
+                if next_section:
+                    remaining = remaining[:next_section.start()]
+                questions = []
+                for qmatch in samhsa_question_pattern.finditer(remaining):
+                    q_num = qmatch.group(1)
+                    q_text = " ".join(qmatch.group(2).split()).strip()
+                    questions.append({
+                        "id": f"{letter}.{q_num}",
+                        "text": q_text[:300],
+                    })
+                # Also check subsequent pages for questions belonging to this section
+                for next_pg in range(page_number, min(page_number + 3, len(pages) + 1)):
+                    if next_pg == page_number:
+                        continue  # already processed
+                    next_text = pages[next_pg - 1]
+                    # Stop if next page has a new section header
+                    if re.search(r"\n\s*[A-E]\s*[:.].*\(\s*(?:Up\s+to\s+)?\d+\s*points?", next_text):
+                        break
+                    for qmatch in samhsa_question_pattern.finditer(next_text):
+                        q_num = qmatch.group(1)
+                        q_text = " ".join(qmatch.group(2).split()).strip()
+                        q_id = f"{letter}.{q_num}"
+                        if not any(q["id"] == q_id for q in questions):
+                            questions.append({"id": q_id, "text": q_text[:300]})
+
+                samhsa_sections.append({
+                    "number": letter_to_number.get(letter, 0),
+                    "letter": letter,
+                    "name": name,
+                    "points": int(points),
+                    "keywords": [w.lower() for w in re.findall(r"[A-Za-z]{4,}", name)],
+                    "source_page": page_number,
+                    "source_heading": " ".join(match.group(0).split()),
+                    "questions": questions,
+                })
+        if samhsa_sections:
+            samhsa_sections.sort(key=lambda s: s["number"])
+            found = samhsa_sections
 
     found.sort(key=lambda item: item["number"])
     total = sum(item["points"] for item in found)
