@@ -88,7 +88,7 @@ def _score_samhsa_section(
         "properties": {
             "question_id": {"type": "string", "description": "The question label, e.g. A.1, B.2"},
             "comment": {"type": "string", "description": "1-3 sentence strength finding"},
-            "application_pages": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}},
+            "application_pages": {"type": "array", "minItems": 1, "maxItems": 3, "items": {"type": "integer", "minimum": 1}, "description": "1-3 most relevant pages ONLY — do not list broad ranges"},
         }
     }
     weakness_comment = {
@@ -97,7 +97,7 @@ def _score_samhsa_section(
         "properties": {
             "question_id": {"type": "string", "description": "The question label, e.g. A.1, B.2"},
             "comment": {"type": "string", "description": "1-3 sentence weakness finding"},
-            "application_pages": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}},
+            "application_pages": {"type": "array", "minItems": 1, "maxItems": 3, "items": {"type": "integer", "minimum": 1}, "description": "1-3 most relevant pages ONLY"},
             "nofo_requirement": {"type": "string", "description": "The NOFO requirement the application falls short of"},
             "impact": {"type": "string", "description": "Impact on successful implementation"},
         }
@@ -107,11 +107,11 @@ def _score_samhsa_section(
         "required": ["question_id", "requirement_text", "nofo_pages", "response_status", "finding_type", "application_pages", "explanation"],
         "properties": {
             "question_id": {"type": "string", "description": "The question label, e.g. A.1, B.2"},
-            "requirement_text": {"type": "string", "description": "The NOFO evaluation question being assessed"},
-            "nofo_pages": {"type": "array", "items": {"type": "integer", "minimum": 1}},
+            "requirement_text": {"type": "string", "description": "The NOFO evaluation question being assessed — use the EXACT text from the NOFO"},
+            "nofo_pages": {"type": "array", "minItems": 1, "maxItems": 2, "items": {"type": "integer", "minimum": 1}, "description": "1-2 NOFO pages where this requirement appears"},
             "response_status": {"type": "string", "enum": ["thoroughly_addressed", "addressed", "partially_addressed", "not_addressed"]},
             "finding_type": {"type": "string", "enum": ["strength", "met", "weakness"]},
-            "application_pages": {"type": "array", "items": {"type": "integer", "minimum": 1}},
+            "application_pages": {"type": "array", "minItems": 1, "maxItems": 3, "items": {"type": "integer", "minimum": 1}, "description": "1-3 most relevant application pages ONLY — no broad ranges"},
             "explanation": {"type": "string", "description": "1-3 sentence reviewer comment labeled with question ID"},
             "nofo_requirement": {"type": "string", "description": "For weaknesses: the NOFO requirement text"},
             "impact": {"type": "string", "description": "For weaknesses: impact on implementation"},
@@ -161,7 +161,7 @@ EVALUATION QUESTIONS FOR THIS SECTION:{question_text}
 {reviewer_note_text}
 
 NOFO TEXT:
-{nofo_text[:15000]}
+{nofo_text[:50000]}
 
 APPLICATION:
 {application_text}
@@ -180,14 +180,17 @@ INSTRUCTIONS:
 6. If NO weaknesses → rating MUST be Outstanding.
 7. For Section B: check if ALL required activities are addressed. If not, max rating is Acceptable.
 8. Include application page # at the end of each comment.
-9. Each comment: 1-3 concise sentences. No unexpanded acronyms."""
+9. Each comment: 1-3 concise sentences. No unexpanded acronyms.
+10. CITATION RULES:
+    - Application pages: cite ONLY the 1-3 pages where the PRIMARY evidence appears. NEVER list more than 3 pages. If content spans pages 18-44, cite only the 2-3 most relevant pages.
+    - NOFO pages: cite ONLY the 1-2 pages where the evaluation question actually appears. The NOFO is {len(nofo_text)} characters — use the actual page numbers from the NOFO text provided above, not guesses."""
 
     needed_tokens = 6000
     response = client.messages.create(
         model=model, max_tokens=needed_tokens, temperature=0,
         system=[{"type": "text", "text": SAMHSA_SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
         messages=[{"role": "user", "content": [
-            {"type": "text", "text": f"NOFO TEXT:\n{nofo_text[:15000]}\n\nAPPLICATION:\n{application_text}", "cache_control": {"type": "ephemeral"}},
+            {"type": "text", "text": f"NOFO TEXT:\n{nofo_text[:50000]}\n\nAPPLICATION:\n{application_text}", "cache_control": {"type": "ephemeral"}},
             {"type": "text", "text": prompt.split("APPLICATION:")[0] + prompt.split(application_text)[-1] if application_text in prompt else prompt},
         ]}],
         tools=[tool], tool_choice={"type": "tool", "name": "score_section"},
