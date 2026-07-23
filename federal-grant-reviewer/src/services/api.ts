@@ -30,6 +30,13 @@ export interface SafeReview {
   overall_summary?: string;
   audit_status?: string;
   audit_summary?: { total_citations: number; verified: number; corrected: number; removed: number };
+  cpp?: {
+    fair_selection: { rating: string; comment: string };
+    data_collection: { rating: string; comment: string };
+    privacy_confidentiality: { rating: string; comment: string };
+    overall_assessment: string;
+    overall_comment?: string;
+  };
 }
 
 export interface ReviewPackage { applications: File[]; nofo: File; rubric: File | null; worksheet: File | null; agency: string }
@@ -266,6 +273,7 @@ export const getReviewResults = async (reviewId: string): Promise<ReviewResults>
       overall_summary: result.overall_summary || undefined,
       audit_status: result.audit_status || undefined,
       audit_summary: result.audit_summary || undefined,
+      cpp: result.cpp || undefined,
     });
   }
   return { review_id: reviewId, reviews };
