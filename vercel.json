@@ -1,8 +1,7 @@
 {
   "services": {
     "railway-worker": {
-      "entrypoint": "railway-worker",
-      "routePrefix": "/"
+      "entrypoint": "railway-worker"
     }
   }
 }
