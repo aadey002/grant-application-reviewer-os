@@ -352,7 +352,7 @@ def score_samhsa_application(
 
     logger = logging.getLogger("grant_worker")
     pages, application_text = _application_text(application)
-    model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5")
+    model = os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5-20251001")
     client = anthropic.Anthropic(api_key=api_key, timeout=300.0)
     nofo_text = guidance or ""
 

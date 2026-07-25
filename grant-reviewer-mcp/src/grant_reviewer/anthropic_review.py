@@ -81,7 +81,7 @@ def score_application_with_claude(application: Path, criteria: list[dict[str, An
     pages, application_text = _application_text(application)
     rubric = "\n".join(f"- {c['name']}: {int(c['points'])} points" for c in criteria)
     prompt = f"Agency: {agency}\nAPPROVED RUBRIC:\n{rubric}\n\nNOFO/WORKSHEET GUIDANCE:\n{guidance[:30000]}\n\nAPPLICATION:\n{application_text}\n\nReturn one complete review. Criterion names and maximum points must exactly match the approved rubric. If guidance explicitly provides scored subcriteria, include them and ensure their scores and maximums sum to the parent criterion. Use an empty finding list when no support exists; do not fabricate evidence."
-    payload = {"model": os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5"), "max_tokens": 12000, "temperature": 0, "system": SYSTEM_PROMPT,
+    payload = {"model": os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5-20251001"), "max_tokens": 12000, "temperature": 0, "system": SYSTEM_PROMPT,
         "messages": [{"role": "user", "content": prompt}], "tools": [_tool(criteria)], "tool_choice": {"type": "tool", "name": "submit_grant_review"}}
     request = urllib.request.Request("https://api.anthropic.com/v1/messages", data=json.dumps(payload).encode("utf-8"), headers={"x-api-key": api_key, "anthropic-version": "2023-06-01", "content-type": "application/json"}, method="POST")
     try:
