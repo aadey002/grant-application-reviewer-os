@@ -1,7 +1,8 @@
 {
   "services": {
     "railway-worker": {
-      "entrypoint": "railway-worker"
+      "entrypoint": "railway-worker",
+      "root": "railway-worker"
     }
   }
 }
