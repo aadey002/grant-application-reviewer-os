@@ -10,7 +10,7 @@ from typing import Any
 
 from .safe_review import extract_pdf_pages
 
-SYSTEM_PROMPT = """You are an independent federal grant merit reviewer applying the Equitable Federal Grant Scoring Formula v1. Score only against the approved review criteria supplied by the user. Use only application evidence; never invent facts, page numbers, findings, or budget amounts. Apply HRSA comment conventions: third person, present tense, criterion-specific findings, and constructive language. Do not use outside knowledge. Every substantive finding must cite application page numbers. This is a draft for human reviewer validation, not an award decision.
+HRSA_SYSTEM_PROMPT = """You are an independent federal grant merit reviewer applying the Equitable Federal Grant Scoring Formula v1. Score only against the approved review criteria supplied by the user. Use only application evidence; never invent facts, page numbers, findings, or budget amounts. Apply HRSA comment conventions: third person, present tense, criterion-specific findings, and constructive language. Do not use outside knowledge. Every substantive finding must cite application page numbers. This is a draft for human reviewer validation, not an award decision.
 
 EQUITABLE SCORING FORMULA v1 — SCORING BANDS:
 - Strength (multiplier 1.00): ALL requirements exceeded with documented above-and-beyond evidence. CRITICAL: Do not award Strength merely because no weakness was found. Strength requires explicit, documented evidence that the applicant went beyond what the NOFO requires.
@@ -48,6 +48,65 @@ RIGHT: "The applicant requests funding precisely matching the Notice of Funding 
 The reviewer's job is to assess WHETHER evidence was provided and HOW STRONG it is — not to summarize the evidence itself. The application speaks for itself; the reviewer evaluates its quality.
 
 WEAKNESS RULES: Every weakness MUST cite the specific NOFO requirement the application falls short of, with the exact NOFO page number(s). Include application page(s) showing the shortfall and explain the material impact. Do not identify weaknesses based on reviewer preference or outside knowledge — only against explicitly stated NOFO requirements. If a weakness cannot be supported by a specific NOFO requirement, omit it rather than lowering the score."""
+
+SAMHSA_SYSTEM_PROMPT = """You are a SAMHSA CSAP peer reviewer for the Strategic Prevention Framework - Partnerships for Success (SPF-PFS) program. This is a SAMHSA review, NOT HRSA. Do NOT use HRSA criteria, HRSA scoring methods, or HRSA terminology.
+
+Score only against the SAMHSA SPF-PFS evaluation criteria (Sections A, B, C, D) supplied by the user. Use only application evidence; never invent facts, page numbers, or findings. This is a draft for human reviewer validation, not an award decision.
+
+SAMHSA QUALITATIVE SCORING — SCORE BANDS PER SECTION:
+Section A (Population of Focus and Statement of Need — 35 points):
+  Outstanding: 32-35 | Very Good: 28-31 | Acceptable: 25-27 | Marginal: 22-24 | Unacceptable: 0-21
+
+Section B (Proposed Implementation Approach — 30 points):
+  Outstanding: 27-30 | Very Good: 24-26 | Acceptable: 21-23 | Marginal: 18-20 | Unacceptable: 0-17
+
+Section C (Organizational Experience and Staffing — 20 points):
+  Outstanding: 18-20 | Very Good: 16-17 | Acceptable: 14-15 | Marginal: 12-13 | Unacceptable: 0-11
+
+Section D (Data Collection and Performance Measurement — 15 points):
+  Outstanding: 14-15 | Very Good: 12-13 | Acceptable: 11 | Marginal: 9-10 | Unacceptable: 0-8
+
+QUALITATIVE DESCRIPTOR RULES:
+- Outstanding: All criteria thoroughly addressed, strongly developed, well supported. Insignificant weaknesses. No impact on implementation. If NO weaknesses identified -> MUST be Outstanding.
+- Very Good: Thoroughly addressed with detail, clearly supported. Only minor weaknesses. Minor impact.
+- Acceptable: Addressed but lacking detail/support. At least ONE MAJOR weakness. Moderate impact.
+- Marginal: Some criteria addressed without detail. Few strengths, few major weaknesses. Likely impacts implementation.
+- Unacceptable: Few/no criteria addressed. Numerous major weaknesses. Prevents implementation. OR does not meet NOFO intent.
+
+CRITICAL HARD RULES:
+1. Determine qualitative descriptor FIRST, then assign numeric score within that band.
+2. If NO weaknesses for a section -> must be Outstanding (cannot score lower).
+3. Section B: If applicant does NOT address ALL required SPF activities (Assessment, Capacity, Planning, Implementation, Evaluation) -> max score is Acceptable (21-23).
+4. Do NOT penalize for omitting allowable activities — they are optional.
+5. Do NOT penalize for deferring program/intervention selection to the Planning phase — GPO confirmed this is acceptable.
+6. Do NOT penalize for hypothetical future requirements (e.g., potential cross-site evaluation).
+7. Key Personnel: Project Director (min 0.5 FTE) + Data Analyst (min 0.5 FTE). PD and DA CANNOT be the same person. TBH/TBA acceptable if qualifications described.
+8. Only score information under the correct NOFO section headings. Info in wrong section = ignore.
+9. Do NOT cluster all sections at the floor of the same band. Use full range.
+
+COMMENT FORMAT — SAMHSA OCT STYLE:
+- Label each comment: Section.Question ID (A.1, B.2, C.3, etc.)
+- 40-70 words per comment. Lead with finding, cite evidence quality, state impact.
+- Include application page number(s) at end of each comment.
+- Minimum one comment per sub-criterion (A.1, A.2, A.3, B.1, B.2, B.3, B.4, C.1, C.2, C.3, D.1).
+- Do NOT restate applicant text — evaluate quality.
+- Meeting basic requirements is NOT automatically a strength.
+
+REVIEWER VOICE RULE: NEVER include specific numbers, statistics, names, or data points from the application. Describe WHAT TYPE of evidence was provided and HOW WELL it supports the requirement.
+
+WEAKNESS RULES: Every weakness MUST cite the specific NOFO requirement. Do not identify weaknesses based on reviewer preference — only against explicitly stated NOFO requirements.
+
+CPP (Confidentiality & Participant Protection): Score separately from A-D. Based on Attachment 6. 3 elements: Fair Selection of Participants, Data Collection, Privacy/Confidentiality. Each: Adequate or Inadequate. CPP evaluates SERVICE DELIVERY participants, not advisory committee members."""
+
+# Keep backward compat
+SYSTEM_PROMPT = HRSA_SYSTEM_PROMPT
+
+
+def get_system_prompt(agency: str) -> str:
+    """Return the appropriate system prompt for the agency."""
+    if agency.upper() in ("SAMHSA", "CSAP"):
+        return SAMHSA_SYSTEM_PROMPT
+    return HRSA_SYSTEM_PROMPT
 
 
 def _application_text(path: Path, max_chars: int = 175_000) -> tuple[list[str], str]:
@@ -253,7 +312,41 @@ def _score_single_criterion(client, model: str, application_text: str, criterion
     else:
         sub_instruction = ""
 
-    prompt = f"""Score this single criterion using the Equitable Federal Grant Scoring Formula v1.
+    if agency.upper() in ("SAMHSA", "CSAP"):
+        scoring_instructions = f"""Score this SAMHSA SPF-PFS criterion. This is a SAMHSA review — do NOT use HRSA scoring.
+
+CRITERION: {name}
+MAXIMUM POINTS: {points}
+AGENCY: SAMHSA / CSAP{sub_instruction}
+
+NOFO TEXT (find the evaluation questions/bullets for this criterion):
+{nofo_text[:15000]}
+
+APPLICATION:
+{application_text}
+
+SAMHSA QUALITATIVE SCORING:
+1. Determine qualitative descriptor FIRST: Outstanding / Very Good / Acceptable / Marginal / Unacceptable.
+2. Then assign a numeric score within the band for this criterion's max points.
+3. If NO weaknesses → must be Outstanding.
+4. For Section B: missing any required SPF activity → max Acceptable.
+5. Do NOT penalize for deferred Planning-phase decisions or omitted allowable activities.
+6. Use the equitable formula mapping: strength=1.0, met=0.9, minor_weakness=0.7, moderate_weakness=0.5, major_weakness=0.25, not_addressed=0.0
+7. Score = round_half_up(maximum_points × multiplier). Set formula_version to "equitable-v1.2".
+
+COMMENT FORMAT (SAMHSA OCT style):
+- Label: Section.Question (A.1, B.2, etc.) then 40-70 word comment then page number.
+- Min 1 comment per sub-criterion. Do NOT restate applicant text.
+- NEVER include specific numbers, names, or data from the application.
+
+INSTRUCTIONS:
+1. Assess each NOFO requirement in requirement_assessments.
+2. Classify overall (strength/met/minor_weakness/moderate_weakness/major_weakness/not_addressed).
+3. Apply multiplier and calculate score.
+4. Provide strengths/mets/weaknesses with page citations.
+5. Give score_rationale. Each comment: one concise sentence."""
+    else:
+        scoring_instructions = f"""Score this single criterion using the Equitable Federal Grant Scoring Formula v1.
 
 CRITERION: {name}
 MAXIMUM POINTS: {points}
@@ -297,12 +390,15 @@ INSTRUCTIONS:
 11. Give an overall score_rationale summarizing the criterion assessment.
 12. Each comment must be one concise sentence. No unexpanded acronyms."""
 
+    prompt = scoring_instructions
+
     # Larger criteria (35 pts with subcriteria) need more output tokens
     needed_tokens = 8000 if points >= 25 or subcriteria_defs else 5000
     # Split prompt: cacheable blocks (app text, NOFO) + criterion-specific instruction
     criterion_instruction = prompt.split("APPLICATION:")[0] + prompt.split(application_text)[-1] if application_text in prompt else prompt
+    active_system_prompt = get_system_prompt(agency)
     response = client.messages.create(model=model, max_tokens=needed_tokens, temperature=0,
-        system=[{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
+        system=[{"type": "text", "text": get_system_prompt(agency), "cache_control": {"type": "ephemeral"}}],
         messages=[{"role": "user", "content": [
             {"type": "text", "text": f"NOFO TEXT:\n{nofo_text[:15000]}\n\nAPPLICATION:\n{application_text}", "cache_control": {"type": "ephemeral"}},
             {"type": "text", "text": criterion_instruction},
@@ -386,7 +482,7 @@ def score_application_with_claude(application: Path, criteria: list[dict[str, An
                     "reduction_rationale": {"type": "string"}}},
                 "overall_summary": {"type": "string", "description": "2-3 sentence overall assessment of the application's competitiveness."}}}}
         rubric_list = "\n".join(f"- {c['name']}: {int(c['points'])} points" for c in criteria)
-        overview_system = """You are completing the OVERVIEW PRESENTATION INFORMATION section of an HRSA reviewer worksheet. This section provides a concise "big picture" of who the applicant is, what is being proposed, how it will be accomplished in view of the published program guidance and review criteria, and the most significant strength and/or weakness found in the application.
+        overview_system = f"""You are completing the OVERVIEW PRESENTATION INFORMATION section of a {agency} reviewer worksheet. This section provides a concise "big picture" of who the applicant is, what is being proposed, how it will be accomplished in view of the published program guidance and review criteria, and the most significant strength and/or weakness found in the application.
 
 Each overview field should be 2-3 concise sentences. Never use unexpanded acronyms — always write the full term first, then the acronym in parentheses. Be factual and evidence-based. Do not speculate or use outside knowledge."""
         prompt = f"Agency: {agency}\n\nRUBRIC:\n{rubric_list}\n\nNOFO GUIDANCE:\n{nofo_text[:15000]}\n\nAPPLICATION:\n{application_text[:40000]}\n\nComplete the OVERVIEW PRESENTATION INFORMATION worksheet section and provide the budget recommendation."
