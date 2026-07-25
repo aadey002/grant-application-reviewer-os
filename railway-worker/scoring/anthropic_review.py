@@ -406,18 +406,36 @@ STEP 3: Count your weaknesses. Apply these rules:
   - Prevents implementation or doesn't meet NOFO intent → "unacceptable" (score 0-{marginal_lo - 1})
 STEP 4: Assign score WITHIN the band for your descriptor. Do NOT pick a score outside the band.
 
+WHAT IS A WEAKNESS: A weakness is information that is MISSING, INCOMPLETE, or INSUFFICIENTLY DETAILED
+relative to what the NOFO evaluation criterion EXPLICITLY asks for. Both "not addressed" and "addressed
+but lacking necessary detail" are weaknesses. However, the shortfall must be against a specific NOFO
+requirement — not something the reviewer wishes was included.
+
 CRITICAL R7 — BEFORE WRITING ANY WEAKNESS, ASK: "Does the NOFO evaluation criterion EXPLICITLY require this?"
 If NO → do NOT include it as a weakness. These are NOT valid weaknesses:
   - Deferring intervention/program selection to Planning phase (GPO confirmed acceptable)
+  - Interventions described as "subject to change" or "pending Planning phase" — this is CORRECT SPF process, NOT a weakness
+  - Conditional framing of intervention selection — the NOFO REQUIRES using the Planning phase to select interventions
   - Not naming specific EBIs when goals/objectives are detailed
   - Not addressing potential cross-site evaluation (hypothetical)
   - Omitting allowable activities (optional, no score impact)
   - Insufficient detail on post-award deliverables (needs assessment, eval plan due after award)
   - Participant enrollment targets missing from timeline (only requires dates, activities, staff)
+  - Absence of baseline-referenced outcome targets (these are developed during Planning, not pre-award)
+  - Not specifying a community readiness assessment instrument (NOFO does not require naming a specific tool)
 
 COMMENT FORMAT: Label with section.question (A.1, B.2). 40-70 words. Page numbers at end.
 REVIEWER VOICE: NEVER cite specific numbers, names, or data from application. Describe evidence TYPE and QUALITY.
-NOFO PAGES: Find the ACTUAL page where this criterion appears in the NOFO text above. Use those page numbers."""
+
+NOFO PAGE CITATIONS — CRITICAL:
+The evaluation criteria (Sections A, B, C, D with point values) are located in the "Merit Review" or
+"Application Review" section of the NOFO, which is typically in the SECOND HALF of the document
+(usually pages 20-30). When citing nofo_pages for a requirement_assessment or weakness:
+  - Search the NOFO text for the EXACT section heading with point values, e.g., "A: Population of focus and need statement (35 points"
+  - The page where THAT heading appears is the correct nofo_page
+  - Do NOT cite pages from the Program Description (pages 1-15) — those describe the program, not the evaluation criteria
+  - If the NOFO text shows "--- NOFO PAGE 24 ---" before the evaluation criteria, use page 24
+  - The evaluation criteria pages are where the numbered questions (A.1, A.2, B.1, etc.) appear with point allocations"""
     else:
         scoring_instructions = f"""Score this single criterion using the Equitable Federal Grant Scoring Formula v1.
 
