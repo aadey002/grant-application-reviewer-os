@@ -4,7 +4,7 @@ services:
     runtime: docker
     dockerfilePath: ./Dockerfile
     region: ohio
-    plan: starter
+    plan: standard
     envVars:
       - key: ANTHROPIC_API_KEY
         sync: false
