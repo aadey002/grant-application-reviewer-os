@@ -1234,6 +1234,12 @@ def _process_job(
 
         # -- Write criterion_scores rows --
         for crit in review_result.get("criteria", []):
+            if isinstance(crit, str):
+                logger.warning("Criterion result is a string, skipping: %s", crit[:200])
+                continue
+            if not isinstance(crit, dict):
+                logger.warning("Criterion result is not a dict (%s), skipping", type(crit).__name__)
+                continue
             _insert(sb, "criterion_scores", {
                 "id": str(uuid.uuid4()),
                 "review_id": review_id,
@@ -1252,6 +1258,8 @@ def _process_job(
 
         # -- Write review_findings rows (flattened per finding) --
         for crit in review_result.get("criteria", []):
+            if not isinstance(crit, dict):
+                continue
             for finding_type in ("strengths", "mets", "weaknesses"):
                 for finding in crit.get(finding_type, []):
                     # Support both old "pages" and new "application_pages" field names
