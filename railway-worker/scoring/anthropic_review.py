@@ -353,38 +353,71 @@ def _score_single_criterion(client, model: str, application_text: str, criterion
         sub_instruction = ""
 
     if agency.upper() in ("SAMHSA", "CSAP"):
-        scoring_instructions = f"""Score this SAMHSA SPF-PFS criterion. This is a SAMHSA review — do NOT use HRSA scoring.
+        # --- SAMHSA-specific tool schema (qualitative descriptors, NOT equitable formula) ---
+        samhsa_tool = {"name": "score_criterion", "description": f"Submit SAMHSA qualitative score for '{name}' ({points} points).", "input_schema": {"type": "object", "additionalProperties": False,
+            "required": ["name", "maximum_points", "qualitative_descriptor", "score", "score_rationale", "strengths", "weaknesses"],
+            "properties": {
+                "name": {"type": "string", "enum": [name]},
+                "maximum_points": {"type": "integer", "enum": [points]},
+                "qualitative_descriptor": {"type": "string", "enum": ["outstanding", "very_good", "acceptable", "marginal", "unacceptable"],
+                    "description": "Determine this FIRST based on strengths/weaknesses pattern. If NO weaknesses -> MUST be outstanding."},
+                "score": {"type": "integer", "minimum": 0, "maximum": points,
+                    "description": "Numeric score WITHIN the band for the chosen descriptor. Must match the descriptor band."},
+                "score_rationale": {"type": "string", "description": "1-2 sentence summary justifying descriptor and score"},
+                "strengths": {"type": "array", "items": strength_met, "description": "Specific strengths with page citations"},
+                "weaknesses": {"type": "array", "items": weakness, "description": "Only weaknesses supported by specific NOFO requirements. If none, return empty array."},
+                "mets": {"type": "array", "items": strength_met, "description": "Requirements adequately addressed without exceeding"},
+                "requirement_assessments": {"type": "array", "items": requirement_assessment},
+                "question_responses": {"type": "array", "items": question_answer},
+                "classification": {"type": "string", "enum": ["outstanding", "very_good", "acceptable", "marginal", "unacceptable"],
+                    "description": "Same as qualitative_descriptor — for backward compatibility"},
+                "formula_version": {"type": "string", "enum": ["samhsa-qualitative-v1"]},
+            }}}
+        # Override the HRSA tool
+        tool = samhsa_tool
+
+        # Calculate score bands for this criterion's max points
+        outstanding_lo = round(points * 0.90)
+        very_good_lo = round(points * 0.80)
+        acceptable_lo = round(points * 0.70)
+        marginal_lo = round(points * 0.60)
+
+        scoring_instructions = f"""Score this SAMHSA criterion using SAMHSA qualitative descriptors. Do NOT use HRSA equitable formula.
 
 CRITERION: {name}
 MAXIMUM POINTS: {points}
 AGENCY: SAMHSA / CSAP{sub_instruction}
 
-NOFO TEXT (find the evaluation questions/bullets for this criterion):
+NOFO TEXT (find the evaluation criteria for this section — look for section headings with point values):
 {nofo_text[:15000]}
 
 APPLICATION:
 {application_text}
 
-SAMHSA QUALITATIVE SCORING:
-1. Determine qualitative descriptor FIRST: Outstanding / Very Good / Acceptable / Marginal / Unacceptable.
-2. Then assign a numeric score within the band for this criterion's max points.
-3. If NO weaknesses → must be Outstanding.
-4. For Section B: missing any required SPF activity → max Acceptable.
-5. Do NOT penalize for deferred Planning-phase decisions or omitted allowable activities.
-6. Use the equitable formula mapping: strength=1.0, met=0.9, minor_weakness=0.7, moderate_weakness=0.5, major_weakness=0.25, not_addressed=0.0
-7. Score = round_half_up(maximum_points × multiplier). Set formula_version to "equitable-v1.2".
+SAMHSA QUALITATIVE SCORING — FOLLOW THESE STEPS IN ORDER:
 
-COMMENT FORMAT (SAMHSA OCT style):
-- Label: Section.Question (A.1, B.2, etc.) then 40-70 word comment then page number.
-- Min 1 comment per sub-criterion. Do NOT restate applicant text.
-- NEVER include specific numbers, names, or data from the application.
+STEP 1: Read the NOFO evaluation criteria for this section. Find the EXACT text and page number.
+STEP 2: Assess each requirement. Write strengths and weaknesses with page citations.
+STEP 3: Count your weaknesses. Apply these rules:
+  - ZERO weaknesses → descriptor MUST be "outstanding" (score {outstanding_lo}-{points})
+  - Only minor weaknesses (no impact on implementation) → "very_good" (score {very_good_lo}-{outstanding_lo - 1})
+  - At least one major weakness → "acceptable" (score {acceptable_lo}-{very_good_lo - 1})
+  - Few strengths, multiple major weaknesses → "marginal" (score {marginal_lo}-{acceptable_lo - 1})
+  - Prevents implementation or doesn't meet NOFO intent → "unacceptable" (score 0-{marginal_lo - 1})
+STEP 4: Assign score WITHIN the band for your descriptor. Do NOT pick a score outside the band.
 
-INSTRUCTIONS:
-1. Assess each NOFO requirement in requirement_assessments.
-2. Classify overall (strength/met/minor_weakness/moderate_weakness/major_weakness/not_addressed).
-3. Apply multiplier and calculate score.
-4. Provide strengths/mets/weaknesses with page citations.
-5. Give score_rationale. Each comment: one concise sentence."""
+CRITICAL R7 — BEFORE WRITING ANY WEAKNESS, ASK: "Does the NOFO evaluation criterion EXPLICITLY require this?"
+If NO → do NOT include it as a weakness. These are NOT valid weaknesses:
+  - Deferring intervention/program selection to Planning phase (GPO confirmed acceptable)
+  - Not naming specific EBIs when goals/objectives are detailed
+  - Not addressing potential cross-site evaluation (hypothetical)
+  - Omitting allowable activities (optional, no score impact)
+  - Insufficient detail on post-award deliverables (needs assessment, eval plan due after award)
+  - Participant enrollment targets missing from timeline (only requires dates, activities, staff)
+
+COMMENT FORMAT: Label with section.question (A.1, B.2). 40-70 words. Page numbers at end.
+REVIEWER VOICE: NEVER cite specific numbers, names, or data from application. Describe evidence TYPE and QUALITY.
+NOFO PAGES: Find the ACTUAL page where this criterion appears in the NOFO text above. Use those page numbers."""
     else:
         scoring_instructions = f"""Score this single criterion using the Equitable Federal Grant Scoring Formula v1.
 
@@ -460,31 +493,64 @@ The PRIMARY output is requirement_assessments. Create ONE entry for EACH NOFO ev
         result = json.loads(result)
     result["name"] = name
     result["maximum_points"] = points
-    # If Claude didn't return the equitable fields, compute from what we have
-    MULTIPLIER_MAP = {"strength": 1.0, "met": 0.9, "minor_weakness": 0.7, "moderate_weakness": 0.5, "major_weakness": 0.25, "not_addressed": 0.0}
-    if not result.get("calculated_score") and result.get("classification"):
-        mult = MULTIPLIER_MAP.get(result["classification"], 0.9)
-        result["multiplier"] = mult
-        result["calculated_score"] = round(points * mult)
-        result["formula_version"] = "equitable-v1.2"
-    elif not result.get("calculated_score") and result.get("score"):
-        # Legacy: Claude returned a raw score — infer classification
-        raw = result["score"]
-        ratio = raw / points if points > 0 else 0
-        if ratio >= 0.95: result["classification"] = "strength"
-        elif ratio >= 0.75: result["classification"] = "met"
-        elif ratio >= 0.55: result["classification"] = "minor_weakness"
-        elif ratio >= 0.45: result["classification"] = "moderate_weakness"
-        elif ratio >= 0.15: result["classification"] = "major_weakness"
-        else: result["classification"] = "not_addressed"
-        result["multiplier"] = MULTIPLIER_MAP[result["classification"]]
-        result["calculated_score"] = round(points * result["multiplier"])
-        result["formula_version"] = "equitable-v1.2"
-    # Map calculated_score → score for backward compatibility with frontend/validate
-    result["score"] = result.get("calculated_score", result.get("score", 0))
-    logger.info("  Criterion '%s': %s/%s (multiplier=%s, classification=%s)",
+
+    # --- SAMHSA qualitative path ---
+    if agency.upper() in ("SAMHSA", "CSAP") and result.get("qualitative_descriptor"):
+        descriptor = result["qualitative_descriptor"]
+        score = result.get("score", 0)
+        # Validate score falls within descriptor band
+        outstanding_lo = round(points * 0.90)
+        very_good_lo = round(points * 0.80)
+        acceptable_lo = round(points * 0.70)
+        marginal_lo = round(points * 0.60)
+        bands = {
+            "outstanding": (outstanding_lo, points),
+            "very_good": (very_good_lo, outstanding_lo - 1),
+            "acceptable": (acceptable_lo, very_good_lo - 1),
+            "marginal": (marginal_lo, acceptable_lo - 1),
+            "unacceptable": (0, marginal_lo - 1),
+        }
+        if descriptor in bands:
+            lo, hi = bands[descriptor]
+            if score < lo or score > hi:
+                logger.warning("SAMHSA band fix: '%s' descriptor=%s but score=%d outside band %d-%d, clamping",
+                              name, descriptor, score, lo, hi)
+                result["score"] = max(lo, min(hi, score))
+        # No-weakness = Outstanding enforcement
+        if not result.get("weaknesses") and descriptor != "outstanding":
+            logger.warning("SAMHSA R5 fix: '%s' has no weaknesses but descriptor=%s, forcing outstanding", name, descriptor)
+            result["qualitative_descriptor"] = "outstanding"
+            result["classification"] = "outstanding"
+            result["score"] = max(result["score"], outstanding_lo)
+        result["classification"] = result.get("classification", descriptor)
+        result["formula_version"] = result.get("formula_version", "samhsa-qualitative-v1")
+        result["calculated_score"] = result["score"]
+    # --- HRSA equitable formula path ---
+    else:
+        MULTIPLIER_MAP = {"strength": 1.0, "met": 0.9, "minor_weakness": 0.7, "moderate_weakness": 0.5, "major_weakness": 0.25, "not_addressed": 0.0}
+        if not result.get("calculated_score") and result.get("classification"):
+            mult = MULTIPLIER_MAP.get(result["classification"], 0.9)
+            result["multiplier"] = mult
+            result["calculated_score"] = round(points * mult)
+            result["formula_version"] = "equitable-v1.2"
+        elif not result.get("calculated_score") and result.get("score"):
+            raw = result["score"]
+            ratio = raw / points if points > 0 else 0
+            if ratio >= 0.95: result["classification"] = "strength"
+            elif ratio >= 0.75: result["classification"] = "met"
+            elif ratio >= 0.55: result["classification"] = "minor_weakness"
+            elif ratio >= 0.45: result["classification"] = "moderate_weakness"
+            elif ratio >= 0.15: result["classification"] = "major_weakness"
+            else: result["classification"] = "not_addressed"
+            result["multiplier"] = MULTIPLIER_MAP[result["classification"]]
+            result["calculated_score"] = round(points * result["multiplier"])
+            result["formula_version"] = "equitable-v1.2"
+        result["score"] = result.get("calculated_score", result.get("score", 0))
+
+    logger.info("  Criterion '%s': %s/%s (descriptor=%s, classification=%s)",
                 name, result.get("score"), points,
-                result.get("multiplier"), result.get("classification"))
+                result.get("qualitative_descriptor", result.get("classification", "n/a")),
+                result.get("classification", "n/a"))
     return result
 
 
