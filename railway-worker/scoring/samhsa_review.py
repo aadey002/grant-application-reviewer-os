@@ -84,6 +84,21 @@ SAMHSA requires that each evaluation question (A.1, A.2, B.1, etc.) be answered 
 - If you find the answer in a different section, note it: "The applicant addresses this requirement in Section [X] rather than in the required Section [Y]. Per NOFO instructions, reviewers will only consider information included in the appropriate numbered criterion."
 - Do NOT give credit for information placed in the wrong section. This is a scorable weakness.
 
+R7 NO SPECULATIVE WEAKNESSES — CRITICAL:
+Before writing ANY weakness, ask: "Does the NOFO evaluation criterion EXPLICITLY require this?"
+If NO, do NOT include it. The following are NOT valid weaknesses — NEVER flag these:
+  - Interventions described as "subject to change" or "pending Planning phase" — this is CORRECT SPF process
+  - Conditional framing of intervention selection — the NOFO REQUIRES using the Planning phase to select interventions
+  - Not naming specific evidence-based interventions when goals/objectives are detailed
+  - Omitting allowable activities (optional, no score impact)
+  - Not addressing potential cross-site evaluation (hypothetical future requirement)
+  - Insufficient detail on post-award deliverables (needs assessment, eval plan due after award)
+  - Absence of baseline-referenced outcome targets (developed during Planning, not pre-award)
+  - Not specifying a community readiness assessment instrument (NOFO does not require naming a tool)
+  - Participant enrollment targets missing from timeline (only requires dates, activities, staff)
+A weakness MUST cite a specific NOFO requirement the application fails to address. If you cannot point
+to an explicit NOFO requirement, OMIT the weakness rather than lowering the score.
+
 FACTUAL ACCURACY — CRITICAL:
 Before asserting any weakness, verify your claim against the cited application pages. Do NOT claim something is missing if it appears elsewhere in the application — but DO note if it appears in the WRONG section. If uncertain whether a weakness is factually supported, omit it. A false weakness is worse than a missed one.
 
