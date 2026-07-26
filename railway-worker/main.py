@@ -1160,21 +1160,27 @@ def _process_job(
         nofo_bytes = None
         try:
             nofo_bytes = _download_bytes(sb, BUCKET_NOFO, nofo_storage_path)
-            try:
-                from scoring.document_processor import DocumentProcessor
-                proc = DocumentProcessor()
-            except ImportError:
-                proc = None
-            if proc is None:
-                pass  # skip guidance extraction
-            else:
-                proc = DocumentProcessor()
             with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as ntmp:
                 ntmp.write(nofo_bytes)
                 ntmp_path = Path(ntmp.name)
             try:
-                doc_result = proc.process_document(str(ntmp_path))
-                guidance_text = doc_result.get("text_content", "")[:30000]
+                # Use page-marked extraction for SAMHSA (so Claude can cite correct NOFO pages)
+                if agency.upper() == "SAMHSA":
+                    from scoring.safe_review import extract_pdf_pages as _epages
+                    nofo_pages = _epages(ntmp_path)
+                    guidance_text = "\n\n".join(
+                        f"--- NOFO PAGE {i+1} ---\n{p.strip()}"
+                        for i, p in enumerate(nofo_pages)
+                    )[:80000]
+                else:
+                    try:
+                        from scoring.document_processor import DocumentProcessor
+                        proc = DocumentProcessor()
+                    except ImportError:
+                        proc = None
+                    if proc:
+                        doc_result = proc.process_document(str(ntmp_path))
+                        guidance_text = doc_result.get("text_content", "")[:30000]
             finally:
                 ntmp_path.unlink(missing_ok=True)
         except Exception as exc:
