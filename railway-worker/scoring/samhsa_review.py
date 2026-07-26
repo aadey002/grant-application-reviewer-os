@@ -226,12 +226,29 @@ def _score_samhsa_section(
     if reviewer_notes:
         reviewer_note_text = f"\n\nREVIEWER NOTES (from Review Administrator):\n{reviewer_notes}"
 
+    # Section-specific rules injected into the prompt
+    section_rules = ""
+    if letter == "B":
+        section_rules = """
+SECTION B SPECIFIC RULES:
+- B.2: Interventions described as "subject to change" or "pending Planning phase" is CORRECT SPF
+  process — do NOT flag as weakness. The NOFO requires using the Planning phase to select interventions.
+- B.3: Before claiming the applicant does not link activities to SAMHSA Strategic Priorities, RE-READ
+  the B.3 text. If the applicant names specific activities under EACH priority (e.g., fidelity monitoring
+  for evidence-based practice, SPARS reporting for fiscal stewardship, CAC/YAC for partnerships,
+  specific substances for prevention, surveillance data for emerging threats), that IS a thorough
+  response and MUST be scored as a Strength. Do NOT claim "does not link specific activities" if
+  activities ARE listed under each priority.
+- B.4: The NOFO criterion says "In Attachment 4, provide..." — it directs content to the attachment.
+  "SEE ATTACHMENT 4" is acceptable if the attachment is complete with dates, activities, and staff.
+"""
+
     prompt = f"""Score this SAMHSA section using the qualitative scoring scale.
 
 SECTION: {letter} — {name}
 MAXIMUM SCORE: {max_score}
 AGENCY: {agency}
-
+{section_rules}
 EVALUATION QUESTIONS FOR THIS SECTION:{question_text}
 {reviewer_note_text}
 
