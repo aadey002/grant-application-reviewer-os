@@ -73,6 +73,11 @@ Format: "A.1 [comment text]. Page #"
 - Strengths and weaknesses are entered in SEPARATE boxes per section.
 - Each comment should be 1-3 concise sentences covering one substantive observation.
 - Cite only the 1-3 most relevant application pages. Do NOT list broad page ranges.
+- NEVER embed weakness language inside a strength comment. If a criterion has both a strength
+  and a weakness, create TWO SEPARATE entries — one strength finding and one weakness finding.
+  WRONG: "A.1 The applicant thoroughly identifies the catchment area. A minor discrepancy exists..."
+  RIGHT: Strength: "A.1 The applicant thoroughly identifies the catchment area with strong data."
+         Weakness: "A.1 A minor discrepancy exists between veteran population figures in the narrative and Attachment 10."
 
 SPECIAL RULE FOR SECTION B.2 (Required Activities):
 If the applicant has NOT included ALL required activities, Section B can ONLY receive a MAXIMUM score of Acceptable.
