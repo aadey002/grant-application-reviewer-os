@@ -1171,7 +1171,7 @@ def _process_job(
                     guidance_text = "\n\n".join(
                         f"--- NOFO PAGE {i+1} ---\n{p.strip()}"
                         for i, p in enumerate(nofo_pages)
-                    )[:80000]
+                    )[:50000]
                 else:
                     try:
                         from scoring.document_processor import DocumentProcessor

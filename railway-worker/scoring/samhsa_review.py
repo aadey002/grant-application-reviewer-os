@@ -230,12 +230,21 @@ INSTRUCTIONS:
     Do NOT cite pages from the Program Description section (typically pages 1-15)."""
 
     needed_tokens = 6000
+    # Build clean message: NOFO criteria pages + application text + scoring instructions
+    nofo_criteria = _extract_criteria_pages(nofo_text)
+    # Strip application text from prompt to avoid duplication (it's in the cached block)
+    instructions_only = prompt.split("APPLICATION:")[0] if "APPLICATION:" in prompt else prompt
+    # Remove the NOFO TEXT block from instructions too (it's in the cached block)
+    if "NOFO TEXT:" in instructions_only:
+        instructions_only = instructions_only.split("NOFO TEXT:")[0] + instructions_only.split("INSTRUCTIONS:")[1] if "INSTRUCTIONS:" in instructions_only else instructions_only.split("NOFO TEXT:")[0]
+        instructions_only = instructions_only.rstrip() + "\n\nINSTRUCTIONS:" + prompt.split("INSTRUCTIONS:")[-1] if "INSTRUCTIONS:" in prompt else instructions_only
+
     response = client.messages.create(
         model=model, max_tokens=needed_tokens, temperature=0,
         system=[{"type": "text", "text": SAMHSA_SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
         messages=[{"role": "user", "content": [
-            {"type": "text", "text": f"NOFO TEXT:\n{_extract_criteria_pages(nofo_text)}\n\nAPPLICATION:\n{application_text}", "cache_control": {"type": "ephemeral"}},
-            {"type": "text", "text": prompt.split("APPLICATION:")[0] + prompt.split(application_text)[-1] if application_text in prompt else prompt},
+            {"type": "text", "text": f"=== NOFO EVALUATION CRITERIA ===\n{nofo_criteria}\n\n=== GRANT APPLICATION (score THIS document) ===\n{application_text}", "cache_control": {"type": "ephemeral"}},
+            {"type": "text", "text": instructions_only},
         ]}],
         tools=[tool], tool_choice={"type": "tool", "name": "score_section"},
     )
