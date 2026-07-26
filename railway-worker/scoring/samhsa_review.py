@@ -6,7 +6,50 @@ import json
 from pathlib import Path
 from typing import Any
 
+import re as _re
+
 from .safe_review import extract_pdf_pages
+
+
+def _extract_criteria_pages(nofo_text: str, max_chars: int = 50000) -> str:
+    """Extract ONLY the evaluation criteria section from NOFO text.
+
+    Looks for the Merit Review / Evaluation Criteria section (with point values)
+    and returns just those pages. Falls back to full text if not found.
+    This prevents Claude from citing Program Description pages (1-15) instead
+    of actual criteria pages (typically 20-30).
+    """
+    # Split into pages using the marker format
+    pages = _re.split(r'(--- NOFO PAGE \d+ ---)', nofo_text)
+
+    # Find pages containing evaluation criteria headings with point values
+    criteria_markers = [
+        r'\(\s*\d+\s*points?\s*\)',  # "(35 points)" or "(30 points)"
+        r'merit\s+review',
+        r'evaluation\s+criteria',
+        r'application\s+review',
+    ]
+    criteria_start = None
+    criteria_pages = []
+
+    for i, chunk in enumerate(pages):
+        text_lower = chunk.lower()
+        if any(_re.search(p, text_lower) for p in criteria_markers):
+            if criteria_start is None:
+                # Include the page marker before this chunk
+                criteria_start = max(0, i - 1)
+            criteria_pages.append(i)
+
+    if criteria_start is not None and criteria_pages:
+        # Include from first criteria page to end of criteria section (+ a few pages)
+        last_criteria = max(criteria_pages)
+        end = min(last_criteria + 4, len(pages))  # Include a few extra pages after
+        extracted = "".join(pages[criteria_start:end])
+        if len(extracted) > 500:  # Sanity check
+            return extracted[:max_chars]
+
+    # Fallback: return full text
+    return nofo_text[:max_chars]
 
 SAMHSA_SYSTEM_PROMPT = """You are an independent federal grant peer reviewer for the Substance Abuse and Mental Health Services Administration (SAMHSA). Score only against the evaluation criteria in the NOFO. Use only application evidence; never invent facts, page numbers, findings, or data. Apply SAMHSA comment conventions: third person, present tense, section-specific findings, constructive language. Do not use outside knowledge. Every finding must cite application page numbers. This is a draft for human reviewer validation, not an award decision.
 
@@ -161,7 +204,7 @@ EVALUATION QUESTIONS FOR THIS SECTION:{question_text}
 {reviewer_note_text}
 
 NOFO TEXT:
-{nofo_text[:50000]}
+{_extract_criteria_pages(nofo_text)}
 
 APPLICATION:
 {application_text}
@@ -181,16 +224,17 @@ INSTRUCTIONS:
 7. For Section B: check if ALL required activities are addressed. If not, max rating is Acceptable.
 8. Include application page # at the end of each comment.
 9. Each comment: 1-3 concise sentences. No unexpanded acronyms.
-10. CITATION RULES:
-    - Application pages: cite ONLY the 1-3 pages where the PRIMARY evidence appears. NEVER list more than 3 pages. If content spans pages 18-44, cite only the 2-3 most relevant pages.
-    - NOFO pages: cite ONLY the 1-2 pages where the evaluation question actually appears. The NOFO is {len(nofo_text)} characters — use the actual page numbers from the NOFO text provided above, not guesses."""
+10. NOFO PAGE CITATIONS: The evaluation criteria with point values appear in the NOFO text above.
+    Use the page numbers shown in the "--- NOFO PAGE X ---" markers next to the section headings
+    with point values (e.g., "A: Population of focus and need statement (35 points)").
+    Do NOT cite pages from the Program Description section (typically pages 1-15)."""
 
     needed_tokens = 6000
     response = client.messages.create(
         model=model, max_tokens=needed_tokens, temperature=0,
         system=[{"type": "text", "text": SAMHSA_SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
         messages=[{"role": "user", "content": [
-            {"type": "text", "text": f"NOFO TEXT:\n{nofo_text[:50000]}\n\nAPPLICATION:\n{application_text}", "cache_control": {"type": "ephemeral"}},
+            {"type": "text", "text": f"NOFO TEXT:\n{_extract_criteria_pages(nofo_text)}\n\nAPPLICATION:\n{application_text}", "cache_control": {"type": "ephemeral"}},
             {"type": "text", "text": prompt.split("APPLICATION:")[0] + prompt.split(application_text)[-1] if application_text in prompt else prompt},
         ]}],
         tools=[tool], tool_choice={"type": "tool", "name": "score_section"},
@@ -287,14 +331,19 @@ def _score_cpp(client, model: str, application_text: str, nofo_text: str, pages:
         },
     }
 
-    prompt = f"""Assess the Confidentiality and Participant Protection (Attachment 6) for this SAMHSA capacity building grant application.
+    prompt = f"""Assess the Confidentiality and Participant Protection (Attachment 6) for this SAMHSA SPF-PFS grant application.
 
-This is a CAPACITY BUILDING grant (Section E of the Application Guide). Evaluate these three required elements:
+CRITICAL: "Participants" for CPP purposes means people receiving PREVENTION SERVICES (direct service
+delivery participants) — NOT advisory committee members, NOT CAC/YAC members, NOT coalition
+governance members. Evaluate recruitment/selection of SERVICE DELIVERY participants ONLY.
+
+Evaluate these three required elements:
 
 1. FAIR SELECTION OF PARTICIPANTS
-   - Does the applicant explain how it will recruit and select individuals for capacity building activities (work group members, individuals with lived experience, consumers)?
-   - If providing external trainings, does it explain eligibility criteria and why they are appropriate?
-   INADEQUATE IF: Not explaining recruitment/selection process, or if providing trainings without explaining eligibility criteria.
+   - Does the applicant explain how it will recruit and select individuals for prevention services?
+   - Does it explain any exclusions from participation and why?
+   - Is participation voluntary with informed consent?
+   INADEQUATE IF: Not explaining how service delivery participants will be recruited/selected.
 
 2. DATA COLLECTION
    - Does the applicant describe data collection procedures and specify data sources?
@@ -330,6 +379,15 @@ APPLICATION (including attachments):
     result = tool_use.input
     if isinstance(result, str):
         result = json.loads(result)
+
+    # Ensure nested CPP objects are dicts, not JSON strings
+    for key in ("fair_selection", "data_collection", "privacy_confidentiality"):
+        val = result.get(key)
+        if isinstance(val, str):
+            try:
+                result[key] = json.loads(val)
+            except (json.JSONDecodeError, TypeError):
+                result[key] = {"rating": "adequate", "comment": val}
 
     logger.info("  CPP: %s", result.get("overall_assessment", "?"))
     return result
