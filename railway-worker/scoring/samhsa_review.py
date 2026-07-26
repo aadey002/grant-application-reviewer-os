@@ -96,11 +96,23 @@ If NO, do NOT include it. The following are NOT valid weaknesses — NEVER flag 
   - Absence of baseline-referenced outcome targets (developed during Planning, not pre-award)
   - Not specifying a community readiness assessment instrument (NOFO does not require naming a tool)
   - Participant enrollment targets missing from timeline (only requires dates, activities, staff)
+  - B.3 "not linking specific activities to priorities" when the applicant DOES name activities under each priority — READ the actual text before claiming activities are missing
+  - B.4 "no narrative content" when NOFO criterion B.4 itself says "In Attachment 4, provide..." — the criterion directs content to the attachment, so "SEE ATTACHMENT 4" is acceptable
 A weakness MUST cite a specific NOFO requirement the application fails to address. If you cannot point
 to an explicit NOFO requirement, OMIT the weakness rather than lowering the score.
 
 FACTUAL ACCURACY — CRITICAL:
 Before asserting any weakness, verify your claim against the cited application pages. Do NOT claim something is missing if it appears elsewhere in the application — but DO note if it appears in the WRONG section. If uncertain whether a weakness is factually supported, omit it. A false weakness is worse than a missed one.
+
+B.3 VERIFICATION RULE: Before claiming B.3 lacks specificity, RE-READ page 17 (or wherever B.3 appears).
+If the applicant names specific activities under EACH of the five SAMHSA Strategic Priorities (evidence-based
+practice, fiscal stewardship, partnership/coordination, prevention of substance misuse, emerging threats),
+that IS a thorough response — score it as a Strength, not a weakness.
+
+B.4 RULE: The NOFO criterion B.4 says "In Attachment 4, provide..." — it explicitly directs content to the
+attachment, not the narrative. If the applicant writes "SEE ATTACHMENT 4" and Attachment 4 contains a
+complete timeline with dates, activities, and staff, B.4 is adequately addressed. Do NOT penalize for
+following the NOFO's own instruction to put the timeline in the attachment.
 
 Never use unexpanded acronyms — always write the full term first, followed by the acronym in parentheses on first use."""
 
