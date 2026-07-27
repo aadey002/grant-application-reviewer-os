@@ -122,9 +122,41 @@ following the NOFO's own instruction to put the timeline in the attachment.
 Never use unexpanded acronyms — always write the full term first, followed by the acronym in parentheses on first use."""
 
 
+def _try_ocr_page(path: Path, page_index: int) -> str:
+    """Attempt OCR on a single page that has images but no extractable text."""
+    try:
+        import fitz
+        doc = fitz.open(path)
+        page = doc[page_index]
+        # Check if page has images
+        if not page.get_images():
+            return ""
+        # Try fitz built-in OCR (requires tesseract)
+        try:
+            tp = page.get_textpage_ocr(language="eng")
+            text = page.get_text("text", textpage=tp)
+            if text and len(text.strip()) > 50:
+                return text.strip()
+        except Exception:
+            pass
+        return ""
+    except Exception:
+        return ""
+
+
 def _application_text(path: Path, max_chars: int = 175_000) -> tuple[list[str], str]:
-    """Extract application text with page markers."""
+    """Extract application text with page markers. Falls back to OCR for scanned pages."""
     pages = extract_pdf_pages(path)
+
+    # Detect and attempt OCR on pages that are likely scanned (have images but <50 chars text)
+    for i, page_text in enumerate(pages):
+        stripped = page_text.strip()
+        # Page has a header but no body text — likely scanned
+        if len(stripped) < 100 and stripped:
+            ocr_text = _try_ocr_page(path, i)
+            if ocr_text:
+                pages[i] = ocr_text
+
     blocks, used = [], 0
     for number, page in enumerate(pages, 1):
         block = f"\n--- APPLICATION PAGE {number} ---\n{page.strip()}"
@@ -389,36 +421,33 @@ def _score_cpp(client, model: str, application_text: str, nofo_text: str, pages:
         },
     }
 
-    prompt = f"""Assess the Confidentiality and Participant Protection (Attachment 6) for this SAMHSA SPF-PFS grant application.
+    prompt = f"""Assess the Confidentiality and Participant Protection for this SAMHSA grant application.
+Look in Attachment 6, Attachment 2, and Attachment 3 for CPP content.
 
-CRITICAL: "Participants" for CPP purposes means people receiving PREVENTION SERVICES (direct service
-delivery participants) — NOT advisory committee members, NOT CAC/YAC members, NOT coalition
-governance members. Evaluate recruitment/selection of SERVICE DELIVERY participants ONLY.
+"Participants" = people receiving PREVENTION SERVICES only. NOT advisory committee/CAC/YAC members.
 
-Evaluate these three required elements:
+NOTE: Some attachment pages may be scanned images that appear blank in the extracted text.
+If a page shows only a header (e.g., "ATTACHMENT 6- CONFIDENTIALITY") with no body text,
+the content may exist as a scanned image. Flag this: "Page X appears to contain scanned
+content that could not be extracted. Manual verification recommended."
 
-1. FAIR SELECTION OF PARTICIPANTS
-   - Does the applicant explain how it will recruit and select individuals for prevention services?
-   - Does it explain any exclusions from participation and why?
-   - Is participation voluntary with informed consent?
-   INADEQUATE IF: Not explaining how service delivery participants will be recruited/selected.
+Three required elements:
 
-2. DATA COLLECTION
-   - Does the applicant describe data collection procedures and specify data sources?
-   - Are data collection instruments or interview protocols provided in Attachment 2, or web links to standardized instruments?
-   INADEQUATE IF: Not including data collection instruments (or links) in Attachment 2.
+1. FAIR SELECTION: How will service delivery participants be recruited/selected? Voluntary? Informed consent?
+   INADEQUATE IF: No recruitment/selection process described.
 
-3. PRIVACY AND CONFIDENTIALITY
-   - Does the applicant explain where collected data will be stored?
-   - Does it specify who will have access to collected data?
-   - Does it explain how it will keep the identity of individuals private, particularly consumers and those with lived experience (e.g., coding system, limited access, separate storage of identifiers)?
-   INADEQUATE IF: Not explaining data storage, not specifying who has access, not explaining how identities are kept private.
+2. DATA COLLECTION: Procedures and data sources described? Instruments in Attachment 2 (or web links)?
+   INADEQUATE IF: No instruments or links in Attachment 2.
 
-OVERALL ASSESSMENT:
-- ADEQUATE: All three areas are adequately addressed.
-- COMMENT: Minor issues that should be noted but don't compromise protection.
-- CONCERN: One or more areas are inadequate — raises concern about participant protection.
-The overall assessment must reflect the most serious level of any individual rating.
+3. PRIVACY/CONFIDENTIALITY: Where is data stored? Who has access? How are identities protected?
+   INADEQUATE IF: Storage, access, or identity protection not explained.
+
+OVERALL: Adequate (all OK) / Comment (minor deficiency, can proceed) / Concern (inadequate element, cannot proceed).
+Must reflect most serious individual rating.
+
+CONCISENESS RULE: Each element rating should be 2-4 sentences max. State what was found, cite the
+page, note any gaps. Do not repeat the full text of consent forms or procedures — summarize the key
+protections. The overall comment should be 3-4 sentences max.
 
 APPLICATION (including attachments):
 {cpp_app_text[:60000]}"""
