@@ -146,8 +146,41 @@ def get_system_prompt(agency: str) -> str:
     return HRSA_SYSTEM_PROMPT
 
 
+def _try_ocr_page(path: Path, page_index: int) -> str:
+    """Attempt OCR on a single page that has images but no extractable text."""
+    try:
+        import fitz
+        doc = fitz.open(path)
+        page = doc[page_index]
+        if not page.get_images():
+            return ""
+        try:
+            tp = page.get_textpage_ocr(language="eng")
+            text = page.get_text("text", textpage=tp)
+            if text and len(text.strip()) > 50:
+                return text.strip()
+        except Exception:
+            pass
+        return ""
+    except Exception:
+        return ""
+
+
 def _application_text(path: Path, max_chars: int = 175_000) -> tuple[list[str], str]:
     pages = extract_pdf_pages(path)
+
+    # Detect scanned pages and attempt OCR, flag unreadable ones
+    scanned_flags = []
+    for i, page_text in enumerate(pages):
+        stripped = page_text.strip()
+        if len(stripped) < 100 and stripped:
+            ocr_text = _try_ocr_page(path, i)
+            if ocr_text:
+                pages[i] = ocr_text
+            else:
+                scanned_flags.append(i + 1)
+                pages[i] = stripped + f"\n[WARNING: Page {i+1} appears to contain scanned/image content that could not be extracted. This page may contain letters of support, attachments, or other documents. Manual verification recommended.]"
+
     blocks, used = [], 0
     for number, page in enumerate(pages, 1):
         block = f"\n--- APPLICATION PAGE {number} ---\n{page.strip()}"

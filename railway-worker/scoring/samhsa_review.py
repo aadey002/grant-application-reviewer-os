@@ -148,14 +148,15 @@ def _application_text(path: Path, max_chars: int = 175_000) -> tuple[list[str], 
     """Extract application text with page markers. Falls back to OCR for scanned pages."""
     pages = extract_pdf_pages(path)
 
-    # Detect and attempt OCR on pages that are likely scanned (have images but <50 chars text)
+    # Detect and attempt OCR on pages that are likely scanned (have images but <100 chars text)
     for i, page_text in enumerate(pages):
         stripped = page_text.strip()
-        # Page has a header but no body text — likely scanned
         if len(stripped) < 100 and stripped:
             ocr_text = _try_ocr_page(path, i)
             if ocr_text:
                 pages[i] = ocr_text
+            else:
+                pages[i] = stripped + f"\n[WARNING: Page {i+1} appears to contain scanned/image content that could not be extracted. This page may contain letters of support, attachments, or other documents. Manual verification recommended.]"
 
     blocks, used = [], 0
     for number, page in enumerate(pages, 1):
