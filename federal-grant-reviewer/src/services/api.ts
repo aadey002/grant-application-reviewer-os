@@ -373,6 +373,7 @@ export interface StoredReviewFromDB {
   app_count: number;
   completed_count: number;
   failed_count: number;
+  app_names: string[];
 }
 
 export const listReviews = async (): Promise<StoredReviewFromDB[]> => {
@@ -385,14 +386,14 @@ export const listReviews = async (): Promise<StoredReviewFromDB[]> => {
 
   const result: StoredReviewFromDB[] = [];
   for (const r of (reviews || [])) {
-    const { count: appCount } = await supabase.from('applications').select('id', { count: 'exact', head: true }).eq('review_id', r.id);
-    const { count: completedCount } = await supabase.from('applications').select('id', { count: 'exact', head: true }).eq('review_id', r.id).eq('status', 'completed');
-    const { count: failedCount } = await supabase.from('applications').select('id', { count: 'exact', head: true }).eq('review_id', r.id).eq('status', 'failed');
+    const { data: apps } = await supabase.from('applications').select('id, filename, status').eq('review_id', r.id);
+    const appList = apps || [];
     result.push({
       ...r,
-      app_count: appCount || 0,
-      completed_count: completedCount || 0,
-      failed_count: failedCount || 0,
+      app_count: appList.length,
+      completed_count: appList.filter(a => a.status === 'completed').length,
+      failed_count: appList.filter(a => a.status === 'failed').length,
+      app_names: appList.map(a => a.filename),
     });
   }
   return result;
@@ -503,4 +504,82 @@ export const getApplicationViewUrl = async (
   const { data, error } = await supabase.storage.from('grant-applications').createSignedUrl(app.storage_path, 3600);
   if (error) throw new Error('Failed to create view URL');
   return { url: data.signedUrl, filename: app.filename, expires_in: 3600 };
+};
+
+// ---------------------------------------------------------------------------
+// Committee Consensus Review
+// ---------------------------------------------------------------------------
+
+export interface ConsensusStatement {
+  number: string;
+  type: 'weakness' | 'strength' | 'met';
+  verbatim_text: string;
+  reviewer_citation: string;
+  worksheet_question: string;
+  action: 'KEEP' | 'MERGE' | 'REVISE' | 'REMOVE';
+  merge_target?: string;
+  revised_text?: string;
+  rationale: string;
+  is_mine?: boolean;
+}
+
+export interface ConsensusCriterion {
+  criterion_name: string;
+  maximum_points: number;
+  worksheet_questions: Array<{ id: string; text: string }>;
+  weaknesses: ConsensusStatement[];
+  strengths: ConsensusStatement[];
+  mets: ConsensusStatement[];
+  score_range: string;
+}
+
+export interface ConsensusResult {
+  applicant_name: string;
+  nofo_number: string;
+  criteria: ConsensusCriterion[];
+  budget_recommendation: { recommendation: string; rationale: string };
+  summary: {
+    total_findings: number;
+    keep_count: number;
+    merge_count: number;
+    revise_count: number;
+    remove_count: number;
+    findings_after_consolidation: number;
+    suggested_score_range: string;
+    motion: string;
+  };
+  review_type?: string;
+  certification?: string;
+}
+
+export const submitConsensusReview = async (
+  reviewId: string,
+  applicationId: string,
+  combinedStatementFile: File,
+  reviewerName: string,
+): Promise<{ status: string; application_id: string }> => {
+  const API_BASE = (API_BASE_URL || '').replace(/[\s\n]+$/, '').replace(/\/+$/, '');
+  const formData = new FormData();
+  formData.append('review_id', reviewId);
+  formData.append('application_id', applicationId);
+  formData.append('reviewer_name', reviewerName);
+  formData.append('combined_statement', combinedStatementFile);
+
+  const response = await fetch(API_BASE + '/consensus/review', {
+    method: 'POST',
+    body: formData,
+  });
+  const body = await response.json();
+  if (!response.ok) throw new Error(body.detail || 'Consensus review submission failed');
+  return body;
+};
+
+export const getConsensusResult = async (
+  applicationId: string,
+): Promise<{ status: string; result?: ConsensusResult; error?: string }> => {
+  const API_BASE = (API_BASE_URL || '').replace(/[\s\n]+$/, '').replace(/\/+$/, '');
+  const response = await fetch(API_BASE + '/consensus/result/' + applicationId);
+  const body = await response.json();
+  if (!response.ok) throw new Error(body.detail || 'Failed to fetch consensus result');
+  return body;
 };

@@ -49,6 +49,10 @@ def _lazy_samhsa_scoring():
     from scoring.samhsa_review import score_samhsa_application
     return score_samhsa_application
 
+def _lazy_consensus_scoring():
+    from scoring.consensus_review import run_consensus_review
+    return run_consensus_review
+
 # Supabase client — only imported when needed
 _supabase_client: Any = None
 
@@ -1696,4 +1700,158 @@ def get_worksheet_download_url(review_id: str, application_id: str):
         "filename": doc["filename"],
         "download_url": signed,
         "expires_in_seconds": 3600,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Committee Consensus Review
+# ---------------------------------------------------------------------------
+
+@app.post("/consensus/review")
+async def consensus_review(
+    background_tasks: BackgroundTasks,
+    review_id: str = Form(...),
+    application_id: str = Form(...),
+    reviewer_name: str = Form(""),
+    combined_statement: UploadFile = File(...),
+):
+    """Upload a combined statements PDF and run consensus review.
+
+    Uses the NOFO and criteria already stored on the parent grant_review.
+    Stores the result on the applications row as consensus_result.
+    """
+    sb = get_supabase()
+
+    # Validate review exists and get NOFO path + rubric
+    review_rows = _select(sb, "grant_reviews", {"id": review_id})
+    if not review_rows:
+        raise HTTPException(status_code=404, detail="Review not found")
+    review_row = review_rows[0]
+
+    # Validate application exists
+    app_rows = _select(sb, "applications", {"id": application_id})
+    if not app_rows:
+        raise HTTPException(status_code=404, detail="Application not found")
+
+    nofo_storage_path = review_row.get("nofo_storage_path", "")
+    rubric = review_row.get("extracted_rubric", {})
+    criteria = rubric.get("criteria", [])
+    if not criteria:
+        raise HTTPException(status_code=400, detail="No rubric criteria found on this review")
+
+    # Read combined statement bytes
+    cs_bytes = await combined_statement.read()
+    if len(cs_bytes) < 100:
+        raise HTTPException(status_code=400, detail="Combined statement file is too small or empty")
+
+    # Upload to storage
+    user_id = review_row.get("user_id", "system")
+    cs_storage_path = f"{user_id}/{review_id}/consensus/{application_id}/{combined_statement.filename}"
+    _upload_bytes(sb, BUCKET_APPS, cs_storage_path, cs_bytes, "application/pdf")
+
+    # Mark as processing
+    _update(sb, "applications", {"id": application_id}, {
+        "consensus_status": "processing",
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    })
+
+    # Run in background
+    def _run_consensus():
+        try:
+            # Download NOFO text
+            nofo_bytes = _download_bytes(sb, BUCKET_NOFO, nofo_storage_path)
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as ntmp:
+                ntmp.write(nofo_bytes)
+                nofo_tmp = Path(ntmp.name)
+            try:
+                from scoring.document_processor import DocumentProcessor
+                proc = DocumentProcessor()
+                doc_result = proc.process_document(str(nofo_tmp))
+                nofo_text = doc_result.get("text_content", "")[:50000]
+            except Exception:
+                from scoring.safe_review import extract_pdf_pages as _epdf
+                pages = _epdf(nofo_tmp)
+                nofo_text = "\n".join(f"--- NOFO PAGE {i} ---\n{p}" for i, p in enumerate(pages, 1))[:50000]
+            finally:
+                nofo_tmp.unlink(missing_ok=True)
+
+            # Write combined statement to temp file
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as ctmp:
+                ctmp.write(cs_bytes)
+                cs_tmp = Path(ctmp.name)
+
+            try:
+                run_consensus = _lazy_consensus_scoring()
+                result = run_consensus(
+                    combined_statement_path=cs_tmp,
+                    nofo_text=nofo_text,
+                    criteria=criteria,
+                    user_reviewer_name=reviewer_name,
+                )
+            finally:
+                cs_tmp.unlink(missing_ok=True)
+
+            # Store result
+            _update(sb, "applications", {"id": application_id}, {
+                "consensus_result": json.dumps(result),
+                "consensus_status": "completed",
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            })
+            logger.info("Consensus review completed for application %s", application_id)
+
+        except Exception as exc:
+            logger.error("Consensus review failed for application %s: %s", application_id, exc)
+            _update(sb, "applications", {"id": application_id}, {
+                "consensus_status": "failed",
+                "consensus_error": str(exc)[:500],
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            })
+
+    import threading
+    threading.Thread(target=_run_consensus, daemon=True).start()
+
+    return {
+        "status": "processing",
+        "application_id": application_id,
+        "review_id": review_id,
+        "message": "Consensus review started. Poll GET /consensus/result/{application_id} for results.",
+    }
+
+
+@app.get("/consensus/result/{application_id}")
+def get_consensus_result(application_id: str):
+    """Get the consensus review result for an application."""
+    sb = get_supabase()
+    app_rows = _select(sb, "applications", {"id": application_id})
+    if not app_rows:
+        raise HTTPException(status_code=404, detail="Application not found")
+
+    app_row = app_rows[0]
+    status = app_row.get("consensus_status", "none")
+    result_str = app_row.get("consensus_result")
+
+    if status == "none" or (status is None and result_str is None):
+        return {"status": "none", "application_id": application_id}
+
+    if status == "processing":
+        return {"status": "processing", "application_id": application_id}
+
+    if status == "failed":
+        return {
+            "status": "failed",
+            "application_id": application_id,
+            "error": app_row.get("consensus_error", "Unknown error"),
+        }
+
+    result = None
+    if result_str:
+        try:
+            result = json.loads(result_str) if isinstance(result_str, str) else result_str
+        except json.JSONDecodeError:
+            result = None
+
+    return {
+        "status": "completed",
+        "application_id": application_id,
+        "result": result,
     }

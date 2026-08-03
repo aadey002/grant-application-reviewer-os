@@ -7,11 +7,12 @@ import {
   deleteApplicantData, deleteReview, extractRubric, ExtractedRubric, generateNofoBrief,
   getApplicationViewUrl, getNofoBrief, getNofoViewUrl,
   getNofoBriefDownload, getReviewResults,
-  getWorksheetUrl, JobStatus, NofoBrief, pollJobStatus, ReviewPackage,
+  getWorksheetUrl, JobStatus, listReviews, NofoBrief, pollJobStatus, ReviewPackage,
   runSafeReviews, SafeReview, updateReviewValidation,
 } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import CommitteeReview from './CommitteeReview';
 
 const agencies = ['HRSA', 'SAMHSA', 'NIH', 'CDC'];
 const agencyText: Record<string, string> = {
@@ -166,6 +167,9 @@ const SafeReviewDashboard: React.FC = () => {
   // Reviewer validation state: applicationId -> validation status
   const [validationStatus, setValidationStatus] = useState<Record<string, string>>({});
   const [validationBusy, setValidationBusy] = useState<Record<string, boolean>>({});
+
+  // Committee consensus review modal
+  const [showConsensus, setShowConsensus] = useState(false);
   const briefPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Findings filter
@@ -173,6 +177,42 @@ const SafeReviewDashboard: React.FC = () => {
 
   // History
   const [storedReviews, setStoredReviews] = useState<StoredReview[]>(loadStoredReviews);
+  const [dbLoaded, setDbLoaded] = useState(false);
+
+  // Fetch reviews from Supabase when entering history tab and merge with localStorage
+  useEffect(() => {
+    if (step !== 'history' || dbLoaded) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const dbReviews = await listReviews();
+        if (cancelled) return;
+        const local = loadStoredReviews();
+        const localIds = new Set(local.map(r => r.review_id));
+        const merged = [...local];
+        for (const db of dbReviews) {
+          if (!localIds.has(db.id)) {
+            merged.push({
+              review_id: db.id,
+              job_ids: [],
+              agency: db.agency,
+              timestamp: db.created_at,
+              nofo_name: db.nofo_filename,
+              app_names: db.app_names,
+              status: (db.status === 'completed' ? 'completed' : db.status === 'failed' ? 'failed' : 'processing') as StoredReview['status'],
+            });
+          }
+        }
+        saveStoredReviews(merged);
+        setStoredReviews(merged);
+        setDbLoaded(true);
+      } catch {
+        // Supabase fetch failed — fall back to localStorage only
+      }
+    })();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
 
   const current = reviews[selected] ?? reviews[0] ?? null;
   const scoreTotal = useMemo(() => current?.final_score ?? null, [current]);
@@ -2217,6 +2257,13 @@ const SafeReviewDashboard: React.FC = () => {
                     >
                       <Download size={18} /> Export JSON
                     </button>
+
+                    <button
+                      onClick={() => setShowConsensus(true)}
+                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-3 font-bold text-white hover:bg-indigo-700"
+                    >
+                      <FileSearch size={18} /> Committee Review
+                    </button>
                   </aside>
                 </div>
 
@@ -2342,7 +2389,7 @@ const SafeReviewDashboard: React.FC = () => {
             <div className="mb-6 flex items-center justify-between">
               <div>
                 <h2 className="text-3xl font-bold">My Reviews</h2>
-                <p className="text-slate-500 mt-1">All reviews saved in this browser · {statusSummary(storedReviews)}</p>
+                <p className="text-slate-500 mt-1">All reviews · {statusSummary(storedReviews)}</p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -2435,6 +2482,17 @@ const SafeReviewDashboard: React.FC = () => {
         )}
 
       </main>
+
+      {/* Committee Consensus Review modal */}
+      {showConsensus && currentReviewId && current && (
+        <CommitteeReview
+          reviewId={currentReviewId}
+          applicationId={current.application_id}
+          applicantName={current.applicant_name || current.application_file || 'Application'}
+          agency={agency}
+          onClose={() => setShowConsensus(false)}
+        />
+      )}
     </div>
   );
 };
