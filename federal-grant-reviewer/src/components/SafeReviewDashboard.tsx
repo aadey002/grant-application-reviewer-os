@@ -1838,66 +1838,84 @@ const SafeReviewDashboard: React.FC = () => {
                       <div className="rounded-xl border bg-white p-5 mb-4">
                         <div className="flex items-center justify-between mb-3">
                           <h3 className="font-bold text-lg">Overview Presentation Information</h3>
-                          <button
-                            onClick={() => {
-                              const ov = current.overview || {};
-                              const lines = [
-                                'OVERVIEW PRESENTATION INFORMATION',
-                                `Applicant: ${current.applicant_name || ''}`,
-                                `Application Number: ${current.application_number || ''}`,
-                                '',
-                                'Applicant information:',
-                                ov.applicant_information || '',
-                                '',
-                                'Target population, service area, appropriateness of budget, etc.:',
-                                ov.target_population || '',
-                                '',
-                                'Proposed project/program description:',
-                                ov.project_description || '',
-                                '',
-                                'Major goals and objectives:',
-                                ov.goals_objectives || '',
-                                '',
-                                'Any significant strength and/or weakness:',
-                                ov.significant_findings || '',
-                                '',
-                                'Any other pertinent information:',
-                                ov.other_information || '',
-                              ];
-                              const blob = new Blob([lines.join('\n')], {type: 'text/plain'});
-                              const url = URL.createObjectURL(blob);
-                              const a = document.createElement('a');
-                              a.href = url;
-                              a.download = (current.applicant_name || 'Application') + ' - Overview.txt';
-                              a.click();
-                              URL.revokeObjectURL(url);
-                            }}
-                            className="flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm font-semibold text-blue-700 hover:bg-blue-50"
-                          >
-                            <Download size={14} /> Download Overview
-                          </button>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                const ov = current.overview || {};
+                                const html = [
+                                  '<html><head><meta charset="utf-8"><style>body{font-family:Calibri,Arial,sans-serif;font-size:11pt;margin:1in;}h1{font-size:14pt;margin-bottom:4pt;}h2{font-size:11pt;font-weight:bold;margin:12pt 0 4pt;color:#333;}p{margin:0 0 8pt;line-height:1.4;}</style></head><body>',
+                                  '<h1>OVERVIEW PRESENTATION INFORMATION</h1>',
+                                  '<p><strong>Applicant:</strong> ' + (current.applicant_name || '') + '</p>',
+                                  '<p><strong>Application Number:</strong> ' + (current.application_number || '') + '</p>',
+                                  '<h2>Applicant information:</h2>',
+                                  '<p>' + (ov.applicant_information || '') + '</p>',
+                                  '<h2>Target population, service area, appropriateness of budget, etc.:</h2>',
+                                  '<p>' + (ov.target_population || '') + '</p>',
+                                  '<h2>Proposed project/program description:</h2>',
+                                  '<p>' + (ov.project_description || '') + '</p>',
+                                  '<h2>Major goals and objectives:</h2>',
+                                  '<p>' + (ov.goals_objectives || '') + '</p>',
+                                  '<h2>Any significant strength and/or weakness:</h2>',
+                                  '<p>' + (ov.significant_findings || '') + '</p>',
+                                  '<h2>Any other pertinent information:</h2>',
+                                  '<p>' + (ov.other_information || '') + '</p>',
+                                  '</body></html>',
+                                ].join('');
+                                const blob = new Blob([html], {type: 'application/msword'});
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = (current.applicant_name || 'Application') + ' - Overview.doc';
+                                a.click();
+                                URL.revokeObjectURL(url);
+                              }}
+                              className="flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+                            >
+                              <Download size={14} /> Word
+                            </button>
+                            <button
+                              onClick={() => {
+                                const ov = current.overview || {};
+                                const printWin = window.open('', '_blank');
+                                if (!printWin) return;
+                                printWin.document.write([
+                                  '<html><head><meta charset="utf-8"><title>Overview - ' + (current.applicant_name || '') + '</title>',
+                                  '<style>body{font-family:Calibri,Arial,sans-serif;font-size:11pt;margin:1in;}h1{font-size:14pt;margin-bottom:4pt;}h2{font-size:11pt;font-weight:bold;margin:12pt 0 4pt;color:#333;}p{margin:0 0 8pt;line-height:1.4;}</style></head><body>',
+                                  '<h1>OVERVIEW PRESENTATION INFORMATION</h1>',
+                                  '<p><strong>Applicant:</strong> ' + (current.applicant_name || '') + '</p>',
+                                  '<p><strong>Application Number:</strong> ' + (current.application_number || '') + '</p>',
+                                  '<h2>Applicant information:</h2><p>' + (ov.applicant_information || '') + '</p>',
+                                  '<h2>Target population, service area, appropriateness of budget, etc.:</h2><p>' + (ov.target_population || '') + '</p>',
+                                  '<h2>Proposed project/program description:</h2><p>' + (ov.project_description || '') + '</p>',
+                                  '<h2>Major goals and objectives:</h2><p>' + (ov.goals_objectives || '') + '</p>',
+                                  '<h2>Any significant strength and/or weakness:</h2><p>' + (ov.significant_findings || '') + '</p>',
+                                  '<h2>Any other pertinent information:</h2><p>' + (ov.other_information || '') + '</p>',
+                                  '</body></html>',
+                                ].join(''));
+                                printWin.document.close();
+                                printWin.print();
+                              }}
+                              className="flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                            >
+                              <Download size={14} /> PDF
+                            </button>
+                          </div>
                         </div>
-                        {(() => {
-                          const fields = [
+                        <div className="space-y-4">
+                          {[
                             ['Applicant information', current.overview.applicant_information],
-                            ['Target population & budget', current.overview.target_population],
-                            ['Project description', current.overview.project_description],
-                            ['Goals & objectives', current.overview.goals_objectives],
-                            ['Significant strength/weakness', current.overview.significant_findings],
-                            ['Other information', current.overview.other_information],
-                          ];
-                          // Compact: show all fields in a 2-column grid, truncated
-                          return (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              {fields.map(([label, value]) => value ? (
-                                <div key={label as string}>
-                                  <p className="text-xs font-bold uppercase text-slate-500 mb-0.5">{label}</p>
-                                  <p className="text-xs text-slate-700 leading-snug line-clamp-3">{value}</p>
-                                </div>
-                              ) : null)}
+                            ['Target population, service area, appropriateness of budget', current.overview.target_population],
+                            ['Proposed project/program description', current.overview.project_description],
+                            ['Major goals and objectives', current.overview.goals_objectives],
+                            ['Any significant strength and/or weakness', current.overview.significant_findings],
+                            ['Any other pertinent information', current.overview.other_information],
+                          ].map(([label, value]) => value ? (
+                            <div key={label as string}>
+                              <p className="text-xs font-bold uppercase text-slate-500 mb-1">{label}</p>
+                              <p className="text-sm text-slate-800 leading-relaxed">{value}</p>
                             </div>
-                          );
-                        })()}
+                          ) : null)}
+                        </div>
                       </div>
                     )}
 

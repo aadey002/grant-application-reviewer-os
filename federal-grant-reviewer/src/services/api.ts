@@ -517,6 +517,7 @@ export interface ConsensusStatement {
   reviewer_citation: string;
   reviewer_references?: string;
   worksheet_question: string;
+  nofo_requirement_text?: string;
   action: 'KEEP' | 'MERGE' | 'REVISE' | 'REMOVE';
   merge_target?: string;
   revised_text?: string;

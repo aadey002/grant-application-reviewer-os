@@ -50,13 +50,24 @@ RULES — follow exactly:
 
 13. For the user's own statements (flagged in the input), mark them with is_mine: true so the UI can flag them.
 
-STRENGTH vs MET vs WEAKNESS CONFLICT RESOLUTION — CRITICAL:
-- If the SAME worksheet question has BOTH a strength AND a met from different reviewers, the STRENGTH supersedes the met. Mark the met as action MERGE into the strength — strength is the higher-order finding.
-- If the SAME worksheet question has BOTH a strength AND a weakness from different reviewers, this is a CONFLICT. You MUST resolve it by going back to the NOFO requirement text. Check the actual NOFO language for that question. Then:
-  a. If the NOFO requirement is clearly met or exceeded per the application, REMOVE the weakness and cite the NOFO page + requirement text that supports the strength.
-  b. If the NOFO requirement is genuinely not met, REMOVE the strength and cite the NOFO page + requirement text that supports the weakness.
-  c. If both have merit (e.g., the applicant partially addressed it — strong in one aspect, weak in another), KEEP both but add a rationale explaining the conflict: "CONFLICT: Reviewer A cites strength because [X], Reviewer B cites weakness because [Y]. NOFO p.XX requires [Z]. Chair should discuss."
-- Flag all conflict resolutions with "CONFLICT RESOLVED:" or "CONFLICT: Chair should discuss." in the rationale so the Chair can review them.
+NOFO REQUIREMENT REFERENCE — CRITICAL:
+For EVERY statement, provide the verbatim NOFO requirement text that the statement addresses in the nofo_requirement_text field. Copy the exact NOFO language for the worksheet question this statement answers. Include the NOFO page number. This lets the Chair verify each statement against the actual NOFO language.
+
+CROSS-QUESTION CONFLICT DETECTION — CRITICAL:
+After mapping every statement to its worksheet question, check for CONFLICTS within each question:
+- If a question has a STRENGTH from one reviewer and a WEAKNESS from another — this is a CONFLICT. Set is_conflict: true on both. The Chair must discuss.
+- If a question has a MET from one reviewer and a WEAKNESS from another — this is a CONFLICT. A question cannot be both met and weak. Set is_conflict: true on both. Go to the NOFO requirement text and determine which assessment is correct. State in the rationale: "CONFLICT: [Reviewer] says met because [X], [Reviewer] says weakness because [Y]. NOFO p.XX requires: '[verbatim NOFO text]'. Chair should discuss."
+- If a question has a STRENGTH from one reviewer and a MET from another — NOT a conflict. The STRENGTH supersedes the met. Mark the met as action MERGE into the strength.
+- If a question has ONLY strengths, or ONLY mets, or ONLY weaknesses — no conflict.
+
+STRENGTH vs MET vs WEAKNESS RESOLUTION:
+- STRENGTH + MET on same question: Strength supersedes. MERGE the met into the strength.
+- STRENGTH + WEAKNESS on same question: CONFLICT. Go back to NOFO. Check the actual requirement text. Then:
+  a. If NOFO requirement is clearly met/exceeded, REMOVE the weakness. Cite NOFO page + requirement text.
+  b. If NOFO requirement is genuinely not met, REMOVE the strength. Cite NOFO page + requirement text.
+  c. If both have merit, KEEP both with is_conflict: true. Rationale: "CONFLICT: [details]. NOFO p.XX requires: '[verbatim]'. Chair should discuss."
+- MET + WEAKNESS on same question: CONFLICT. A met means the requirement is satisfied — a weakness means it isn't. These cannot both be true. Set is_conflict: true. Resolve by checking NOFO requirement text. If the applicant addressed the requirement adequately, REMOVE the weakness. If not, REMOVE the met.
+- Flag all conflict resolutions with "CONFLICT RESOLVED:" or "CONFLICT: Chair should discuss." in the rationale.
 
 PAGE LIMIT ENFORCEMENT — CRITICAL:
 If a page_limit is provided, any statement that cites or relies on evidence from pages BEYOND the page limit must be flagged with action REMOVE. The rationale must state: "PAGE LIMIT VIOLATION: This finding cites page(s) [X] which exceed the NOFO page limit of [N]. Per NOFO: 'We will not review any pages that exceed the page limit.'" Check the reviewer_references field for page numbers past the limit. If a statement cites both in-limit and over-limit pages, REVISE it to remove the over-limit citations and reword to only reference evidence within the page limit.
@@ -98,6 +109,10 @@ def _consensus_tool(criteria: list[dict[str, Any]]) -> dict[str, Any]:
             "worksheet_question": {
                 "type": "string",
                 "description": "Which reviewer worksheet question (Q1, Q2, etc.) this statement answers",
+            },
+            "nofo_requirement_text": {
+                "type": "string",
+                "description": "The VERBATIM NOFO requirement text for the worksheet question this statement answers. Copy the exact NOFO language. Include NOFO page number at the end, e.g. '...effectively served through this award. (NOFO p. 45)'",
             },
             "action": {
                 "type": "string",

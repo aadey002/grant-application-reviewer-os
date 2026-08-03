@@ -98,6 +98,12 @@ function StatementTable({ statements, headerColor }: { statements: ConsensusStat
                 <p className={s.action === 'REMOVE' ? 'line-through text-red-700' : ''}>
                   {s.verbatim_text}
                 </p>
+                {s.nofo_requirement_text && (
+                  <div className="mt-2 rounded-lg bg-indigo-50 p-2 text-xs text-indigo-900 border border-indigo-200">
+                    <span className="font-semibold">NOFO: </span>
+                    <span className="italic">{s.nofo_requirement_text}</span>
+                  </div>
+                )}
                 {s.action === 'REVISE' && s.revised_text && (
                   <div className="mt-2 rounded-lg bg-blue-50 p-3 text-sm text-blue-900 border border-blue-200">
                     <span className="font-semibold">Suggested revision: </span>
@@ -109,6 +115,13 @@ function StatementTable({ statements, headerColor }: { statements: ConsensusStat
                     Merge into {s.merge_target}
                   </p>
                 )}
+                {s.is_conflict && (
+                  <div className="mt-2 rounded-lg bg-orange-50 p-2 text-xs text-orange-900 border border-orange-200">
+                    <ShieldAlert size={12} className="inline mr-1" />
+                    <span className="font-semibold">CONFLICT: </span>
+                    This question has conflicting assessments from different reviewers. Chair should discuss.
+                  </div>
+                )}
               </td>
               <td className="px-3 py-3 align-top text-sm text-slate-600">
                 <div className="whitespace-nowrap font-semibold">{s.reviewer_citation}</div>
@@ -118,7 +131,9 @@ function StatementTable({ statements, headerColor }: { statements: ConsensusStat
               </td>
               <td className="px-3 py-3 align-top text-sm text-slate-500 whitespace-nowrap">{s.worksheet_question}</td>
               <td className="px-3 py-3 align-top"><ActionBadge action={s.action} /></td>
-              <td className="px-3 py-3 align-top text-sm text-slate-600 max-w-xs">{s.rationale}</td>
+              <td className="px-3 py-3 align-top text-sm text-slate-600 max-w-xs">
+                {s.rationale}
+              </td>
             </tr>
           ))}
         </tbody>
