@@ -40,7 +40,9 @@ RULES — follow exactly:
 
 8. Preserve the reviewer citation on every statement (e.g., "Reviewer A", "R-A, R-B"). This identifies the writer.
 
-9. Do NOT add new findings that were not in the combined statements. You are consolidating, not reviewing.
+9. Preserve the page references or citation numbers that accompany each statement in the combined document (e.g., "pp. 8-9", "App p. 33"). These references identify which reviewer wrote the statement. Put them in the reviewer_references field exactly as written.
+
+10. Do NOT add new findings that were not in the combined statements. You are consolidating, not reviewing.
 
 10. Do NOT increase the budget recommendation. If reviewers recommend a reduction, the rationale must be provided.
 
@@ -77,6 +79,10 @@ def _consensus_tool(criteria: list[dict[str, Any]]) -> dict[str, Any]:
             "reviewer_citation": {
                 "type": "string",
                 "description": "Reviewer attribution, e.g. 'Reviewer A', 'R-A, R-B, R-C', 'Dr. T'",
+            },
+            "reviewer_references": {
+                "type": "string",
+                "description": "The page references or citation numbers that accompanied this statement in the combined document (e.g. 'pp. 8-9', 'App p. 33, 34'). Preserve exactly as written — these identify the reviewer.",
             },
             "worksheet_question": {
                 "type": "string",

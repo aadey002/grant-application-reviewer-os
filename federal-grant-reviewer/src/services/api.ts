@@ -515,6 +515,7 @@ export interface ConsensusStatement {
   type: 'weakness' | 'strength' | 'met';
   verbatim_text: string;
   reviewer_citation: string;
+  reviewer_references?: string;
   worksheet_question: string;
   action: 'KEEP' | 'MERGE' | 'REVISE' | 'REMOVE';
   merge_target?: string;

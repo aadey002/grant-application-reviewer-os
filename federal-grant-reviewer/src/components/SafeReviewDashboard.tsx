@@ -12,7 +12,6 @@ import {
 } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import CommitteeReview from './CommitteeReview';
 
 const agencies = ['HRSA', 'SAMHSA', 'NIH', 'CDC'];
 const agencyText: Record<string, string> = {
@@ -168,8 +167,6 @@ const SafeReviewDashboard: React.FC = () => {
   const [validationStatus, setValidationStatus] = useState<Record<string, string>>({});
   const [validationBusy, setValidationBusy] = useState<Record<string, boolean>>({});
 
-  // Committee consensus review modal
-  const [showConsensus, setShowConsensus] = useState(false);
   const briefPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Findings filter
@@ -2259,7 +2256,10 @@ const SafeReviewDashboard: React.FC = () => {
                     </button>
 
                     <button
-                      onClick={() => setShowConsensus(true)}
+                      onClick={() => {
+                        const url = window.location.origin + window.location.pathname + '#/consensus/' + currentReviewId + '/' + current.application_id;
+                        window.open(url, '_blank');
+                      }}
                       className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-3 font-bold text-white hover:bg-indigo-700"
                     >
                       <FileSearch size={18} /> Committee Review
@@ -2483,16 +2483,6 @@ const SafeReviewDashboard: React.FC = () => {
 
       </main>
 
-      {/* Committee Consensus Review modal */}
-      {showConsensus && currentReviewId && current && (
-        <CommitteeReview
-          reviewId={currentReviewId}
-          applicationId={current.application_id}
-          applicantName={current.applicant_name || current.application_file || 'Application'}
-          agency={agency}
-          onClose={() => setShowConsensus(false)}
-        />
-      )}
     </div>
   );
 };

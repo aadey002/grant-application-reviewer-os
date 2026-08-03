@@ -4,17 +4,19 @@ import LoginPage from './components/Auth/LoginPage';
 import SafeReviewDashboard from './components/SafeReviewDashboard';
 import LandingPage from './components/LandingPage';
 import DemoMode from './components/DemoMode';
+import CommitteeReview from './components/CommitteeReview';
 
 // ---------------------------------------------------------------------------
 // Simple hash-based router — no react-router dependency needed
 // ---------------------------------------------------------------------------
-type Route = '/' | '/login' | '/app' | '/demo' | '/reviews' | `/reviews/${string}`;
+type Route = '/' | '/login' | '/app' | '/demo' | '/reviews' | `/reviews/${string}` | '/consensus';
 
 function getRoute(): Route {
   const hash = window.location.hash.replace(/^#/, '');
   if (hash === '/login') return '/login';
   if (hash === '/demo') return '/demo';
   if (hash === '/reviews') return '/reviews';
+  if (hash.startsWith('/consensus/')) return '/consensus';
   if (hash.startsWith('/reviews/')) return hash as `/reviews/${string}`;
   if (hash === '/app') return '/app';
   return '/';
@@ -51,6 +53,14 @@ const AppRoutes: React.FC = () => {
   if (route === '/login') return <LoginPage />;
 
   // Protected routes — require authentication
+  if (route === '/consensus') {
+    if (!user) {
+      window.location.hash = '/login';
+      return null;
+    }
+    return <CommitteeReview />;
+  }
+
   if (route === '/app' || route === '/reviews' || route.startsWith('/reviews/')) {
     if (!user) {
       window.location.hash = '/login';

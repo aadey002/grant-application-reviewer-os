@@ -1,22 +1,34 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   AlertTriangle, CheckCircle2, FileText, Flag, Loader2, Merge,
-  Pencil, Trash2, Upload, X,
+  Pencil, Printer, Trash2, Upload,
 } from 'lucide-react';
 import {
   ConsensusResult, ConsensusCriterion, ConsensusStatement,
   getConsensusResult, submitConsensusReview,
 } from '../services/api';
+import { supabase } from '../lib/supabase';
 
 // ---------------------------------------------------------------------------
-// Props
+// Print styles — injected once into <head>
 // ---------------------------------------------------------------------------
-interface CommitteeReviewProps {
-  reviewId: string;
-  applicationId: string;
-  applicantName: string;
-  agency: string;
-  onClose: () => void;
+const PRINT_STYLE_ID = 'committee-review-print';
+function ensurePrintStyles() {
+  if (document.getElementById(PRINT_STYLE_ID)) return;
+  const style = document.createElement('style');
+  style.id = PRINT_STYLE_ID;
+  style.textContent = `
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display: none !important; }
+      .print-break { page-break-before: always; }
+      table { font-size: 11px; }
+      td, th { padding: 4px 6px !important; }
+      .rounded-xl, .rounded-lg, .rounded-2xl { border-radius: 0 !important; }
+      .shadow, .shadow-sm, .shadow-lg, .shadow-2xl { box-shadow: none !important; }
+    }
+  `;
+  document.head.appendChild(style);
 }
 
 // ---------------------------------------------------------------------------
@@ -43,40 +55,70 @@ function ActionBadge({ action }: { action: string }) {
 }
 
 // ---------------------------------------------------------------------------
-// Statement row
+// Statement table (shared for weaknesses / strengths / mets)
 // ---------------------------------------------------------------------------
-function StatementRow({ s }: { s: ConsensusStatement }) {
+function StatementTable({ statements, headerColor }: { statements: ConsensusStatement[]; headerColor: string }) {
+  if (statements.length === 0) return null;
+  const bgMap: Record<string, string> = {
+    red: 'bg-red-50', emerald: 'bg-emerald-50', slate: 'bg-slate-50',
+  };
+  const textMap: Record<string, string> = {
+    red: 'text-red-900', emerald: 'text-emerald-900', slate: 'text-slate-700',
+  };
   return (
-    <tr className={'border-b last:border-0 ' + (s.action === 'REMOVE' ? 'bg-red-50/50' : s.action === 'MERGE' ? 'bg-amber-50/30' : '')}>
-      <td className="px-3 py-3 align-top font-mono text-sm font-bold whitespace-nowrap">
-        {s.number}
-        {s.is_mine && (
-          <span className="ml-1 text-blue-600" title="Your statement">
-            <Flag size={14} className="inline" />
-          </span>
-        )}
-      </td>
-      <td className="px-3 py-3 align-top text-sm leading-relaxed max-w-xl">
-        <p className={s.action === 'REMOVE' ? 'line-through text-red-700' : ''}>
-          {s.verbatim_text}
-        </p>
-        {s.action === 'REVISE' && s.revised_text && (
-          <div className="mt-2 rounded-lg bg-blue-50 p-3 text-sm text-blue-900 border border-blue-200">
-            <span className="font-semibold">Suggested revision: </span>
-            {s.revised_text}
-          </div>
-        )}
-        {s.action === 'MERGE' && s.merge_target && (
-          <p className="mt-1 text-xs text-amber-700 font-semibold">
-            Merge into {s.merge_target}
-          </p>
-        )}
-      </td>
-      <td className="px-3 py-3 align-top text-sm text-slate-600 whitespace-nowrap">{s.reviewer_citation}</td>
-      <td className="px-3 py-3 align-top text-sm text-slate-500 whitespace-nowrap">{s.worksheet_question}</td>
-      <td className="px-3 py-3 align-top"><ActionBadge action={s.action} /></td>
-      <td className="px-3 py-3 align-top text-sm text-slate-600 max-w-xs">{s.rationale}</td>
-    </tr>
+    <div className="overflow-x-auto rounded-lg border">
+      <table className="w-full text-left">
+        <thead className={bgMap[headerColor] || 'bg-slate-50'}>
+          <tr>
+            <th className={'px-3 py-2 text-xs font-bold ' + (textMap[headerColor] || '')}>#</th>
+            <th className={'px-3 py-2 text-xs font-bold ' + (textMap[headerColor] || '')}>Combined Statement (verbatim)</th>
+            <th className={'px-3 py-2 text-xs font-bold ' + (textMap[headerColor] || '')}>Reviewer</th>
+            <th className={'px-3 py-2 text-xs font-bold ' + (textMap[headerColor] || '')}>Q</th>
+            <th className={'px-3 py-2 text-xs font-bold ' + (textMap[headerColor] || '')}>Action</th>
+            <th className={'px-3 py-2 text-xs font-bold ' + (textMap[headerColor] || '')}>Rationale</th>
+          </tr>
+        </thead>
+        <tbody>
+          {statements.map(s => (
+            <tr key={s.number} className={'border-b last:border-0 ' + (s.action === 'REMOVE' ? 'bg-red-50/50' : s.action === 'MERGE' ? 'bg-amber-50/30' : '')}>
+              <td className="px-3 py-3 align-top font-mono text-sm font-bold whitespace-nowrap">
+                {s.number}
+                {s.is_mine && (
+                  <span className="ml-1 text-blue-600" title="Your statement">
+                    <Flag size={14} className="inline" />
+                  </span>
+                )}
+              </td>
+              <td className="px-3 py-3 align-top text-sm leading-relaxed max-w-xl">
+                <p className={s.action === 'REMOVE' ? 'line-through text-red-700' : ''}>
+                  {s.verbatim_text}
+                </p>
+                {s.action === 'REVISE' && s.revised_text && (
+                  <div className="mt-2 rounded-lg bg-blue-50 p-3 text-sm text-blue-900 border border-blue-200">
+                    <span className="font-semibold">Suggested revision: </span>
+                    {s.revised_text}
+                  </div>
+                )}
+                {s.action === 'MERGE' && s.merge_target && (
+                  <p className="mt-1 text-xs text-amber-700 font-semibold">
+                    Merge into {s.merge_target}
+                  </p>
+                )}
+              </td>
+              <td className="px-3 py-3 align-top text-sm text-slate-600">
+                <div className="whitespace-nowrap font-semibold">{s.reviewer_citation}</div>
+                {s.reviewer_references && (
+                  <div className="text-xs text-slate-400 mt-0.5">{s.reviewer_references}</div>
+                )}
+              </td>
+              <td className="px-3 py-3 align-top text-sm text-slate-500 whitespace-nowrap">{s.worksheet_question}</td>
+              <td className="px-3 py-3 align-top"><ActionBadge action={s.action} /></td>
+              <td className="px-3 py-3 align-top text-sm text-slate-600 max-w-xs">{s.rationale}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -85,7 +127,7 @@ function StatementRow({ s }: { s: ConsensusStatement }) {
 // ---------------------------------------------------------------------------
 function CriterionSection({ crit }: { crit: ConsensusCriterion }) {
   return (
-    <div className="mb-8">
+    <div className="mb-8 print-break">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-lg font-bold">
           {crit.criterion_name} ({crit.maximum_points} pts)
@@ -111,23 +153,7 @@ function CriterionSection({ crit }: { crit: ConsensusCriterion }) {
           <h4 className="font-bold text-red-800 mb-2 text-sm uppercase tracking-wide">
             Weaknesses ({crit.weaknesses.length})
           </h4>
-          <div className="overflow-x-auto rounded-lg border">
-            <table className="w-full text-left">
-              <thead className="bg-red-50">
-                <tr>
-                  <th className="px-3 py-2 text-xs font-bold text-red-900">#</th>
-                  <th className="px-3 py-2 text-xs font-bold text-red-900">Combined Statement (verbatim)</th>
-                  <th className="px-3 py-2 text-xs font-bold text-red-900">Reviewer</th>
-                  <th className="px-3 py-2 text-xs font-bold text-red-900">Q</th>
-                  <th className="px-3 py-2 text-xs font-bold text-red-900">Action</th>
-                  <th className="px-3 py-2 text-xs font-bold text-red-900">Rationale</th>
-                </tr>
-              </thead>
-              <tbody>
-                {crit.weaknesses.map(s => <StatementRow key={s.number} s={s} />)}
-              </tbody>
-            </table>
-          </div>
+          <StatementTable statements={crit.weaknesses} headerColor="red" />
         </div>
       )}
 
@@ -137,23 +163,7 @@ function CriterionSection({ crit }: { crit: ConsensusCriterion }) {
           <h4 className="font-bold text-emerald-800 mb-2 text-sm uppercase tracking-wide">
             Strengths ({crit.strengths.length})
           </h4>
-          <div className="overflow-x-auto rounded-lg border">
-            <table className="w-full text-left">
-              <thead className="bg-emerald-50">
-                <tr>
-                  <th className="px-3 py-2 text-xs font-bold text-emerald-900">#</th>
-                  <th className="px-3 py-2 text-xs font-bold text-emerald-900">Combined Statement (verbatim)</th>
-                  <th className="px-3 py-2 text-xs font-bold text-emerald-900">Reviewer</th>
-                  <th className="px-3 py-2 text-xs font-bold text-emerald-900">Q</th>
-                  <th className="px-3 py-2 text-xs font-bold text-emerald-900">Action</th>
-                  <th className="px-3 py-2 text-xs font-bold text-emerald-900">Rationale</th>
-                </tr>
-              </thead>
-              <tbody>
-                {crit.strengths.map(s => <StatementRow key={s.number} s={s} />)}
-              </tbody>
-            </table>
-          </div>
+          <StatementTable statements={crit.strengths} headerColor="emerald" />
         </div>
       )}
 
@@ -163,23 +173,7 @@ function CriterionSection({ crit }: { crit: ConsensusCriterion }) {
           <h4 className="font-bold text-slate-700 mb-2 text-sm uppercase tracking-wide">
             Met ({crit.mets.length})
           </h4>
-          <div className="overflow-x-auto rounded-lg border">
-            <table className="w-full text-left">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-3 py-2 text-xs font-bold text-slate-700">#</th>
-                  <th className="px-3 py-2 text-xs font-bold text-slate-700">Combined Statement (verbatim)</th>
-                  <th className="px-3 py-2 text-xs font-bold text-slate-700">Reviewer</th>
-                  <th className="px-3 py-2 text-xs font-bold text-slate-700">Q</th>
-                  <th className="px-3 py-2 text-xs font-bold text-slate-700">Action</th>
-                  <th className="px-3 py-2 text-xs font-bold text-slate-700">Rationale</th>
-                </tr>
-              </thead>
-              <tbody>
-                {crit.mets.map(s => <StatementRow key={s.number} s={s} />)}
-              </tbody>
-            </table>
-          </div>
+          <StatementTable statements={crit.mets} headerColor="slate" />
         </div>
       )}
     </div>
@@ -187,11 +181,65 @@ function CriterionSection({ crit }: { crit: ConsensusCriterion }) {
 }
 
 // ---------------------------------------------------------------------------
-// Main component
+// Criteria tabs — click a criterion to show only that one
 // ---------------------------------------------------------------------------
-export default function CommitteeReview({
-  reviewId, applicationId, applicantName, agency, onClose,
-}: CommitteeReviewProps) {
+function CriteriaTabs({ criteria }: { criteria: ConsensusCriterion[] }) {
+  const [activeIdx, setActiveIdx] = useState(0);
+  const active = criteria[activeIdx];
+  if (!active) return null;
+
+  return (
+    <div>
+      {/* Tab bar */}
+      <div className="flex gap-1 mb-4 overflow-x-auto no-print">
+        {criteria.map((crit, i) => {
+          const totalFindings = crit.weaknesses.length + crit.strengths.length + crit.mets.length;
+          const removals = [...crit.weaknesses, ...crit.strengths, ...crit.mets].filter(s => s.action === 'REMOVE').length;
+          return (
+            <button
+              key={crit.criterion_name}
+              onClick={() => setActiveIdx(i)}
+              className={
+                'shrink-0 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ' +
+                (i === activeIdx
+                  ? 'bg-blue-700 text-white'
+                  : 'bg-white border text-slate-600 hover:bg-slate-50')
+              }
+            >
+              {crit.criterion_name}
+              <span className="ml-1 text-xs opacity-70">
+                ({totalFindings}{removals > 0 ? ', -' + removals : ''})
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Active criterion */}
+      <CriterionSection crit={active} />
+
+      {/* Print: show all criteria */}
+      <div className="hidden print:block">
+        {criteria.filter((_, i) => i !== activeIdx).map(crit => (
+          <CriterionSection key={crit.criterion_name} crit={crit} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main component — standalone page (reads reviewId + applicationId from hash)
+// ---------------------------------------------------------------------------
+export default function CommitteeReview() {
+  // Parse IDs from URL hash: #/consensus/{reviewId}/{applicationId}
+  const hash = window.location.hash;
+  const match = hash.match(/^#\/consensus\/([a-z0-9-]+)\/([a-z0-9-]+)$/);
+  const reviewId = match?.[1] || '';
+  const applicationId = match?.[2] || '';
+
+  const [applicantName, setApplicantName] = useState('');
+  const [agency, setAgency] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [reviewerName, setReviewerName] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -199,6 +247,29 @@ export default function CommitteeReview({
   const [result, setResult] = useState<ConsensusResult | null>(null);
   const [error, setError] = useState('');
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Inject print styles
+  useEffect(() => { ensurePrintStyles(); }, []);
+
+  // Load application metadata
+  useEffect(() => {
+    if (!applicationId || !reviewId) return;
+    (async () => {
+      const { data: app } = await supabase
+        .from('applications')
+        .select('filename')
+        .eq('id', applicationId)
+        .single();
+      if (app?.filename) setApplicantName(app.filename.replace(/\.pdf$/i, ''));
+
+      const { data: review } = await supabase
+        .from('grant_reviews')
+        .select('agency')
+        .eq('id', reviewId)
+        .single();
+      if (review?.agency) setAgency(review.agency);
+    })();
+  }, [applicationId, reviewId]);
 
   // Poll for results
   const startPolling = useCallback((appId: string) => {
@@ -222,8 +293,9 @@ export default function CommitteeReview({
     pollRef.current = poll;
   }, []);
 
-  // Check if there's already a result
+  // Check for existing result on mount
   useEffect(() => {
+    if (!applicationId) return;
     (async () => {
       try {
         const res = await getConsensusResult(applicationId);
@@ -255,178 +327,205 @@ export default function CommitteeReview({
     }
   };
 
-  // ---------------------------------------------------------------------------
-  // Render
-  // ---------------------------------------------------------------------------
-  return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center overflow-y-auto py-8">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-7xl mx-4 min-h-[60vh]">
-        {/* Header */}
-        <div className="flex items-center justify-between px-8 py-5 border-b">
-          <div>
-            <h2 className="text-2xl font-bold">Committee Consensus Review</h2>
-            <p className="text-slate-500 mt-0.5">
-              {applicantName} &middot; {agency}
-            </p>
-          </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100">
-            <X size={20} />
-          </button>
-        </div>
-
-        <div className="px-8 py-6">
-          {/* Upload form — show if no result yet */}
-          {!result && !polling && (
-            <div className="max-w-xl mx-auto">
-              <div className="rounded-xl border-2 border-dashed border-slate-300 p-8 text-center">
-                <FileText size={40} className="mx-auto text-slate-400 mb-4" />
-                <h3 className="text-lg font-bold mb-2">Upload Combined Statements</h3>
-                <p className="text-slate-500 text-sm mb-4">
-                  Upload the combined reviewer statements PDF for this application.
-                  The tool will validate each statement against the NOFO worksheet questions.
-                </p>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold text-slate-700 mb-1 text-left">
-                    Your reviewer name (for flagging your statements)
-                  </label>
-                  <input
-                    type="text"
-                    value={reviewerName}
-                    onChange={e => setReviewerName(e.target.value)}
-                    placeholder="e.g. Reviewer A, Dr. T"
-                    className="w-full rounded-lg border px-4 py-2 text-sm"
-                  />
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold text-slate-700 mb-1 text-left">
-                    Combined statement PDF
-                  </label>
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={e => setFile(e.target.files?.[0] || null)}
-                    className="w-full text-sm"
-                  />
-                  {file && (
-                    <p className="mt-1 text-xs text-slate-500">{file.name} ({(file.size / 1024).toFixed(0)} KB)</p>
-                  )}
-                </div>
-
-                <button
-                  onClick={handleSubmit}
-                  disabled={!file || submitting}
-                  className="flex items-center gap-2 mx-auto rounded-xl bg-blue-700 px-6 py-3 text-sm font-bold text-white hover:bg-blue-800 disabled:opacity-40"
-                >
-                  {submitting ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                  {submitting ? 'Submitting...' : 'Run Consensus Review'}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Polling state */}
-          {polling && !result && (
-            <div className="text-center py-16">
-              <Loader2 size={40} className="mx-auto text-blue-600 animate-spin mb-4" />
-              <h3 className="text-lg font-bold">Analyzing combined statements...</h3>
-              <p className="text-slate-500 mt-1">
-                Validating each statement against NOFO worksheet questions.
-                This takes 1-2 minutes.
-              </p>
-            </div>
-          )}
-
-          {/* Error */}
-          {error && (
-            <div className="rounded-xl bg-red-50 border border-red-200 p-4 mb-6 flex items-start gap-3">
-              <AlertTriangle size={20} className="text-red-600 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold text-red-800">Error</p>
-                <p className="text-sm text-red-700">{error}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Results */}
-          {result && (
-            <div>
-              {/* Summary cards */}
-              <div className="grid grid-cols-6 gap-3 mb-6">
-                <div className="rounded-xl bg-slate-50 p-4 text-center">
-                  <p className="text-2xl font-bold">{result.summary.total_findings}</p>
-                  <p className="text-xs text-slate-500 font-semibold">Total</p>
-                </div>
-                <div className="rounded-xl bg-emerald-50 p-4 text-center">
-                  <p className="text-2xl font-bold text-emerald-700">{result.summary.keep_count}</p>
-                  <p className="text-xs text-emerald-600 font-semibold">KEEP</p>
-                </div>
-                <div className="rounded-xl bg-amber-50 p-4 text-center">
-                  <p className="text-2xl font-bold text-amber-700">{result.summary.merge_count}</p>
-                  <p className="text-xs text-amber-600 font-semibold">MERGE</p>
-                </div>
-                <div className="rounded-xl bg-blue-50 p-4 text-center">
-                  <p className="text-2xl font-bold text-blue-700">{result.summary.revise_count}</p>
-                  <p className="text-xs text-blue-600 font-semibold">REVISE</p>
-                </div>
-                <div className="rounded-xl bg-red-50 p-4 text-center">
-                  <p className="text-2xl font-bold text-red-700">{result.summary.remove_count}</p>
-                  <p className="text-xs text-red-600 font-semibold">REMOVE</p>
-                </div>
-                <div className="rounded-xl bg-slate-50 p-4 text-center">
-                  <p className="text-2xl font-bold">{result.summary.findings_after_consolidation}</p>
-                  <p className="text-xs text-slate-500 font-semibold">After consolidation</p>
-                </div>
-              </div>
-
-              {/* Score + motion */}
-              <div className="flex items-center gap-4 mb-6">
-                <div className="rounded-xl bg-blue-700 text-white px-5 py-3">
-                  <p className="text-xs font-semibold opacity-80">Suggested Score</p>
-                  <p className="text-xl font-bold">{result.summary.suggested_score_range}</p>
-                </div>
-                <div className="rounded-xl border px-5 py-3">
-                  <p className="text-xs font-semibold text-slate-500">Motion</p>
-                  <p className="text-sm font-bold">
-                    {result.summary.motion.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                  </p>
-                </div>
-                <div className="rounded-xl border px-5 py-3">
-                  <p className="text-xs font-semibold text-slate-500">Budget</p>
-                  <p className="text-sm font-bold">
-                    {result.budget_recommendation.recommendation.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                  </p>
-                  {result.budget_recommendation.rationale && (
-                    <p className="text-xs text-slate-500 mt-0.5">{result.budget_recommendation.rationale}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-1 ml-auto text-sm text-slate-500">
-                  <Flag size={14} className="text-blue-600" /> = Your statement
-                </div>
-              </div>
-
-              {/* Criteria */}
-              {result.criteria.map(crit => (
-                <CriterionSection key={crit.criterion_name} crit={crit} />
-              ))}
-
-              {/* Re-run button */}
-              <div className="mt-8 pt-6 border-t flex items-center justify-between">
-                <p className="text-xs text-slate-400">
-                  {result.certification}
-                </p>
-                <button
-                  onClick={() => { setResult(null); setFile(null); setError(''); }}
-                  className="rounded-lg border px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-                >
-                  Re-run with different document
-                </button>
-              </div>
-            </div>
-          )}
+  // No valid IDs
+  if (!reviewId || !applicationId) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <div className="bg-white rounded-xl p-8 shadow text-center">
+          <AlertTriangle size={40} className="mx-auto text-amber-500 mb-4" />
+          <h2 className="text-xl font-bold mb-2">Invalid URL</h2>
+          <p className="text-slate-500">Missing review or application ID in the URL.</p>
         </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-100">
+      {/* Header */}
+      <header className="bg-white border-b px-8 py-5 flex items-center justify-between no-print">
+        <div>
+          <h1 className="text-2xl font-bold">Committee Consensus Review</h1>
+          <p className="text-slate-500 mt-0.5">
+            {applicantName || 'Loading...'} &middot; {agency}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {result && (
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+            >
+              <Printer size={16} /> Print
+            </button>
+          )}
+          <a
+            href={'#/reviews/' + reviewId}
+            className="rounded-lg border px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+          >
+            Back to Review
+          </a>
+        </div>
+      </header>
+
+      {/* Print-only header */}
+      <div className="hidden print:block px-8 py-4 border-b">
+        <h1 className="text-xl font-bold">Committee Consensus Review</h1>
+        <p className="text-sm text-slate-600">
+          {applicantName} &middot; {agency} &middot; {new Date().toLocaleDateString()}
+        </p>
+      </div>
+
+      <main className="max-w-7xl mx-auto px-8 py-6">
+        {/* Upload form — show if no result yet */}
+        {!result && !polling && (
+          <div className="max-w-xl mx-auto no-print">
+            <div className="rounded-xl border-2 border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
+              <FileText size={40} className="mx-auto text-slate-400 mb-4" />
+              <h3 className="text-lg font-bold mb-2">Upload Combined Statements</h3>
+              <p className="text-slate-500 text-sm mb-4">
+                Upload the combined reviewer statements PDF for this application.
+                The tool will validate each statement against the NOFO worksheet questions.
+              </p>
+
+              <div className="mb-4 text-left">
+                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  Your reviewer name (for flagging your statements)
+                </label>
+                <input
+                  type="text"
+                  value={reviewerName}
+                  onChange={e => setReviewerName(e.target.value)}
+                  placeholder="e.g. Reviewer A, Dr. T"
+                  className="w-full rounded-lg border px-4 py-2 text-sm"
+                />
+              </div>
+
+              <div className="mb-4 text-left">
+                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  Combined statement PDF
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={e => setFile(e.target.files?.[0] || null)}
+                  className="w-full text-sm"
+                />
+                {file && (
+                  <p className="mt-1 text-xs text-slate-500">{file.name} ({(file.size / 1024).toFixed(0)} KB)</p>
+                )}
+              </div>
+
+              <button
+                onClick={handleSubmit}
+                disabled={!file || submitting}
+                className="flex items-center gap-2 mx-auto rounded-xl bg-blue-700 px-6 py-3 text-sm font-bold text-white hover:bg-blue-800 disabled:opacity-40"
+              >
+                {submitting ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                {submitting ? 'Submitting...' : 'Run Consensus Review'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Polling state */}
+        {polling && !result && (
+          <div className="text-center py-16 no-print">
+            <Loader2 size={40} className="mx-auto text-blue-600 animate-spin mb-4" />
+            <h3 className="text-lg font-bold">Analyzing combined statements...</h3>
+            <p className="text-slate-500 mt-1">
+              Validating each statement against NOFO worksheet questions.
+              This takes 1-2 minutes.
+            </p>
+          </div>
+        )}
+
+        {/* Error */}
+        {error && (
+          <div className="rounded-xl bg-red-50 border border-red-200 p-4 mb-6 flex items-start gap-3">
+            <AlertTriangle size={20} className="text-red-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-red-800">Error</p>
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Results */}
+        {result && (
+          <div>
+            {/* Summary cards */}
+            <div className="grid grid-cols-6 gap-3 mb-6">
+              <div className="rounded-xl bg-white p-4 text-center border">
+                <p className="text-2xl font-bold">{result.summary.total_findings}</p>
+                <p className="text-xs text-slate-500 font-semibold">Total</p>
+              </div>
+              <div className="rounded-xl bg-emerald-50 p-4 text-center border border-emerald-200">
+                <p className="text-2xl font-bold text-emerald-700">{result.summary.keep_count}</p>
+                <p className="text-xs text-emerald-600 font-semibold">KEEP</p>
+              </div>
+              <div className="rounded-xl bg-amber-50 p-4 text-center border border-amber-200">
+                <p className="text-2xl font-bold text-amber-700">{result.summary.merge_count}</p>
+                <p className="text-xs text-amber-600 font-semibold">MERGE</p>
+              </div>
+              <div className="rounded-xl bg-blue-50 p-4 text-center border border-blue-200">
+                <p className="text-2xl font-bold text-blue-700">{result.summary.revise_count}</p>
+                <p className="text-xs text-blue-600 font-semibold">REVISE</p>
+              </div>
+              <div className="rounded-xl bg-red-50 p-4 text-center border border-red-200">
+                <p className="text-2xl font-bold text-red-700">{result.summary.remove_count}</p>
+                <p className="text-xs text-red-600 font-semibold">REMOVE</p>
+              </div>
+              <div className="rounded-xl bg-white p-4 text-center border">
+                <p className="text-2xl font-bold">{result.summary.findings_after_consolidation}</p>
+                <p className="text-xs text-slate-500 font-semibold">After consolidation</p>
+              </div>
+            </div>
+
+            {/* Score + motion + budget */}
+            <div className="flex items-center gap-4 mb-6 flex-wrap">
+              <div className="rounded-xl bg-blue-700 text-white px-5 py-3">
+                <p className="text-xs font-semibold opacity-80">Suggested Score</p>
+                <p className="text-xl font-bold">{result.summary.suggested_score_range}</p>
+              </div>
+              <div className="rounded-xl border bg-white px-5 py-3">
+                <p className="text-xs font-semibold text-slate-500">Motion</p>
+                <p className="text-sm font-bold">
+                  {result.summary.motion.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                </p>
+              </div>
+              <div className="rounded-xl border bg-white px-5 py-3">
+                <p className="text-xs font-semibold text-slate-500">Budget</p>
+                <p className="text-sm font-bold">
+                  {result.budget_recommendation.recommendation.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                </p>
+                {result.budget_recommendation.rationale && (
+                  <p className="text-xs text-slate-500 mt-0.5">{result.budget_recommendation.rationale}</p>
+                )}
+              </div>
+              <div className="flex items-center gap-1 ml-auto text-sm text-slate-500">
+                <Flag size={14} className="text-blue-600" /> = Your statement
+              </div>
+            </div>
+
+            {/* Criteria tabs */}
+            <CriteriaTabs criteria={result.criteria} />
+
+            {/* Footer */}
+            <div className="mt-8 pt-6 border-t flex items-center justify-between">
+              <p className="text-xs text-slate-400">
+                {result.certification}
+              </p>
+              <button
+                onClick={() => { setResult(null); setFile(null); setError(''); }}
+                className="rounded-lg border px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 no-print"
+              >
+                Re-run with different document
+              </button>
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
