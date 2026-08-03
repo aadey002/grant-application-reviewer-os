@@ -1927,7 +1927,15 @@ const SafeReviewDashboard: React.FC = () => {
                           ].map(([label, value]) => value ? (
                             <div key={label as string}>
                               <p className="text-xs font-bold uppercase text-slate-500 mb-1">{label}</p>
-                              <p className="text-sm text-slate-800 leading-relaxed">{value}</p>
+                              {(value as string).includes('•') ? (
+                                <ul className="text-sm text-slate-800 leading-relaxed list-disc list-inside space-y-0.5">
+                                  {(value as string).split('•').filter(Boolean).map((bullet, bi) => (
+                                    <li key={bi}>{bullet.trim()}</li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="text-sm text-slate-800 leading-relaxed">{value}</p>
+                              )}
                             </div>
                           ) : null)}
                         </div>
