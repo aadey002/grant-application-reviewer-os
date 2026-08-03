@@ -368,7 +368,7 @@ INSTRUCTIONS:
 
     response = client.messages.create(
         model=model,
-        max_tokens=16000,
+        max_tokens=32000,
         temperature=0,
         system=[{
             "type": "text",
@@ -390,13 +390,23 @@ INSTRUCTIONS:
         tool_choice={"type": "tool", "name": "submit_consensus_review"},
     )
 
+    logger.info("Claude response: stop_reason=%s, usage=%s",
+                 response.stop_reason,
+                 {"input": response.usage.input_tokens, "output": response.usage.output_tokens})
+
     tool_use = next((b for b in response.content if b.type == "tool_use"), None)
     if not tool_use:
+        # Log what we got instead
+        for b in response.content:
+            logger.error("Non-tool block type=%s: %s", b.type, str(b)[:500])
         raise RuntimeError("Claude did not return a consensus review result")
 
     result = tool_use.input
     if isinstance(result, str):
         result = json.loads(result)
+
+    logger.info("Consensus result keys: %s, criteria count: %d",
+                list(result.keys()), len(result.get("criteria", [])))
 
     # --- Validate ---
     expected_names = {c["name"].strip().lower() for c in criteria}
