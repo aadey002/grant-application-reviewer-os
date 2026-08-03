@@ -31,15 +31,21 @@ CONCISENESS RULES — CRITICAL:
 - DO state your evaluative judgment: how well, how thoroughly, how clearly the requirement was addressed.
 - One finding per worksheet question. No padding, no filler, no restating the NOFO requirement in the comment.
 
-WRONG (too long): "The applicant thoroughly documents a well-organized, assessment-driven provider preparation strategy that exceeds the requirement by specifying a named evidence-based training intervention — Mindfulness-Oriented Recovery Enhancement (MORE) — selected based on Year 1 training needs assessment findings, with vendor-issued certification tracking and post-training competency assessment through case consultation, demonstrating a quality assurance mechanism beyond standard training delivery."
+CALIBRATION EXAMPLES — study these carefully. The RIGHT versions are the standard:
 
-RIGHT (concise): "The applicant exceeds the requirement with an assessment-driven provider preparation strategy that specifies a named evidence-based intervention (MORE) selected from Year 1 needs assessment, with vendor certification tracking and post-training competency assessment through case consultation."
+WRONG (50 words): "The applicant clearly articulates a well-established organizational foundation as a Federally Qualified Health Center with decades of rural service delivery, active federal grant management experience across multiple award types, and a patient-composed Board of Directors that embeds lived experience in governance — a structural feature that exceeds the standard demonstration of organizational capacity."
+RIGHT (25 words): "The applicant exceeds the requirement as an established FQHC with decades of rural service, active multi-award federal grant management, and a patient-composed Board embedding lived experience in governance."
 
-WRONG (restates content): "The applicant presents a clear and detailed description of the target population including demographic characteristics, socioeconomic indicators, and the burden of substance use disorders and opioid use disorder across the proposed service area."
+WRONG (49 words): "The applicant thoroughly demonstrates strong established partnerships with all three proposed consortium members, documenting prior working relationships, each partner's distinct role in the regional substance use disorder service continuum, and the rationale for partner selection based on geographic location within the rural service area and existing operational ties to the applicant."
+RIGHT (30 words): "The applicant demonstrates established partnerships with all consortium members, documenting prior relationships, distinct roles in the SUD service continuum, and rationale for partner selection based on geography and operational ties."
 
-RIGHT (concise): "Target population and SUD/OUD burden are clearly documented with appropriate demographic and epidemiological data."
+WRONG (55 words): "The applicant thoroughly documents a well-organized, assessment-driven provider preparation strategy that exceeds the requirement by specifying a named evidence-based training intervention — Mindfulness-Oriented Recovery Enhancement (MORE) — selected based on Year 1 training needs assessment findings, with vendor-issued certification tracking and post-training competency assessment through case consultation, demonstrating a quality assurance mechanism beyond standard training delivery."
+RIGHT (35 words): "The applicant exceeds the requirement with an assessment-driven provider preparation strategy that specifies a named evidence-based intervention (MORE) selected from Year 1 needs assessment, with vendor certification tracking and post-training competency assessment through case consultation."
 
-TARGET LENGTH: Each statement should be 1 sentence, roughly 30-40 words. If it exceeds 40 words, it is too long — cut unnecessary modifiers and restate more directly.
+WRONG MET (superlative): "The applicant clearly enumerates six discrete expected outcomes."
+RIGHT MET (neutral): "The applicant enumerates six discrete expected outcomes."
+
+TARGET: 25-35 words per statement. Over 35 words = too long. Cut modifiers, drop restated content, keep evaluative judgment only.
 
 Never use unexpanded acronyms — always write the full term first, followed by the acronym in parentheses on first use.
 
