@@ -65,21 +65,47 @@ function StatementTable({ statements, headerColor }: { statements: ConsensusStat
   const textMap: Record<string, string> = {
     red: 'text-red-900', emerald: 'text-emerald-900', slate: 'text-slate-700',
   };
+
+  // Group by subcriterion if any statements have one
+  const hasSubs = statements.some(s => s.subcriterion && s.subcriterion.trim());
+  const groups: Array<{ label: string; items: ConsensusStatement[] }> = [];
+  if (hasSubs) {
+    const seen = new Map<string, ConsensusStatement[]>();
+    for (const s of statements) {
+      const key = s.subcriterion?.trim() || '(General)';
+      if (!seen.has(key)) seen.set(key, []);
+      seen.get(key)!.push(s);
+    }
+    for (const [label, items] of seen) groups.push({ label, items });
+  } else {
+    groups.push({ label: '', items: statements });
+  }
+
+  const thClass = 'px-3 py-2 text-xs font-bold ' + (textMap[headerColor] || '');
+
   return (
     <div className="overflow-x-auto rounded-lg border">
       <table className="w-full text-left">
         <thead className={bgMap[headerColor] || 'bg-slate-50'}>
           <tr>
-            <th className={'px-3 py-2 text-xs font-bold ' + (textMap[headerColor] || '')}>#</th>
-            <th className={'px-3 py-2 text-xs font-bold ' + (textMap[headerColor] || '')}>Combined Statement (verbatim)</th>
-            <th className={'px-3 py-2 text-xs font-bold ' + (textMap[headerColor] || '')}>Reviewer</th>
-            <th className={'px-3 py-2 text-xs font-bold ' + (textMap[headerColor] || '')}>Q</th>
-            <th className={'px-3 py-2 text-xs font-bold ' + (textMap[headerColor] || '')}>Action</th>
-            <th className={'px-3 py-2 text-xs font-bold ' + (textMap[headerColor] || '')}>Rationale</th>
+            <th className={thClass}>#</th>
+            <th className={thClass}>Combined Statement (verbatim)</th>
+            <th className={thClass}>Reviewer</th>
+            <th className={thClass}>Q</th>
+            <th className={thClass}>Action</th>
+            <th className={thClass}>Rationale</th>
           </tr>
         </thead>
         <tbody>
-          {statements.map(s => (
+          {groups.map(group => (<React.Fragment key={group.label}>
+            {group.label && (
+              <tr>
+                <td colSpan={6} className="px-3 py-2 bg-indigo-50 border-t border-b border-indigo-200">
+                  <span className="text-xs font-bold text-indigo-800 uppercase tracking-wide">{group.label}</span>
+                </td>
+              </tr>
+            )}
+            {group.items.map(s => (
             <tr key={s.number} className={'border-b last:border-0 ' + (s.action === 'REMOVE' ? 'bg-red-50/50' : s.action === 'MERGE' ? 'bg-amber-50/30' : '')}>
               <td className="px-3 py-3 align-top font-mono text-sm font-bold whitespace-nowrap">
                 {s.number}
@@ -136,6 +162,7 @@ function StatementTable({ statements, headerColor }: { statements: ConsensusStat
               </td>
             </tr>
           ))}
+          </React.Fragment>))}
         </tbody>
       </table>
     </div>

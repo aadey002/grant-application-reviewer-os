@@ -110,6 +110,10 @@ def _consensus_tool(criteria: list[dict[str, Any]]) -> dict[str, Any]:
                 "type": "string",
                 "description": "Which reviewer worksheet question (Q1, Q2, etc.) this statement answers",
             },
+            "subcriterion": {
+                "type": "string",
+                "description": "If this criterion has subcriteria (e.g. '2.1 Overview', '2.2 Network building'), state which subcriterion this statement belongs to. Use the exact subcriterion name from the NOFO. Empty string if no subcriteria.",
+            },
             "nofo_requirement_text": {
                 "type": "string",
                 "description": "The VERBATIM NOFO requirement text for the worksheet question this statement answers. Copy the exact NOFO language. Include NOFO page number at the end, e.g. '...effectively served through this award. (NOFO p. 45)'",
@@ -378,6 +382,7 @@ INSTRUCTIONS:
    e. Preserve the reviewer citation
 4. Maintain the SAME ordering as the combined statement document: if HRSA lists strengths first then weaknesses, follow that order. If weaknesses first, follow that. Do NOT impose a different order.
 5. Number statements sequentially within each type per criterion: W1, W2... S1, S2... M1, M2...
+6. SUBCRITERIA: If a criterion has subcriteria (e.g., Response has "2.1 Overview", "2.2 Network building", "2.3 Assessment & action planning", "2.4 Service provider preparation"), tag each statement with its subcriterion name in the subcriterion field. Group statements by subcriterion within each finding type. Use the exact subcriterion name from the NOFO/combined statement.
 6. Provide a suggested score range and budget recommendation.
 7. Provide a summary with counts of each action type.
 8. GAP CHECK: After mapping all statements to worksheet questions, check if ANY worksheet question has NO reviewer feedback at all. For each criterion, compare the list of worksheet questions (Q1, Q2, Q3...) against the questions actually addressed by statements. List any unanswered questions in the criterion's worksheet_questions array with a note. Also add unanswered questions to the missing_questions field in the summary."""
