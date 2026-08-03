@@ -1262,13 +1262,51 @@ const SafeReviewDashboard: React.FC = () => {
                   Review the AI-generated NOFO brief before scoring applications. This summary helps ensure reviewers apply criteria consistently.
                 </p>
               </div>
-              {nofoBrief?.generation_status === 'ready' && nofoBrief.docx_storage_path && (
-                <button
-                  onClick={downloadBriefDocx}
-                  className="flex shrink-0 items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-700"
-                >
-                  <Download size={16} /> Download DOCX
-                </button>
+              {nofoBrief?.generation_status === 'ready' && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      const b = nofoBrief?.brief_json;
+                      if (!b) return;
+                      const win = window.open('', '_blank');
+                      if (!win) return;
+                      const sections: string[] = [];
+                      sections.push('<h1>NOFO Reviewer Brief</h1>');
+                      if (b.funding_opportunity) {
+                        sections.push('<h2>Funding Opportunity</h2>');
+                        sections.push('<p><strong>Title:</strong> ' + (b.funding_opportunity.title || '') + '</p>');
+                        sections.push('<p><strong>Number:</strong> ' + (b.funding_opportunity.number || '') + '</p>');
+                        sections.push('<p><strong>Agency:</strong> ' + (b.funding_opportunity.agency || '') + '</p>');
+                      }
+                      if (b.executive_summary) sections.push('<h2>Executive Summary</h2><p>' + b.executive_summary + '</p>');
+                      if (b.program_purpose) sections.push('<h2>Program Purpose</h2><p>' + (b.program_purpose.text || '') + '</p>');
+                      if (b.scoring_criteria) {
+                        sections.push('<h2>Scoring Criteria</h2><table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%"><tr style="background:#f0f0f0"><th>Criterion</th><th>Points</th><th>Key Requirements</th></tr>');
+                        for (const sc of b.scoring_criteria) {
+                          const reqs = (sc.key_requirements || []).map((r: string) => '<li>' + r + '</li>').join('');
+                          sections.push('<tr><td><strong>' + (sc.name || '') + '</strong></td><td style="text-align:center">' + (sc.points || '') + '</td><td><ul style="margin:0;padding-left:16px">' + reqs + '</ul></td></tr>');
+                        }
+                        sections.push('</table>');
+                      }
+                      if (b.key_dates) { sections.push('<h2>Key Dates</h2><ul>'); for (const d of b.key_dates) sections.push('<li><strong>' + (d.label || '') + ':</strong> ' + (d.value || '') + '</li>'); sections.push('</ul>'); }
+                      if (b.eligibility) sections.push('<h2>Eligibility</h2><p>' + (typeof b.eligibility === 'string' ? b.eligibility : JSON.stringify(b.eligibility)) + '</p>');
+                      if (b.budget_guidance) sections.push('<h2>Budget Guidance</h2><p>' + (typeof b.budget_guidance === 'string' ? b.budget_guidance : (b.budget_guidance.text || '')) + '</p>');
+                      win.document.write('<html><head><meta charset="utf-8"><title>NOFO Brief - ' + (b.funding_opportunity?.number || '') + '</title><style>body{font-family:Calibri,Arial,sans-serif;font-size:11pt;margin:1in;line-height:1.5}h1{font-size:16pt;color:#1a365d}h2{font-size:13pt;color:#2d3748;margin-top:18pt;border-bottom:1px solid #e2e8f0;padding-bottom:4pt}table{font-size:10pt}li{margin-bottom:4pt}</style></head><body>' + sections.join('') + '</body></html>');
+                      win.document.close();
+                    }}
+                    className="flex shrink-0 items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
+                  >
+                    <FileSearch size={16} /> View Brief
+                  </button>
+                  {nofoBrief.docx_storage_path && (
+                    <button
+                      onClick={downloadBriefDocx}
+                      className="flex shrink-0 items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-700"
+                    >
+                      <Download size={16} /> Download DOCX
+                    </button>
+                  )}
+                </div>
               )}
             </div>
 
