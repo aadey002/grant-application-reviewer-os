@@ -349,15 +349,15 @@ Any statement citing evidence from pages beyond page {page_limit} must be REMOVE
 """ if page_limit > 0 else ""}
 INSTRUCTIONS:
 1. For EACH criterion, first identify the NOFO evaluation questions (the worksheet questions) — these are the bullets under each criterion that say what "the panel will review."
-2. Then go through EVERY statement in the combined document for that criterion.
+2. Then go through EVERY statement in the combined document for that criterion IN THE SAME ORDER as the combined statement document. Do NOT reorder or rearrange. The HRSA combined statement has a specific structure — preserve it exactly.
 3. For each statement:
    a. Map it to the worksheet question it answers (Q1, Q2, etc.)
    b. Determine the action: KEEP, MERGE, REVISE, or REMOVE
-   c. Preserve the FULL verbatim text — do not shorten or paraphrase
-   d. Preserve the reviewer citation
-   e. Provide rationale for the action
-4. Process WEAKNESSES FIRST, then STRENGTHS, then METS for each criterion.
-5. Number statements sequentially within each criterion: W1, W2... S1, S2... M1, M2...
+   c. State what needs to be done — the rationale should be an actionable instruction (e.g., "DELETE — duplicate of W1", "KEEP — accurately addresses Q2", "REVISE — remove reference to pages past 60")
+   d. Preserve the FULL verbatim text — do not shorten or paraphrase
+   e. Preserve the reviewer citation
+4. Maintain the SAME ordering as the combined statement document: if HRSA lists strengths first then weaknesses, follow that order. If weaknesses first, follow that. Do NOT impose a different order.
+5. Number statements sequentially within each type per criterion: W1, W2... S1, S2... M1, M2...
 6. Provide a suggested score range and budget recommendation.
 7. Provide a summary with counts of each action type."""
 
