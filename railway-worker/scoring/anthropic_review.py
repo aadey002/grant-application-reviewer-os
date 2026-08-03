@@ -1090,12 +1090,12 @@ def score_application_with_claude(application: Path, criteria: list[dict[str, An
                 "overview": {"type": "object", "additionalProperties": False,
                     "required": ["applicant_information", "target_population", "project_description", "goals_objectives", "significant_findings", "other_information"],
                     "properties": {
-                        "applicant_information": {"type": "string", "description": "1-2 sentences ONLY. Organization name, type, location. Keep brief."},
-                        "target_population": {"type": "string", "description": "1-2 sentences ONLY. Target population, service area, tier level and budget amount."},
-                        "project_description": {"type": "string", "description": "1-2 sentences ONLY. What is being proposed and the training model."},
-                        "goals_objectives": {"type": "string", "description": "1-2 sentences ONLY. List the major goals as a brief summary, not full objectives."},
-                        "significant_findings": {"type": "string", "description": "1-2 sentences ONLY. The single most significant strength and/or weakness."},
-                        "other_information": {"type": "string", "description": "1 sentence or 'None identified.' Only note supplements or unusual features."},
+                        "applicant_information": {"type": "string", "description": "1 sentence MAX. Organization name, type, location."},
+                        "target_population": {"type": "string", "description": "1 sentence MAX. Who is being served and where."},
+                        "project_description": {"type": "string", "description": "1 sentence MAX. What is being proposed."},
+                        "goals_objectives": {"type": "string", "description": "Bullet list ONLY. Use format: • goal one • goal two • goal three. No sentences."},
+                        "significant_findings": {"type": "string", "description": "Bullet list ONLY. Use format: Strengths: • bullet • bullet. Weaknesses: • bullet • bullet. Keep each bullet under 10 words."},
+                        "other_information": {"type": "string", "description": "'None.' unless something unusual. Max 1 sentence."},
                     }},
                 "budget": {"type": "object", "additionalProperties": False, "required": ["recommendation", "annual_recommended_funding", "reduction_rationale"], "properties": {
                     "recommendation": {"type": "string", "enum": ["as_requested", "as_reduced", "unable_to_determine"]},
@@ -1103,9 +1103,17 @@ def score_application_with_claude(application: Path, criteria: list[dict[str, An
                     "reduction_rationale": {"type": "string"}}},
                 "overall_summary": {"type": "string", "description": "2-3 sentence overall assessment of the application's competitiveness."}}}}
         rubric_list = "\n".join(f"- {c['name']}: {int(c['points'])} points" for c in criteria)
-        overview_system = f"""You are completing the OVERVIEW PRESENTATION INFORMATION section of a {agency} reviewer worksheet. This section provides a concise "big picture" of who the applicant is, what is being proposed, how it will be accomplished in view of the published program guidance and review criteria, and the most significant strength and/or weakness found in the application.
+        overview_system = f"""You are completing the OVERVIEW PRESENTATION INFORMATION section of a {agency} reviewer worksheet. This is a 1-MINUTE verbal overview — it must be extremely concise. The Chair reads this aloud to the panel.
 
-Each overview field should be 2-3 concise sentences. Never use unexpanded acronyms — always write the full term first, then the acronym in parentheses. Be factual and evidence-based. Do not speculate or use outside knowledge."""
+FORMAT RULES — CRITICAL:
+- applicant_information: 1 sentence. Who they are, where they are.
+- target_population: 1 sentence. Who and where.
+- project_description: 1 sentence. What they propose to do.
+- goals_objectives: BULLET LIST ONLY. Format: "• goal one • goal two • goal three". No prose.
+- significant_findings: BULLET LIST ONLY. Format: "Strengths: • bullet • bullet. Weaknesses: • bullet • bullet." Each bullet under 10 words. This is the most important field — the panel needs to hear the key takeaways fast.
+- other_information: "None." unless truly unusual. Max 1 sentence.
+
+Do NOT write paragraphs. Do NOT repeat application content. Be evaluative, not descriptive. Never use unexpanded acronyms."""
         # Include beginning (cover/narrative) + end (budget pages) of application
         app_start = application_text[:40000]
         app_end = application_text[-25000:] if len(application_text) > 65000 else ""
