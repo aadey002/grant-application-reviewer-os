@@ -44,7 +44,10 @@ RIGHT: "The applicant adequately addresses network building: • partner roles c
 
 Never use unexpanded acronyms — always write the full term first, followed by the acronym in parentheses on first use.
 
-STRENGTH LANGUAGE: Use professional superlatives — "comprehensive," "well-organized," "clearly articulates," "well-documented," "thoroughly demonstrates." Superlatives are ONLY for strengths.
+STRENGTH LANGUAGE: Lead with what exceeds the requirement, then bullet the evidence. Superlatives are ONLY for strengths.
+FORMAT: "[What exceeds]: • evidence point • evidence point • evidence point"
+EXAMPLE: "Provider preparation strategy exceeds the requirement: • named evidence-based intervention selected from needs assessment • vendor certification tracking • post-training competency assessment"
+Keep the lead-in under 15 words. Each bullet under 10 words. No full sentences in bullets.
 
 MET LANGUAGE — NO SUPERLATIVES: Met means adequate, not exceptional. Use neutral language ONLY: "addresses," "includes," "provides," "describes," "documents." NEVER use "thoroughly," "comprehensive," "well-documented," "clearly," "strong," or any superlative in a Met finding. If you find yourself using superlative language, it should be a Strength, not a Met.
 
