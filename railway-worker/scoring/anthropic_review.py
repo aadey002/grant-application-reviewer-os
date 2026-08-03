@@ -515,27 +515,37 @@ CRITICAL SCORING CALIBRATION:
 - Do NOT award Strength merely because the writing is polished or no weakness was found. That is Met.
 - Do NOT confuse thoroughness with exceedance. A complete, well-organized response to exactly what was asked is Met.
 
-INSTRUCTIONS — WORKSHEET-ALIGNED OUTPUT:
-The PRIMARY output is requirement_assessments. Create ONE entry for EACH NOFO evaluation bullet/requirement listed under this criterion. This is how the reviewer worksheet is structured — one row per NOFO requirement.
+INSTRUCTIONS — ONE RESPONSE PER WORKSHEET QUESTION:
+The reviewer worksheet has ONE row per NOFO evaluation question. Your output MUST match this structure exactly: ONE finding per question — no more, no less.
 
-1. Find EVERY evaluation bullet listed under this criterion in the NOFO text. Each bullet that starts with a bullet point or describes what the panel will review becomes one requirement_assessment entry.
-2. For EACH requirement bullet, assess:
-   - requirement_text: Copy the NOFO bullet text (faithful paraphrase OK if very long)
-   - response_status: exceeds / fully_addressed / partially_addressed / not_addressed / unable_to_evaluate
-   - finding_type: strength (if exceeds), met (if fully_addressed), weakness (if partially/not addressed)
-   - explanation: 1-3 sentence reviewer comment on how the applicant addressed this requirement
-   - application_pages: 1-3 most relevant pages where evidence is found
-   - nofo_pages: NOFO page(s) where this requirement appears
-   - For weaknesses: include nofo_requirement (exact text) and impact
-3. If this criterion has subcriteria, prefix each explanation with the subcriterion name in brackets (e.g., "[Overall methodology] The applicant...").
-4. Classify the overall criterion (strength/met/minor_weakness/moderate_weakness/major_weakness/not_addressed).
-5. Apply the corresponding multiplier (1.0/0.9/0.7/0.5/0.25/0.0).
-6. For strengths, use professional superlative language — "thoroughly documents," "comprehensively addresses," "clearly demonstrates exceptional." Do not use generic language.
-7. Calculate: calculated_score = round_half_up(maximum_points × multiplier). Set formula_version to "equitable-v1.2".
-8. Also provide traditional strengths/mets/weaknesses lists for backward compatibility. Each finding in these lists should correspond to a requirement_assessment entry.
-9. Look for EXPLICIT evaluation questions in the NOFO. Only include VERBATIM questions. If none exist, return an EMPTY question_responses array.
+1. Find EVERY evaluation bullet listed under this criterion in the NOFO text. Each bullet that starts with a bullet point or describes what "the panel will review" becomes one worksheet question.
+
+2. For EACH worksheet question, produce EXACTLY ONE response:
+   a. In requirement_assessments: ONE entry per question with:
+      - requirement_text: The VERBATIM NOFO question/bullet text (this IS the worksheet question)
+      - nofo_pages: NOFO page(s) where this question appears
+      - response_status: exceeds / fully_addressed / partially_addressed / not_addressed / unable_to_evaluate
+      - finding_type: strength (if exceeds), met (if fully_addressed), weakness (if partially/not addressed)
+      - explanation: 1-3 sentence reviewer comment — this is your ONE response to this question
+      - application_pages: 1-3 most relevant pages
+      - For weaknesses: include nofo_requirement and impact
+   b. In strengths/mets/weaknesses lists: ONE corresponding entry per question, placed in the correct list based on finding_type. The comment must reference which NOFO question it answers.
+
+3. CRITICAL — ONE RESPONSE PER QUESTION RULES:
+   - If a question has both strong and weak aspects, choose the DOMINANT assessment. Do not split into separate strength and weakness findings for the same question.
+   - The number of entries in requirement_assessments must equal the number of NOFO evaluation bullets found for this criterion.
+   - The total entries across strengths + mets + weaknesses must also equal the number of NOFO evaluation bullets.
+   - NEVER produce multiple findings that answer the same worksheet question.
+
+4. If this criterion has subcriteria, prefix each explanation with the subcriterion name in brackets (e.g., "[Overview] The applicant...").
+5. Classify the overall criterion (strength/met/minor_weakness/moderate_weakness/major_weakness/not_addressed).
+6. Apply the corresponding multiplier (1.0/0.9/0.7/0.5/0.25/0.0).
+7. For strengths, use professional superlative language — "thoroughly documents," "comprehensively addresses," "clearly demonstrates exceptional."
+8. Calculate: calculated_score = round_half_up(maximum_points × multiplier). Set formula_version to "equitable-v1.2".
+9. Look for EXPLICIT evaluation questions in the NOFO. Copy them VERBATIM into question_responses. If none exist, return an EMPTY question_responses array.
 10. Give an overall score_rationale summarizing the criterion assessment.
-11. Each comment must be one concise sentence. No unexpanded acronyms."""
+11. Each comment must be one concise sentence. No unexpanded acronyms.
+12. PAGE CITATIONS FORMAT: Prefix every application page citation with the reviewer initials "AOR". Example: "AOR App p. 12, 13" not "App p. 12, 13". This identifies the reviewer in the combined statement."""
 
     prompt = scoring_instructions
 
