@@ -1801,6 +1801,31 @@ async def consensus_review(
             except Exception as fp_exc:
                 logger.warning("Could not extract review fingerprints: %s", fp_exc)
 
+            # Download application PDF for fact-checking statements
+            application_text = ""
+            try:
+                app_row = _select(sb, "applications", {"id": application_id})
+                if app_row and app_row[0].get("storage_path"):
+                    app_bytes = _download_bytes(sb, BUCKET_APPS, app_row[0]["storage_path"])
+                    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as atmp:
+                        atmp.write(app_bytes)
+                        app_tmp = Path(atmp.name)
+                    try:
+                        from scoring.safe_review import extract_pdf_pages as _epdf
+                        app_pages = _epdf(app_tmp)
+                        # Respect page limit
+                        if page_limit > 0:
+                            app_pages = app_pages[:page_limit]
+                        application_text = "\n".join(
+                            f"--- APP PAGE {i+1} ---\n{p.strip()}"
+                            for i, p in enumerate(app_pages)
+                        )[:80000]
+                    finally:
+                        app_tmp.unlink(missing_ok=True)
+                    logger.info("Extracted %d chars of application text for fact-checking", len(application_text))
+            except Exception as app_exc:
+                logger.warning("Could not extract application text for fact-checking: %s", app_exc)
+
             try:
                 run_consensus = _lazy_consensus_scoring()
                 result = run_consensus(
@@ -1810,6 +1835,7 @@ async def consensus_review(
                     user_reviewer_name=reviewer_name,
                     user_review_fingerprints=user_review_fingerprints,
                     page_limit=page_limit,
+                    application_text=application_text,
                 )
             finally:
                 cs_tmp.unlink(missing_ok=True)

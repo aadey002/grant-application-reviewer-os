@@ -30,7 +30,7 @@ RULES — follow exactly:
 
 3. True DUPLICATES addressing the SAME worksheet question from multiple reviewers are MERGED — keep the most complete version. State which statements were merged.
 
-4. A statement is REMOVED only when it is factually incorrect per the NOFO requirements or the application content. Provide the specific NOFO page and requirement that contradicts it.
+4. A statement is REMOVED when it is factually incorrect per the NOFO requirements OR the application content. For NOFO errors, cite the NOFO page and requirement. For factual errors, cite the application page that contradicts the claim. If application text is provided, VERIFY each statement's claims against the actual application pages cited — if a statement claims something the application does not say on the cited pages, flag it for REMOVE or REVISE.
 
 5. A statement is REVISED only when it is directionally correct but the wording is inaccurate or overstated. Provide the suggested revised wording in full.
 
@@ -251,6 +251,7 @@ def run_consensus_review(
     user_reviewer_name: str = "",
     user_review_fingerprints: list[str] | None = None,
     page_limit: int = 0,
+    application_text: str = "",
 ) -> dict[str, Any]:
     """Run the consensus review on a combined statements document.
 
@@ -262,6 +263,7 @@ def run_consensus_review(
         user_review_fingerprints: First 80 chars of each finding from the user's stored AI review.
             Used to auto-detect which reviewer in the combined statement is the user.
         page_limit: NOFO page limit for the application. Findings citing pages past this are flagged.
+        application_text: Extracted application text for fact-checking reviewer statements.
 
     Returns:
         Consensus review result dict.
@@ -342,6 +344,10 @@ NOFO TEXT (use this to validate statements and identify worksheet questions per 
 
 COMBINED REVIEWER STATEMENTS (preserve every statement verbatim — do NOT shorten):
 {combined_text}
+{f"""
+APPLICATION TEXT (use this to FACT-CHECK reviewer statements — verify claims are accurate):
+{application_text[:80000]}
+""" if application_text else ""}
 {user_flag_instruction}
 {f"""
 APPLICATION PAGE LIMIT: {page_limit}
@@ -382,7 +388,7 @@ INSTRUCTIONS:
             "content": [
                 {
                     "type": "text",
-                    "text": f"NOFO TEXT:\n{nofo_text[:50000]}\n\nCOMBINED STATEMENTS:\n{combined_text}",
+                    "text": f"NOFO TEXT:\n{nofo_text[:50000]}\n\nCOMBINED STATEMENTS:\n{combined_text}" + (f"\n\nAPPLICATION TEXT:\n{application_text[:80000]}" if application_text else ""),
                     "cache_control": {"type": "ephemeral"},
                 },
                 {"type": "text", "text": prompt},
