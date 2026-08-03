@@ -609,6 +609,27 @@ export default function CommitteeReview() {
               </div>
             </div>
 
+            {/* Missing questions alert */}
+            {result.summary.missing_questions && result.summary.missing_questions.length > 0 && (
+              <div className="rounded-xl bg-amber-50 border border-amber-300 p-4 mb-6">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-amber-900">Unanswered Worksheet Questions</p>
+                    <p className="text-sm text-amber-800 mb-2">The following NOFO requirements have no reviewer feedback from any reviewer:</p>
+                    <div className="space-y-1">
+                      {result.summary.missing_questions.map((mq, i) => (
+                        <div key={i} className="text-sm">
+                          <span className="font-mono font-bold text-amber-700">{mq.criterion} — {mq.question_id}:</span>{' '}
+                          <span className="text-amber-900">{mq.question_text}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Criteria tabs */}
             <CriteriaTabs criteria={result.criteria} />
 

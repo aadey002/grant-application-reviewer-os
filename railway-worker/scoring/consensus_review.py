@@ -233,6 +233,20 @@ def _consensus_tool(criteria: list[dict[str, Any]]) -> dict[str, Any]:
                                 "not_recommend_approval",
                             ],
                         },
+                        "missing_questions": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": False,
+                                "required": ["criterion", "question_id", "question_text"],
+                                "properties": {
+                                    "criterion": {"type": "string"},
+                                    "question_id": {"type": "string", "description": "e.g. Q5"},
+                                    "question_text": {"type": "string", "description": "The NOFO requirement text that no reviewer addressed"},
+                                },
+                            },
+                            "description": "Worksheet questions that NO reviewer provided feedback on. Empty array if all questions covered.",
+                        },
                     },
                 },
             },
@@ -365,7 +379,8 @@ INSTRUCTIONS:
 4. Maintain the SAME ordering as the combined statement document: if HRSA lists strengths first then weaknesses, follow that order. If weaknesses first, follow that. Do NOT impose a different order.
 5. Number statements sequentially within each type per criterion: W1, W2... S1, S2... M1, M2...
 6. Provide a suggested score range and budget recommendation.
-7. Provide a summary with counts of each action type."""
+7. Provide a summary with counts of each action type.
+8. GAP CHECK: After mapping all statements to worksheet questions, check if ANY worksheet question has NO reviewer feedback at all. For each criterion, compare the list of worksheet questions (Q1, Q2, Q3...) against the questions actually addressed by statements. List any unanswered questions in the criterion's worksheet_questions array with a note. Also add unanswered questions to the missing_questions field in the summary."""
 
     # --- Call Claude ---
     client = anthropic.Anthropic()

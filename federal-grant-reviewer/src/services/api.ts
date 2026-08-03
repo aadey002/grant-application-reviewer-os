@@ -550,6 +550,7 @@ export interface ConsensusResult {
     findings_after_consolidation: number;
     suggested_score_range: string;
     motion: string;
+    missing_questions?: Array<{ criterion: string; question_id: string; question_text: string }>;
   };
   review_type?: string;
   certification?: string;
