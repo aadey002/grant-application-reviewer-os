@@ -1819,7 +1819,7 @@ async def consensus_review(
                         application_text = "\n".join(
                             f"--- APP PAGE {i+1} ---\n{p.strip()}"
                             for i, p in enumerate(app_pages)
-                        )[:80000]
+                        )[:40000]
                     finally:
                         app_tmp.unlink(missing_ok=True)
                     logger.info("Extracted %d chars of application text for fact-checking", len(application_text))

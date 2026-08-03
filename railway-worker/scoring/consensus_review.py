@@ -354,13 +354,13 @@ CRITERIA:
 {chr(10).join(criteria_desc)}
 
 NOFO TEXT (use this to validate statements and identify worksheet questions per criterion):
-{nofo_text[:50000]}
+{nofo_text[:30000]}
 
 COMBINED REVIEWER STATEMENTS (preserve every statement verbatim — do NOT shorten):
 {combined_text}
 {f"""
 APPLICATION TEXT (use this to FACT-CHECK reviewer statements — verify claims are accurate):
-{application_text[:80000]}
+{application_text[:40000]}
 """ if application_text else ""}
 {user_flag_instruction}
 {f"""
@@ -391,7 +391,7 @@ INSTRUCTIONS:
     collected_blocks = []
     with client.messages.stream(
         model=model,
-        max_tokens=32000,
+        max_tokens=20000,
         temperature=0,
         system=[{
             "type": "text",
@@ -403,7 +403,7 @@ INSTRUCTIONS:
             "content": [
                 {
                     "type": "text",
-                    "text": f"NOFO TEXT:\n{nofo_text[:50000]}\n\nCOMBINED STATEMENTS:\n{combined_text}" + (f"\n\nAPPLICATION TEXT:\n{application_text[:80000]}" if application_text else ""),
+                    "text": f"NOFO TEXT:\n{nofo_text[:30000]}\n\nCOMBINED STATEMENTS:\n{combined_text}" + (f"\n\nAPPLICATION TEXT:\n{application_text[:40000]}" if application_text else ""),
                     "cache_control": {"type": "ephemeral"},
                 },
                 {"type": "text", "text": prompt},
