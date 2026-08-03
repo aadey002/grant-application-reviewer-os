@@ -231,6 +231,7 @@ def run_consensus_review(
     nofo_text: str,
     criteria: list[dict[str, Any]],
     user_reviewer_name: str = "",
+    user_review_fingerprints: list[str] | None = None,
 ) -> dict[str, Any]:
     """Run the consensus review on a combined statements document.
 
@@ -239,6 +240,8 @@ def run_consensus_review(
         nofo_text: Full NOFO text (already extracted).
         criteria: Extracted rubric criteria list.
         user_reviewer_name: The user's reviewer name for flagging (e.g. "Dr. T", "Reviewer B").
+        user_review_fingerprints: First 80 chars of each finding from the user's stored AI review.
+            Used to auto-detect which reviewer in the combined statement is the user.
 
     Returns:
         Consensus review result dict.
@@ -292,6 +295,22 @@ def run_consensus_review(
 
 USER'S REVIEWER IDENTITY: "{user_reviewer_name}"
 When a statement's reviewer citation matches or contains "{user_reviewer_name}", set is_mine: true. Otherwise is_mine: false."""
+    elif user_review_fingerprints:
+        # Build fingerprint block for auto-detection
+        fp_sample = user_review_fingerprints[:25]  # limit to keep prompt manageable
+        fp_text = "\n".join(f"  - {fp}" for fp in fp_sample)
+        user_flag_instruction = f"""
+
+AUTO-DETECT USER'S REVIEWER IDENTITY:
+The user's own review produced these findings (first 80 chars of each). Match them against the combined statements to determine which reviewer label (e.g., "Reviewer A", "Reviewer B", "CDH") belongs to the user. Once identified, set is_mine: true on ALL statements from that reviewer — not just the matched ones.
+
+User's review fingerprints:
+{fp_text}
+
+PROCESS:
+1. Compare each fingerprint against the verbatim text of every statement in the combined document.
+2. The reviewer whose statements have the most matches is the user.
+3. Once you identify the user's reviewer label, flag ALL statements with that label as is_mine: true."""
 
     prompt = f"""Perform a Committee Consensus Review on the combined reviewer statements below.
 

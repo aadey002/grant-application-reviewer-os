@@ -1780,6 +1780,26 @@ async def consensus_review(
                 ctmp.write(cs_bytes)
                 cs_tmp = Path(ctmp.name)
 
+            # Extract user's stored review fingerprints for auto-detection
+            user_review_fingerprints = []
+            try:
+                app_row = _select(sb, "applications", {"id": application_id})
+                if app_row:
+                    fr = app_row[0].get("full_result")
+                    if fr:
+                        stored = json.loads(fr) if isinstance(fr, str) else fr
+                        for crit in stored.get("criteria", []):
+                            if not isinstance(crit, dict):
+                                continue
+                            for finding_type in ("strengths", "mets", "weaknesses"):
+                                for finding in crit.get(finding_type, []):
+                                    comment = finding.get("comment", "")
+                                    if comment and len(comment) > 20:
+                                        user_review_fingerprints.append(comment[:80])
+                logger.info("Extracted %d fingerprints from stored review for auto-detection", len(user_review_fingerprints))
+            except Exception as fp_exc:
+                logger.warning("Could not extract review fingerprints: %s", fp_exc)
+
             try:
                 run_consensus = _lazy_consensus_scoring()
                 result = run_consensus(
@@ -1787,6 +1807,7 @@ async def consensus_review(
                     nofo_text=nofo_text,
                     criteria=criteria,
                     user_reviewer_name=reviewer_name,
+                    user_review_fingerprints=user_review_fingerprints,
                 )
             finally:
                 cs_tmp.unlink(missing_ok=True)
