@@ -1090,11 +1090,11 @@ def score_application_with_claude(application: Path, criteria: list[dict[str, An
                 "overview": {"type": "object", "additionalProperties": False,
                     "required": ["applicant_information", "target_population", "project_description", "goals_objectives", "significant_findings", "other_information"],
                     "properties": {
-                        "applicant_information": {"type": "string", "description": "1 sentence MAX. Organization name, type, location."},
-                        "target_population": {"type": "string", "description": "1 sentence MAX. Who is being served and where."},
-                        "project_description": {"type": "string", "description": "1 sentence MAX. What is being proposed."},
-                        "goals_objectives": {"type": "string", "description": "Bullet list ONLY. Use format: • goal one • goal two • goal three. No sentences."},
-                        "significant_findings": {"type": "string", "description": "Bullet list ONLY. Use format: Strengths: • bullet • bullet. Weaknesses: • bullet • bullet. Keep each bullet under 10 words."},
+                        "applicant_information": {"type": "string", "description": "2-3 sentences. Organization name, type, location, relevant background."},
+                        "target_population": {"type": "string", "description": "2-3 sentences. Who is being served, where, scope of service area."},
+                        "project_description": {"type": "string", "description": "2-3 sentences. What is being proposed and how."},
+                        "goals_objectives": {"type": "string", "description": "Bullet list ONLY. Format: • goal one • goal two • goal three. No prose sentences."},
+                        "significant_findings": {"type": "string", "description": "Exactly 1 strength + 1 weakness. Format: Strength: • [one sentence]. Weakness: • [one sentence]. If no weakness: Weakness: • None identified."},
                         "other_information": {"type": "string", "description": "'None.' unless something unusual. Max 1 sentence."},
                     }},
                 "budget": {"type": "object", "additionalProperties": False, "required": ["recommendation", "annual_recommended_funding", "reduction_rationale"], "properties": {
@@ -1106,11 +1106,11 @@ def score_application_with_claude(application: Path, criteria: list[dict[str, An
         overview_system = f"""You are completing the OVERVIEW PRESENTATION INFORMATION section of a {agency} reviewer worksheet. This is a 1-MINUTE verbal overview — it must be extremely concise. The Chair reads this aloud to the panel.
 
 FORMAT RULES — CRITICAL:
-- applicant_information: 1 sentence. Who they are, where they are.
-- target_population: 1 sentence. Who and where.
-- project_description: 1 sentence. What they propose to do.
+- applicant_information: 2-3 sentences. Organization name, type, location, and relevant background.
+- target_population: 2-3 sentences. Who is being served, where, and the scope of the service area.
+- project_description: 2-3 sentences. What is being proposed and how it will be accomplished.
 - goals_objectives: BULLET LIST ONLY. Format: "• goal one • goal two • goal three". No prose.
-- significant_findings: BULLET LIST ONLY. Format: "Strengths: • bullet • bullet. Weaknesses: • bullet • bullet." Each bullet under 10 words. This is the most important field — the panel needs to hear the key takeaways fast.
+- significant_findings: Exactly ONE most significant strength and ONE most significant weakness. Format: "Strength: • [single most important strength in 1 sentence]. Weakness: • [single most important weakness in 1 sentence]." If no weakness exists, state "Weakness: • None identified."
 - other_information: "None." unless truly unusual. Max 1 sentence.
 
 Do NOT write paragraphs. Do NOT repeat application content. Be evaluative, not descriptive. Never use unexpanded acronyms."""
