@@ -7,8 +7,8 @@ import {
   deleteApplicantData, deleteReview, extractRubric, ExtractedRubric, generateNofoBrief,
   getApplicationViewUrl, getNofoBrief, getNofoViewUrl,
   getNofoBriefDownload, getReviewResults,
-  getWorksheetUrl, JobStatus, listReviews, NofoBrief, pollJobStatus, ReviewPackage,
-  runSafeReviews, SafeReview, updateReviewValidation,
+  getConsensusResult, getWorksheetUrl, JobStatus, listReviews, NofoBrief, pollJobStatus,
+  ReviewPackage, runSafeReviews, SafeReview, updateReviewValidation,
 } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -171,6 +171,21 @@ const SafeReviewDashboard: React.FC = () => {
 
   // Findings filter
   const [findingsFilter, setFindingsFilter] = useState<'all' | 'strengths' | 'mets' | 'weaknesses'>('all');
+
+  // Track which applications have consensus results
+  const [consensusStatus, setConsensusStatus] = useState<Record<string, string>>({});
+
+  // Check consensus status for loaded reviews
+  useEffect(() => {
+    if (reviews.length === 0) return;
+    for (const r of reviews) {
+      if (consensusStatus[r.application_id]) continue;
+      getConsensusResult(r.application_id).then(res => {
+        setConsensusStatus(prev => ({ ...prev, [r.application_id]: res.status }));
+      }).catch(() => {});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reviews]);
 
   // History
   const [storedReviews, setStoredReviews] = useState<StoredReview[]>(loadStoredReviews);
@@ -2281,9 +2296,16 @@ const SafeReviewDashboard: React.FC = () => {
                         const url = window.location.origin + window.location.pathname + '#/consensus/' + currentReviewId + '/' + current.application_id;
                         window.open(url, '_blank');
                       }}
-                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-3 font-bold text-white hover:bg-indigo-700"
+                      className={'mt-3 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 font-bold ' + (
+                        consensusStatus[current.application_id] === 'completed'
+                          ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                          : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      )}
                     >
-                      <FileSearch size={18} /> Committee Review
+                      <FileSearch size={18} />
+                      {consensusStatus[current.application_id] === 'completed'
+                        ? 'View Consensus Review'
+                        : 'Committee Review'}
                     </button>
                   </aside>
                 </div>
