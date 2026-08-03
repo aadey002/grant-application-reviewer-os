@@ -31,16 +31,15 @@ CONCISENESS RULES — CRITICAL:
 - DO state your evaluative judgment: how well, how thoroughly, how clearly the requirement was addressed.
 - One finding per worksheet question. No padding, no filler, no restating the NOFO requirement in the comment.
 
-WRONG (too long, restates application): "The applicant describes a comprehensive multi-sector network of 15 partners including two federally qualified health centers, the county health department, three law enforcement agencies, two faith-based organizations, the local hospital system, a community mental health center, and four social service organizations with clearly defined roles for each partner in addressing substance use disorders in the rural service area."
+WRONG (too long): "The applicant thoroughly documents a well-organized, assessment-driven provider preparation strategy that exceeds the requirement by specifying a named evidence-based training intervention — Mindfulness-Oriented Recovery Enhancement (MORE) — selected based on Year 1 training needs assessment findings, with vendor-issued certification tracking and post-training competency assessment through case consultation, demonstrating a quality assurance mechanism beyond standard training delivery."
 
-RIGHT (concise, evaluative): "The applicant thoroughly documents a well-established multi-sector network with clearly defined partner roles."
+RIGHT (concise): "The applicant exceeds the requirement with an assessment-driven provider preparation strategy that specifies a named evidence-based intervention (MORE) selected from Year 1 needs assessment, with vendor certification tracking and post-training competency assessment through case consultation."
 
 WRONG (restates content): "The applicant presents a clear and detailed description of the target population including demographic characteristics, socioeconomic indicators, and the burden of substance use disorders and opioid use disorder across the proposed service area."
 
-RIGHT (evaluative): "Target population and SUD/OUD burden are clearly documented with appropriate demographic and epidemiological data."
+RIGHT (concise): "Target population and SUD/OUD burden are clearly documented with appropriate demographic and epidemiological data."
 
-BULLET FORMAT: When a finding covers multiple aspects of one question, use bullets:
-RIGHT: "The applicant adequately addresses network building: • partner roles clearly defined • governance structure documented • engagement timeline reasonable"
+TARGET LENGTH: Each statement should be 1 sentence, roughly 30-40 words. If it exceeds 40 words, it is too long — cut unnecessary modifiers and restate more directly.
 
 Never use unexpanded acronyms — always write the full term first, followed by the acronym in parentheses on first use.
 
