@@ -2097,10 +2097,11 @@ const SafeReviewDashboard: React.FC = () => {
                               <thead>
                                 <tr className="bg-slate-100">
                                   <th className="text-left p-2 border w-10">Q#</th>
-                                  <th className="text-left p-2 border" style={{width: '25%'}}>NOFO Requirement</th>
-                                  <th className="text-left p-2 border" style={{width: '35%'}}>Applicant Response (S/M/W)</th>
+                                  <th className="text-left p-2 border" style={{width: '22%'}}>NOFO Requirement</th>
+                                  <th className="text-left p-2 border" style={{width: '28%'}}>Applicant Response (S/M/W)</th>
                                   <th className="text-left p-2 border w-28">Page Ref</th>
-                                  <th className="text-left p-2 border" style={{width: '15%'}}>NOFO Requirement Omitted</th>
+                                  <th className="text-left p-2 border" style={{width: '18%'}}>Reviewer Comments</th>
+                                  <th className="text-left p-2 border" style={{width: '10%'}}>Omitted</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -2134,6 +2135,14 @@ const SafeReviewDashboard: React.FC = () => {
                                         <button onClick={async () => { try { const { url } = await getApplicationViewUrl(currentReviewId!, current.application_id); window.open(url + '#page=' + (ra.application_pages?.[0] || 1), '_blank'); } catch {} }} className="text-xs font-bold text-blue-700 hover:underline cursor-pointer">AOR App p. {(ra.application_pages || []).join(', ')}</button>
                                       </td>
                                       <td className="p-2 border align-top">
+                                        <textarea
+                                          className="w-full text-xs border rounded p-1.5 min-h-[60px] resize-y bg-amber-50 focus:bg-white focus:ring-1 focus:ring-blue-400"
+                                          placeholder="Add reviewer comments..."
+                                          defaultValue={(() => { try { const k = 'rc_' + current.application_id; const d = JSON.parse(localStorage.getItem(k) || '{}'); return d[c.name + '_' + ri] || ''; } catch { return ''; } })()}
+                                          onBlur={(e) => { try { const k = 'rc_' + current.application_id; const d = JSON.parse(localStorage.getItem(k) || '{}'); d[c.name + '_' + ri] = e.target.value; localStorage.setItem(k, JSON.stringify(d)); } catch {} }}
+                                        />
+                                      </td>
+                                      <td className="p-2 border align-top">
                                         {isOmitted && <p className="text-xs text-red-700 font-semibold">{ra.requirement_text}</p>}
                                       </td>
                                     </tr>
@@ -2161,6 +2170,14 @@ const SafeReviewDashboard: React.FC = () => {
                                       {row.pages.length > 0 && (
                                         <button onClick={async () => { try { const { url } = await getApplicationViewUrl(currentReviewId!, current.application_id); window.open(url + '#page=' + row.pages[0], '_blank'); } catch {} }} className="text-xs font-bold text-blue-700 hover:underline cursor-pointer">AOR App p. {row.pages.join(', ')}</button>
                                       )}
+                                    </td>
+                                    <td className="p-2 border align-top">
+                                      <textarea
+                                        className="w-full text-xs border rounded p-1.5 min-h-[60px] resize-y bg-amber-50 focus:bg-white focus:ring-1 focus:ring-blue-400"
+                                        placeholder="Add reviewer comments..."
+                                        defaultValue={(() => { try { const k = 'rc_' + current.application_id; const d = JSON.parse(localStorage.getItem(k) || '{}'); return d[c.name + '_legacy_' + row.key] || ''; } catch { return ''; } })()}
+                                        onBlur={(e) => { try { const k = 'rc_' + current.application_id; const d = JSON.parse(localStorage.getItem(k) || '{}'); d[c.name + '_legacy_' + row.key] = e.target.value; localStorage.setItem(k, JSON.stringify(d)); } catch {} }}
+                                      />
                                     </td>
                                     <td className="p-2 border align-top"></td>
                                   </tr>
