@@ -247,6 +247,36 @@ export default function CommitteeReview() {
   const [result, setResult] = useState<ConsensusResult | null>(null);
   const [error, setError] = useState('');
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [elapsedSec, setElapsedSec] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Analysis phase — drives the status bar
+  type Phase = 'uploading' | 'extracting' | 'validating' | 'consolidating' | 'complete';
+  const [phase, setPhase] = useState<Phase>('uploading');
+
+  // Elapsed timer — starts when polling starts, stops on result
+  useEffect(() => {
+    if (polling && !result) {
+      setElapsedSec(0);
+      const t = setInterval(() => setElapsedSec(s => s + 1), 1000);
+      timerRef.current = t;
+      return () => clearInterval(t);
+    }
+    if (timerRef.current) clearInterval(timerRef.current);
+  }, [polling, result]);
+
+  // Phase progression based on elapsed time (approximate)
+  useEffect(() => {
+    if (!polling) return;
+    if (elapsedSec < 5) setPhase('uploading');
+    else if (elapsedSec < 20) setPhase('extracting');
+    else if (elapsedSec < 60) setPhase('validating');
+    else setPhase('consolidating');
+  }, [elapsedSec, polling]);
+
+  useEffect(() => {
+    if (result) setPhase('complete');
+  }, [result]);
 
   // Inject print styles
   useEffect(() => { ensurePrintStyles(); }, []);
@@ -428,15 +458,55 @@ export default function CommitteeReview() {
           </div>
         )}
 
-        {/* Polling state */}
-        {polling && !result && (
-          <div className="text-center py-16 no-print">
-            <Loader2 size={40} className="mx-auto text-blue-600 animate-spin mb-4" />
-            <h3 className="text-lg font-bold">Analyzing combined statements...</h3>
-            <p className="text-slate-500 mt-1">
-              Validating each statement against NOFO worksheet questions.
-              This takes 1-2 minutes.
-            </p>
+        {/* Status bar — visible during processing */}
+        {(polling || submitting) && !result && (
+          <div className="max-w-2xl mx-auto mb-8 no-print">
+            <div className="rounded-xl bg-white border shadow-sm p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold">Analyzing Combined Statements</h3>
+                <span className="text-sm text-slate-500 font-mono">
+                  {Math.floor(elapsedSec / 60)}:{String(elapsedSec % 60).padStart(2, '0')}
+                </span>
+              </div>
+
+              {/* Step indicators */}
+              <div className="flex gap-1 mb-4">
+                {([
+                  { key: 'uploading', label: 'Upload' },
+                  { key: 'extracting', label: 'OCR & Extract' },
+                  { key: 'validating', label: 'Validate vs NOFO' },
+                  { key: 'consolidating', label: 'Consolidate' },
+                  { key: 'complete', label: 'Complete' },
+                ] as { key: Phase; label: string }[]).map((step, i, arr) => {
+                  const currentIdx = arr.findIndex(s => s.key === phase);
+                  const isPast = i < currentIdx;
+                  const isActive = i === currentIdx;
+                  return (
+                    <div key={step.key} className="flex-1">
+                      <div className={'h-2 rounded-full transition-all duration-500 ' + (
+                        isActive ? 'bg-blue-600 animate-pulse' :
+                        isPast ? 'bg-emerald-500' :
+                        'bg-slate-200'
+                      )} />
+                      <p className={'mt-1 text-xs font-semibold text-center ' + (
+                        isActive ? 'text-blue-700' :
+                        isPast ? 'text-emerald-700' :
+                        'text-slate-400'
+                      )}>{step.label}</p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Status message */}
+              <div className="flex items-center gap-3 text-sm text-slate-600">
+                <Loader2 size={16} className="animate-spin text-blue-600 shrink-0" />
+                {phase === 'uploading' && 'Uploading combined statement PDF...'}
+                {phase === 'extracting' && 'Extracting text from combined statements (OCR if scanned)...'}
+                {phase === 'validating' && 'Validating each statement against NOFO worksheet questions...'}
+                {phase === 'consolidating' && 'Consolidating findings — identifying duplicates, weak statements...'}
+              </div>
+            </div>
           </div>
         )}
 
