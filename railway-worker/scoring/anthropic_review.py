@@ -44,7 +44,14 @@ RIGHT: "The applicant adequately addresses network building: • partner roles c
 
 Never use unexpanded acronyms — always write the full term first, followed by the acronym in parentheses on first use.
 
-STRENGTH LANGUAGE: Use professional superlatives — "comprehensive," "well-organized," "clearly articulates," "well-documented," "thoroughly demonstrates." Do not use flat or generic language.
+STRENGTH LANGUAGE: Use professional superlatives — "comprehensive," "well-organized," "clearly articulates," "well-documented," "thoroughly demonstrates." Superlatives are ONLY for strengths.
+
+MET LANGUAGE — NO SUPERLATIVES: Met means adequate, not exceptional. Use neutral language ONLY: "addresses," "includes," "provides," "describes," "documents." NEVER use "thoroughly," "comprehensive," "well-documented," "clearly," "strong," or any superlative in a Met finding. If you find yourself using superlative language, it should be a Strength, not a Met.
+
+WRONG MET: "The applicant thoroughly documents a well-organized staffing plan."
+RIGHT MET: "The applicant provides a staffing plan that addresses the requirement."
+WRONG MET: "The application clearly demonstrates strong community partnerships."
+RIGHT MET: "The application describes community partnerships."
 
 MET FINDINGS: Only list when the application satisfies a requirement adequately without exceeding it.
 
