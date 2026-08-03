@@ -2073,10 +2073,11 @@ const SafeReviewDashboard: React.FC = () => {
                             <table className="w-full text-sm border">
                               <thead>
                                 <tr className="bg-slate-100">
+                                  <th className="text-left p-2 border w-10">Q#</th>
                                   <th className="text-left p-2 border" style={{width: '25%'}}>NOFO Requirement</th>
                                   <th className="text-left p-2 border" style={{width: '35%'}}>Applicant Response (S/M/W)</th>
-                                  <th className="text-left p-2 border w-24">Page Ref</th>
-                                  <th className="text-left p-2 border" style={{width: '20%'}}>NOFO Requirement Omitted</th>
+                                  <th className="text-left p-2 border w-28">Page Ref</th>
+                                  <th className="text-left p-2 border" style={{width: '15%'}}>NOFO Requirement Omitted</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -2090,6 +2091,7 @@ const SafeReviewDashboard: React.FC = () => {
                                   const badgeLabel = ft === 'strength' ? 'Strength' : ft === 'weakness' ? 'Weakness' : 'Met';
                                   return (
                                     <tr key={'ra-' + ri} className={'border-t ' + (ft === 'weakness' ? 'bg-red-50' : '')}>
+                                      <td className="p-2 border align-top text-center font-mono text-xs font-bold text-slate-500">Q{ri + 1}</td>
                                       <td className="p-2 border align-top">
                                         {subName && <p className="text-xs font-semibold text-indigo-700 mb-1">{subName}</p>}
                                         <p className="text-sm">{ra.requirement_text}</p>
@@ -2106,7 +2108,7 @@ const SafeReviewDashboard: React.FC = () => {
                                         )}
                                       </td>
                                       <td className="p-2 border align-top">
-                                        <button onClick={async () => { try { const { url } = await getApplicationViewUrl(currentReviewId!, current.application_id); window.open(url + '#page=' + (ra.application_pages?.[0] || 1), '_blank'); } catch {} }} className="text-xs font-bold text-blue-700 hover:underline cursor-pointer">App p. {(ra.application_pages || []).join(', ')}</button>
+                                        <button onClick={async () => { try { const { url } = await getApplicationViewUrl(currentReviewId!, current.application_id); window.open(url + '#page=' + (ra.application_pages?.[0] || 1), '_blank'); } catch {} }} className="text-xs font-bold text-blue-700 hover:underline cursor-pointer">AOR App p. {(ra.application_pages || []).join(', ')}</button>
                                       </td>
                                       <td className="p-2 border align-top">
                                         {isOmitted && <p className="text-xs text-red-700 font-semibold">{ra.requirement_text}</p>}
@@ -2118,6 +2120,7 @@ const SafeReviewDashboard: React.FC = () => {
                                   const badgeLabel = row.finding_type === 'strength' ? 'Strength' : row.finding_type === 'weakness' ? 'Weakness' : 'Met';
                                   return (
                                   <tr key={row.key} className={'border-t ' + (row.finding_type === 'weakness' ? 'bg-red-50' : '')}>
+                                    <td className="p-2 border align-top text-center font-mono text-xs text-slate-400">—</td>
                                     <td className="p-2 border align-top text-sm text-slate-400 italic">
                                       {row.subcriterion && <p className="text-xs font-semibold text-indigo-700 mb-1 not-italic">{row.subcriterion}</p>}
                                       {row.finding_type === 'weakness' && row.nofo_requirement ? row.nofo_requirement : '(See finding)'}
@@ -2133,7 +2136,7 @@ const SafeReviewDashboard: React.FC = () => {
                                     </td>
                                     <td className="p-2 border align-top">
                                       {row.pages.length > 0 && (
-                                        <button onClick={async () => { try { const { url } = await getApplicationViewUrl(currentReviewId!, current.application_id); window.open(url + '#page=' + row.pages[0], '_blank'); } catch {} }} className="text-xs font-bold text-blue-700 hover:underline cursor-pointer">App p. {row.pages.join(', ')}</button>
+                                        <button onClick={async () => { try { const { url } = await getApplicationViewUrl(currentReviewId!, current.application_id); window.open(url + '#page=' + row.pages[0], '_blank'); } catch {} }} className="text-xs font-bold text-blue-700 hover:underline cursor-pointer">AOR App p. {row.pages.join(', ')}</button>
                                       )}
                                     </td>
                                     <td className="p-2 border align-top"></td>
