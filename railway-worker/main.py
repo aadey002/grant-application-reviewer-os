@@ -1713,6 +1713,7 @@ async def consensus_review(
     review_id: str = Form(...),
     application_id: str = Form(...),
     reviewer_name: str = Form(""),
+    page_limit: int = Form(0),
     combined_statement: UploadFile = File(...),
 ):
     """Upload a combined statements PDF and run consensus review.
@@ -1808,6 +1809,7 @@ async def consensus_review(
                     criteria=criteria,
                     user_reviewer_name=reviewer_name,
                     user_review_fingerprints=user_review_fingerprints,
+                    page_limit=page_limit,
                 )
             finally:
                 cs_tmp.unlink(missing_ok=True)

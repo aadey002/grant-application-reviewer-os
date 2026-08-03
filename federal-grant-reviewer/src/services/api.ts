@@ -559,12 +559,14 @@ export const submitConsensusReview = async (
   applicationId: string,
   combinedStatementFile: File,
   reviewerName: string,
+  pageLimit: number = 0,
 ): Promise<{ status: string; application_id: string }> => {
   const API_BASE = (API_BASE_URL || '').replace(/[\s\n]+$/, '').replace(/\/+$/, '');
   const formData = new FormData();
   formData.append('review_id', reviewId);
   formData.append('application_id', applicationId);
   formData.append('reviewer_name', reviewerName);
+  formData.append('page_limit', String(pageLimit));
   formData.append('combined_statement', combinedStatementFile);
 
   const response = await fetch(API_BASE + '/consensus/review', {

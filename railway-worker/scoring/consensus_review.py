@@ -58,6 +58,9 @@ STRENGTH vs MET vs WEAKNESS CONFLICT RESOLUTION — CRITICAL:
   c. If both have merit (e.g., the applicant partially addressed it — strong in one aspect, weak in another), KEEP both but add a rationale explaining the conflict: "CONFLICT: Reviewer A cites strength because [X], Reviewer B cites weakness because [Y]. NOFO p.XX requires [Z]. Chair should discuss."
 - Flag all conflict resolutions with "CONFLICT RESOLVED:" or "CONFLICT: Chair should discuss." in the rationale so the Chair can review them.
 
+PAGE LIMIT ENFORCEMENT — CRITICAL:
+If a page_limit is provided, any statement that cites or relies on evidence from pages BEYOND the page limit must be flagged with action REMOVE. The rationale must state: "PAGE LIMIT VIOLATION: This finding cites page(s) [X] which exceed the NOFO page limit of [N]. Per NOFO: 'We will not review any pages that exceed the page limit.'" Check the reviewer_references field for page numbers past the limit. If a statement cites both in-limit and over-limit pages, REVISE it to remove the over-limit citations and reword to only reference evidence within the page limit.
+
 BUDGET RECOMMENDATION (Step 8): Reviewers cannot recommend an increase. If a reduction is recommended, the committee must provide a rationale."""
 
 
@@ -232,6 +235,7 @@ def run_consensus_review(
     criteria: list[dict[str, Any]],
     user_reviewer_name: str = "",
     user_review_fingerprints: list[str] | None = None,
+    page_limit: int = 0,
 ) -> dict[str, Any]:
     """Run the consensus review on a combined statements document.
 
@@ -242,6 +246,7 @@ def run_consensus_review(
         user_reviewer_name: The user's reviewer name for flagging (e.g. "Dr. T", "Reviewer B").
         user_review_fingerprints: First 80 chars of each finding from the user's stored AI review.
             Used to auto-detect which reviewer in the combined statement is the user.
+        page_limit: NOFO page limit for the application. Findings citing pages past this are flagged.
 
     Returns:
         Consensus review result dict.
@@ -323,7 +328,10 @@ NOFO TEXT (use this to validate statements and identify worksheet questions per 
 COMBINED REVIEWER STATEMENTS (preserve every statement verbatim — do NOT shorten):
 {combined_text}
 {user_flag_instruction}
-
+{f"""
+APPLICATION PAGE LIMIT: {page_limit}
+Any statement citing evidence from pages beyond page {page_limit} must be REMOVED with rationale: "PAGE LIMIT VIOLATION: cites page(s) past the NOFO limit of {page_limit}." If a statement cites both in-limit and over-limit pages, REVISE it to reference only evidence within the limit.
+""" if page_limit > 0 else ""}
 INSTRUCTIONS:
 1. For EACH criterion, first identify the NOFO evaluation questions (the worksheet questions) — these are the bullets under each criterion that say what "the panel will review."
 2. Then go through EVERY statement in the combined document for that criterion.

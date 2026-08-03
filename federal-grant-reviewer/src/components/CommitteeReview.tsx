@@ -247,11 +247,13 @@ export default function CommitteeReview() {
   const [agency, setAgency] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [reviewerName, setReviewerName] = useState('');
+  const [pageLimit, setPageLimit] = useState(60);
   const [submitting, setSubmitting] = useState(false);
   const [polling, setPolling] = useState(false);
   const [result, setResult] = useState<ConsensusResult | null>(null);
   const [error, setError] = useState('');
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [cleared, setCleared] = useState(false);
   const [elapsedSec, setElapsedSec] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -328,9 +330,9 @@ export default function CommitteeReview() {
     pollRef.current = poll;
   }, []);
 
-  // Check for existing result on mount
+  // Check for existing result on mount (skip if user just cleared)
   useEffect(() => {
-    if (!applicationId) return;
+    if (!applicationId || cleared) return;
     (async () => {
       try {
         const res = await getConsensusResult(applicationId);
@@ -346,14 +348,15 @@ export default function CommitteeReview() {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [applicationId, startPolling]);
+  }, [applicationId, startPolling, cleared]);
 
   const handleSubmit = async () => {
     if (!file) return;
     setSubmitting(true);
     setError('');
+    setCleared(false);
     try {
-      await submitConsensusReview(reviewId, applicationId, file, reviewerName);
+      await submitConsensusReview(reviewId, applicationId, file, reviewerName, pageLimit);
       startPolling(applicationId);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Submission failed');
@@ -422,6 +425,22 @@ export default function CommitteeReview() {
                 Upload the combined reviewer statements PDF for this application.
                 The tool will validate each statement against the NOFO worksheet questions.
               </p>
+
+              <div className="mb-4 text-left">
+                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  NOFO page limit
+                </label>
+                <input
+                  type="number"
+                  value={pageLimit}
+                  onChange={e => setPageLimit(parseInt(e.target.value) || 0)}
+                  min={0}
+                  className="w-24 rounded-lg border px-4 py-2 text-sm"
+                />
+                <p className="mt-1 text-xs text-slate-400">
+                  Statements citing pages past this limit will be flagged for removal. Set 0 to disable.
+                </p>
+              </div>
 
               <div className="mb-4 text-left">
                 <label className="block text-sm font-semibold text-slate-700 mb-1">
@@ -584,7 +603,21 @@ export default function CommitteeReview() {
                 {result.certification}
               </p>
               <button
-                onClick={() => { setResult(null); setFile(null); setError(''); }}
+                onClick={async () => {
+                  // Clear DB consensus state so a fresh upload can run
+                  try {
+                    await supabase.from('applications').update({
+                      consensus_result: null,
+                      consensus_status: null,
+                      consensus_error: null,
+                    }).eq('id', applicationId);
+                  } catch { /* best effort */ }
+                  setResult(null);
+                  setFile(null);
+                  setError('');
+                  setPolling(false);
+                  setCleared(true);
+                }}
                 className="rounded-lg border px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 no-print"
               >
                 Re-run with different document

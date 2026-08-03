@@ -49,6 +49,9 @@ The reviewer's job is to assess WHETHER evidence was provided and HOW STRONG it 
 
 WEAKNESS RULES: Every weakness MUST cite the specific NOFO requirement the application falls short of, with the exact NOFO page number(s). Include application page(s) showing the shortfall and explain the material impact. Do not identify weaknesses based on reviewer preference or outside knowledge — only against explicitly stated NOFO requirements. If a weakness cannot be supported by a specific NOFO requirement, omit it rather than lowering the score.
 
+PAGE LIMIT — CRITICAL:
+If the application text includes a [PAGE LIMIT ENFORCED] warning, the application exceeds the NOFO page limit. Do NOT cite, reference, or use evidence from any page beyond the stated limit. Any finding that relies on evidence past the page limit must be removed. Per NOFO: "We will not review any pages that exceed the page limit."
+
 FACTUAL ACCURACY — CRITICAL:
 Before asserting any weakness, RE-READ the cited application pages and verify your claim is factually correct:
 - The APPLICANT ORGANIZATION is the entity that submitted the application (named on SF-424 / cover page). All personnel listed in the application are presumed to be employed by or affiliated with the applicant unless the application explicitly states otherwise.
@@ -166,7 +169,7 @@ def _try_ocr_page(path: Path, page_index: int) -> str:
         return ""
 
 
-def _application_text(path: Path, max_chars: int = 175_000) -> tuple[list[str], str]:
+def _application_text(path: Path, max_chars: int = 175_000, page_limit: int = 0) -> tuple[list[str], str]:
     pages = extract_pdf_pages(path)
 
     # Detect scanned pages and attempt OCR, flag unreadable ones
@@ -181,8 +184,12 @@ def _application_text(path: Path, max_chars: int = 175_000) -> tuple[list[str], 
                 scanned_flags.append(i + 1)
                 pages[i] = stripped + f"\n[WARNING: Page {i+1} appears to contain scanned/image content that could not be extracted. This page may contain letters of support, attachments, or other documents. Manual verification recommended.]"
 
+    total_pages = len(pages)
     blocks, used = [], 0
     for number, page in enumerate(pages, 1):
+        # Enforce NOFO page limit — do not include content past the limit
+        if page_limit > 0 and number > page_limit:
+            break
         block = f"\n--- APPLICATION PAGE {number} ---\n{page.strip()}"
         if used + len(block) > max_chars:
             remaining = max_chars - used
@@ -191,6 +198,15 @@ def _application_text(path: Path, max_chars: int = 175_000) -> tuple[list[str], 
             break
         blocks.append(block)
         used += len(block)
+
+    # Append page limit warning if application exceeds the limit
+    if page_limit > 0 and total_pages > page_limit:
+        warning = (f"\n\n[PAGE LIMIT ENFORCED: This application has {total_pages} total pages "
+                   f"but the NOFO page limit is {page_limit}. Content past page {page_limit} "
+                   f"has been excluded. Do NOT cite or use evidence from pages beyond {page_limit}. "
+                   f"Per NOFO: 'We will not review any pages that exceed the page limit.']")
+        blocks.append(warning)
+
     return pages, "".join(blocks)
 
 
@@ -1021,7 +1037,7 @@ def _audit_weakness_facts(client, model: str, review: dict[str, Any], pages: lis
     return review
 
 
-def score_application_with_claude(application: Path, criteria: list[dict[str, Any]], agency: str, guidance: str = "") -> dict[str, Any]:
+def score_application_with_claude(application: Path, criteria: list[dict[str, Any]], agency: str, guidance: str = "", page_limit: int = 0) -> dict[str, Any]:
     api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
     if not api_key:
         raise RuntimeError("ANTHROPIC_API_KEY is not configured.")
@@ -1029,7 +1045,10 @@ def score_application_with_claude(application: Path, criteria: list[dict[str, An
     from concurrent.futures import ThreadPoolExecutor, as_completed
     logger = logging.getLogger("grant_worker")
 
-    pages, application_text = _application_text(application)
+    pages, application_text = _application_text(application, page_limit=page_limit)
+    if page_limit > 0 and len(pages) > page_limit:
+        logger.warning("Application has %d pages, NOFO limit is %d — content past page %d excluded",
+                        len(pages), page_limit, page_limit)
     model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6-20250514")
     client = anthropic.Anthropic(api_key=api_key, timeout=300.0)
     nofo_text = guidance or ""
