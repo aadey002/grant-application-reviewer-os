@@ -366,7 +366,9 @@ INSTRUCTIONS:
     model = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
     tool = _consensus_tool(criteria)
 
-    response = client.messages.create(
+    # Use streaming to handle large responses (required for >10 min operations)
+    collected_blocks = []
+    with client.messages.stream(
         model=model,
         max_tokens=32000,
         temperature=0,
@@ -388,7 +390,8 @@ INSTRUCTIONS:
         }],
         tools=[tool],
         tool_choice={"type": "tool", "name": "submit_consensus_review"},
-    )
+    ) as stream:
+        response = stream.get_final_message()
 
     logger.info("Claude response: stop_reason=%s, usage=%s",
                  response.stop_reason,
@@ -396,7 +399,6 @@ INSTRUCTIONS:
 
     tool_use = next((b for b in response.content if b.type == "tool_use"), None)
     if not tool_use:
-        # Log what we got instead
         for b in response.content:
             logger.error("Non-tool block type=%s: %s", b.type, str(b)[:500])
         raise RuntimeError("Claude did not return a consensus review result")
