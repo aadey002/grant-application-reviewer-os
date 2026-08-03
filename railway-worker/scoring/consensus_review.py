@@ -44,11 +44,19 @@ RULES — follow exactly:
 
 10. Do NOT add new findings that were not in the combined statements. You are consolidating, not reviewing.
 
-10. Do NOT increase the budget recommendation. If reviewers recommend a reduction, the rationale must be provided.
+11. Do NOT increase the budget recommendation. If reviewers recommend a reduction, the rationale must be provided.
 
-11. Number all statements sequentially: W1, W2, W3... for weaknesses; S1, S2, S3... for strengths; M1, M2, M3... for mets. Numbers restart per criterion.
+12. Number all statements sequentially: W1, W2, W3... for weaknesses; S1, S2, S3... for strengths; M1, M2, M3... for mets. Numbers restart per criterion.
 
-12. For the user's own statements (flagged in the input), mark them with is_mine: true so the UI can flag them.
+13. For the user's own statements (flagged in the input), mark them with is_mine: true so the UI can flag them.
+
+STRENGTH vs MET vs WEAKNESS CONFLICT RESOLUTION — CRITICAL:
+- If the SAME worksheet question has BOTH a strength AND a met from different reviewers, the STRENGTH supersedes the met. Mark the met as action MERGE into the strength — strength is the higher-order finding.
+- If the SAME worksheet question has BOTH a strength AND a weakness from different reviewers, this is a CONFLICT. You MUST resolve it by going back to the NOFO requirement text. Check the actual NOFO language for that question. Then:
+  a. If the NOFO requirement is clearly met or exceeded per the application, REMOVE the weakness and cite the NOFO page + requirement text that supports the strength.
+  b. If the NOFO requirement is genuinely not met, REMOVE the strength and cite the NOFO page + requirement text that supports the weakness.
+  c. If both have merit (e.g., the applicant partially addressed it — strong in one aspect, weak in another), KEEP both but add a rationale explaining the conflict: "CONFLICT: Reviewer A cites strength because [X], Reviewer B cites weakness because [Y]. NOFO p.XX requires [Z]. Chair should discuss."
+- Flag all conflict resolutions with "CONFLICT RESOLVED:" or "CONFLICT: Chair should discuss." in the rationale so the Chair can review them.
 
 BUDGET RECOMMENDATION (Step 8): Reviewers cannot recommend an increase. If a reduction is recommended, the committee must provide a rationale."""
 
@@ -107,6 +115,10 @@ def _consensus_tool(criteria: list[dict[str, Any]]) -> dict[str, Any]:
             "is_mine": {
                 "type": "boolean",
                 "description": "True if this statement was written by the user (flagged in input)",
+            },
+            "is_conflict": {
+                "type": "boolean",
+                "description": "True if this statement was part of a strength/weakness conflict on the same worksheet question. Rationale should explain the conflict resolution.",
             },
         },
     }

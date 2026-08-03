@@ -8,3 +8,4 @@ supabase
 httpx
 anthropic
 python-dotenv
+# v2 consensus review

@@ -522,6 +522,7 @@ export interface ConsensusStatement {
   revised_text?: string;
   rationale: string;
   is_mine?: boolean;
+  is_conflict?: boolean;
 }
 
 export interface ConsensusCriterion {

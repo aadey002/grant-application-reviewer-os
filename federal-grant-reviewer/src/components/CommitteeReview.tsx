@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   AlertTriangle, CheckCircle2, FileText, Flag, Loader2, Merge,
-  Pencil, Printer, Trash2, Upload,
+  Pencil, Printer, ShieldAlert, Trash2, Upload,
 } from 'lucide-react';
 import {
   ConsensusResult, ConsensusCriterion, ConsensusStatement,
@@ -86,6 +86,11 @@ function StatementTable({ statements, headerColor }: { statements: ConsensusStat
                 {s.is_mine && (
                   <span className="ml-1 text-blue-600" title="Your statement">
                     <Flag size={14} className="inline" />
+                  </span>
+                )}
+                {s.is_conflict && (
+                  <span className="ml-1 text-orange-600" title="Conflict — strength vs weakness on same question">
+                    <ShieldAlert size={14} className="inline" />
                   </span>
                 )}
               </td>
@@ -573,8 +578,9 @@ export default function CommitteeReview() {
                   <p className="text-xs text-slate-500 mt-0.5">{result.budget_recommendation.rationale}</p>
                 )}
               </div>
-              <div className="flex items-center gap-1 ml-auto text-sm text-slate-500">
-                <Flag size={14} className="text-blue-600" /> = Your statement
+              <div className="flex items-center gap-3 ml-auto text-sm text-slate-500">
+                <span className="flex items-center gap-1"><Flag size={14} className="text-blue-600" /> Your statement</span>
+                <span className="flex items-center gap-1"><ShieldAlert size={14} className="text-orange-600" /> Conflict</span>
               </div>
             </div>
 

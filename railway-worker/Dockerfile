@@ -14,5 +14,6 @@ COPY . .
 
 # Verify FastAPI app loads without heavy deps
 RUN python -c "from fastapi import FastAPI; print('FastAPI OK')"
+# consensus_review module added 2026-08-03
 
 CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
