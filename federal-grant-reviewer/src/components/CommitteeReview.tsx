@@ -57,7 +57,7 @@ function ActionBadge({ action }: { action: string }) {
 // ---------------------------------------------------------------------------
 // Statement table (shared for weaknesses / strengths / mets)
 // ---------------------------------------------------------------------------
-function StatementTable({ statements, headerColor }: { statements: ConsensusStatement[]; headerColor: string }) {
+function StatementTable({ statements, headerColor, applicationId, criterionName }: { statements: ConsensusStatement[]; headerColor: string; applicationId: string; criterionName: string }) {
   if (statements.length === 0) return null;
   const bgMap: Record<string, string> = {
     red: 'bg-red-50', emerald: 'bg-emerald-50', slate: 'bg-slate-50',
@@ -94,13 +94,14 @@ function StatementTable({ statements, headerColor }: { statements: ConsensusStat
             <th className={thClass}>Q</th>
             <th className={thClass}>Action</th>
             <th className={thClass}>Rationale</th>
+            <th className={thClass}>Chair Comments</th>
           </tr>
         </thead>
         <tbody>
           {groups.map(group => (<React.Fragment key={group.label}>
             {group.label && (
               <tr>
-                <td colSpan={6} className="px-3 py-2 bg-indigo-50 border-t border-b border-indigo-200">
+                <td colSpan={7} className="px-3 py-2 bg-indigo-50 border-t border-b border-indigo-200">
                   <span className="text-xs font-bold text-indigo-800 uppercase tracking-wide">{group.label}</span>
                 </td>
               </tr>
@@ -160,6 +161,14 @@ function StatementTable({ statements, headerColor }: { statements: ConsensusStat
               <td className="px-3 py-3 align-top text-sm text-slate-600 max-w-xs">
                 {s.rationale}
               </td>
+              <td className="px-3 py-3 align-top">
+                <textarea
+                  className="w-full text-xs border rounded p-1.5 min-h-[60px] resize-y bg-amber-50 focus:bg-white focus:ring-1 focus:ring-blue-400 no-print"
+                  placeholder="Chair comments..."
+                  defaultValue={(() => { try { const k = 'cc_' + applicationId; const d = JSON.parse(localStorage.getItem(k) || '{}'); return d[criterionName + '_' + s.number] || ''; } catch { return ''; } })()}
+                  onBlur={(e) => { try { const k = 'cc_' + applicationId; const d = JSON.parse(localStorage.getItem(k) || '{}'); d[criterionName + '_' + s.number] = e.target.value; localStorage.setItem(k, JSON.stringify(d)); } catch {} }}
+                />
+              </td>
             </tr>
           ))}
           </React.Fragment>))}
@@ -172,7 +181,7 @@ function StatementTable({ statements, headerColor }: { statements: ConsensusStat
 // ---------------------------------------------------------------------------
 // Criterion section
 // ---------------------------------------------------------------------------
-function CriterionSection({ crit }: { crit: ConsensusCriterion }) {
+function CriterionSection({ crit, applicationId }: { crit: ConsensusCriterion; applicationId: string }) {
   return (
     <div className="mb-8 print-break">
       <div className="flex items-center justify-between mb-3">
@@ -200,7 +209,7 @@ function CriterionSection({ crit }: { crit: ConsensusCriterion }) {
           <h4 className="font-bold text-red-800 mb-2 text-sm uppercase tracking-wide">
             Weaknesses ({crit.weaknesses.length})
           </h4>
-          <StatementTable statements={crit.weaknesses} headerColor="red" />
+          <StatementTable statements={crit.weaknesses} headerColor="red" applicationId={applicationId} criterionName={crit.criterion_name} />
         </div>
       )}
 
@@ -210,7 +219,7 @@ function CriterionSection({ crit }: { crit: ConsensusCriterion }) {
           <h4 className="font-bold text-emerald-800 mb-2 text-sm uppercase tracking-wide">
             Strengths ({crit.strengths.length})
           </h4>
-          <StatementTable statements={crit.strengths} headerColor="emerald" />
+          <StatementTable statements={crit.strengths} headerColor="emerald" applicationId={applicationId} criterionName={crit.criterion_name} />
         </div>
       )}
 
@@ -220,7 +229,7 @@ function CriterionSection({ crit }: { crit: ConsensusCriterion }) {
           <h4 className="font-bold text-slate-700 mb-2 text-sm uppercase tracking-wide">
             Met ({crit.mets.length})
           </h4>
-          <StatementTable statements={crit.mets} headerColor="slate" />
+          <StatementTable statements={crit.mets} headerColor="slate" applicationId={applicationId} criterionName={crit.criterion_name} />
         </div>
       )}
     </div>
@@ -230,7 +239,7 @@ function CriterionSection({ crit }: { crit: ConsensusCriterion }) {
 // ---------------------------------------------------------------------------
 // Criteria tabs — click a criterion to show only that one
 // ---------------------------------------------------------------------------
-function CriteriaTabs({ criteria }: { criteria: ConsensusCriterion[] }) {
+function CriteriaTabs({ criteria, applicationId }: { criteria: ConsensusCriterion[]; applicationId: string }) {
   const [activeIdx, setActiveIdx] = useState(0);
   const active = criteria[activeIdx];
   if (!active) return null;
@@ -263,12 +272,12 @@ function CriteriaTabs({ criteria }: { criteria: ConsensusCriterion[] }) {
       </div>
 
       {/* Active criterion */}
-      <CriterionSection crit={active} />
+      <CriterionSection crit={active} applicationId={applicationId} />
 
       {/* Print: show all criteria */}
       <div className="hidden print:block">
         {criteria.filter((_, i) => i !== activeIdx).map(crit => (
-          <CriterionSection key={crit.criterion_name} crit={crit} />
+          <CriterionSection key={crit.criterion_name} crit={crit} applicationId={applicationId} />
         ))}
       </div>
     </div>
@@ -658,7 +667,7 @@ export default function CommitteeReview() {
             )}
 
             {/* Criteria tabs */}
-            <CriteriaTabs criteria={result.criteria} />
+            <CriteriaTabs criteria={result.criteria} applicationId={applicationId} />
 
             {/* Footer */}
             <div className="mt-8 pt-6 border-t flex items-center justify-between">

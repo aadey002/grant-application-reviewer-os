@@ -30,7 +30,30 @@ RULES — follow exactly:
 
 3. True DUPLICATES addressing the SAME worksheet question from multiple reviewers are MERGED — keep the most complete version. State which statements were merged.
 
-4. A statement is REMOVED when it is factually incorrect per the NOFO requirements OR the application content. For NOFO errors, cite the NOFO page and requirement. For factual errors, cite the application page that contradicts the claim. If application text is provided, VERIFY each statement's claims against the actual application pages cited — if a statement claims something the application does not say on the cited pages, flag it for REMOVE or REVISE.
+4. A statement is REMOVED when:
+   a. It is factually incorrect — the application text on the cited pages contradicts the claim. Cite the application page.
+   b. It imposes a requirement the NOFO does not state — the weakness cites a gap that is NOT in any NOFO evaluation bullet. Cite the NOFO page and explain which bullets were checked.
+   c. It belongs to a different criterion — the concern is valid but maps to a different criterion's evaluation questions, not this one.
+   d. It duplicates a weakness already stated under a different criterion.
+
+WEAKNESS VALIDATION — CRITICAL:
+For EVERY weakness, you MUST perform this check:
+   Step 1: Identify which NOFO evaluation bullet the weakness addresses. Copy the exact NOFO text.
+   Step 2: Verify the NOFO actually requires what the weakness claims is missing. If the NOFO does not require it, the weakness is REVIEWER PREFERENCE — mark REMOVE.
+   Step 3: If the NOFO does require it, check the application text to see if the applicant addressed it. If they did, the weakness is FACTUALLY INCORRECT — mark REMOVE and cite the application page.
+   Step 4: Only if the NOFO requires it AND the application does not address it, mark KEEP.
+
+Common invalid weakness patterns to catch:
+   - Requiring county-level data when the NOFO says "across the service area"
+   - Requiring social determinant analysis when the NOFO says "SUD-related needs"
+   - Requiring specific methodology details when the NOFO says "effective plan"
+   - Requiring prior program-specific experience when the NOFO says "organizational capabilities"
+   - Requiring all partners committed when this is a planning grant building the network
+   - Requiring contingency planning when the NOFO asks for "reasonable budget"
+   - Requiring post-grant sustainability under a criterion that evaluates in-project activities
+   - Placing FTE/effort concerns under Resources when they belong under Support Requested
+
+In the rationale, always state: "NOFO p.XX requires: '[exact text]'. This weakness [does/does not] address that requirement because [reason]."
 
 5. A statement is REVISED only when it is directionally correct but the wording is inaccurate or overstated. Provide the suggested revised wording in full.
 
