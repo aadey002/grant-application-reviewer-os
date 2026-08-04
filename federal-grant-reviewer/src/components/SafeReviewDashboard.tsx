@@ -2226,6 +2226,57 @@ const SafeReviewDashboard: React.FC = () => {
                           </div>
                           );
                         })()}
+
+                        {/* Consolidated ARM Statements */}
+                        {(() => {
+                          const armStrengths = (c as any).strengths || [];
+                          const armMets = (c as any).mets || [];
+                          const armWeaknesses = (c as any).weaknesses || [];
+                          if (armStrengths.length === 0 && armMets.length === 0 && armWeaknesses.length === 0) return null;
+                          return (
+                            <div className="mt-4 rounded-lg border-2 border-indigo-200 bg-indigo-50/30 p-4">
+                              <h4 className="text-sm font-bold text-indigo-800 mb-3 flex items-center gap-2">
+                                <span>📋</span> Consolidated ARM Statements
+                                <span className="text-xs font-normal text-indigo-500">(copy to reviewer worksheet)</span>
+                              </h4>
+                              {armStrengths.length > 0 && (
+                                <div className="mb-3">
+                                  <p className="text-xs font-bold text-emerald-700 uppercase mb-1">Strengths</p>
+                                  {armStrengths.map((s: any, si: number) => (
+                                    <div key={'arm-s-' + si} className="mb-2 rounded bg-white border border-emerald-200 p-2.5">
+                                      <p className="text-sm leading-relaxed text-slate-800">{s.comment}</p>
+                                      <p className="text-xs text-blue-600 mt-1 font-semibold">AOR App p. {(s.application_pages || []).join(', ')}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {armMets.length > 0 && (
+                                <div className="mb-3">
+                                  <p className="text-xs font-bold text-blue-700 uppercase mb-1">Mets</p>
+                                  {armMets.map((m: any, mi: number) => (
+                                    <div key={'arm-m-' + mi} className="mb-2 rounded bg-white border border-blue-200 p-2.5">
+                                      <p className="text-sm leading-relaxed text-slate-800">{m.comment}</p>
+                                      <p className="text-xs text-blue-600 mt-1 font-semibold">AOR App p. {(m.application_pages || []).join(', ')}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {armWeaknesses.length > 0 && (
+                                <div>
+                                  <p className="text-xs font-bold text-red-700 uppercase mb-1">Weaknesses</p>
+                                  {armWeaknesses.map((w: any, wi: number) => (
+                                    <div key={'arm-w-' + wi} className="mb-2 rounded bg-white border border-red-200 p-2.5">
+                                      <p className="text-sm leading-relaxed text-slate-800">{w.comment}</p>
+                                      {w.nofo_requirement && <p className="text-xs text-red-600 mt-1"><span className="font-semibold">NOFO requirement:</span> {w.nofo_requirement}</p>}
+                                      {w.impact && <p className="text-xs text-red-600 mt-0.5 italic"><span className="font-semibold not-italic">Impact:</span> {w.impact}</p>}
+                                      <p className="text-xs text-blue-600 mt-1 font-semibold">AOR App p. {(w.application_pages || []).join(', ')}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </article>
                     ))}
 
