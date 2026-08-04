@@ -535,7 +535,23 @@ CRITICAL SCORING CALIBRATION:
 INSTRUCTIONS — ONE RESPONSE PER WORKSHEET QUESTION:
 The reviewer worksheet has ONE row per NOFO evaluation question. Your output MUST match this structure exactly: ONE finding per question — no more, no less.
 
-1. Find EVERY evaluation bullet listed under this criterion in the NOFO text. Each bullet that starts with a bullet point or describes what "the panel will review" becomes one worksheet question.
+CRITICAL — IDENTIFYING THE CORRECT EVALUATION QUESTIONS:
+The NOFO contains MULTIPLE sections that discuss each criterion. You MUST use ONLY the evaluation criteria bullets — NOT narrative guidance, program description, or application instructions. The evaluation criteria are found in the "Merit Review" or "Application Review" section (typically pages 45-55 of the NOFO) under headings like "Criterion 1: Need (X points)" followed by "The panel will review your application for:" and then bullet points.
+
+DO NOT USE questions from:
+- The "Program Description" section (typically pages 5-20)
+- The "Application Content" or "What to Include" section (typically pages 30-45)
+- Narrative guidance that says "describe your..." or "include information about..."
+- Any section that gives INSTRUCTIONS to the applicant about what to write
+
+ONLY USE questions from:
+- Sections headed "Criterion X: [Name] (X points)"
+- Bullets preceded by "The panel will review your application for:"
+- These are the EXACT bullets on the reviewer worksheet
+
+VERIFICATION: The number of bullets you identify must match what a reviewer would see on their printed worksheet. If the NOFO's evaluation section lists 4 bullets under a criterion, you must have exactly 4 requirement_assessments — not 3, not 5.
+
+1. Find EVERY evaluation bullet listed under this criterion in the EVALUATION CRITERIA section of the NOFO (NOT the narrative guidance section). Each bullet after "The panel will review" becomes one worksheet question.
 
 2. For EACH worksheet question, produce EXACTLY ONE response:
    a. In requirement_assessments: ONE entry per question with:
