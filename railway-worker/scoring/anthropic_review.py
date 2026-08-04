@@ -427,14 +427,19 @@ def _score_single_criterion(client, model: str, application_text: str, criterion
 
     # Build explicit evaluation bullets instruction if available
     eval_bullets = criterion.get("evaluation_bullets", [])
+    source_page = criterion.get("source_page", None)
     if eval_bullets:
         bullets_text = "\n".join("  " + str(i + 1) + ". " + b for i, b in enumerate(eval_bullets))
+        page_instruction = ""
+        if source_page:
+            page_instruction = "For ALL nofo_pages in requirement_assessments for this criterion, use page " + str(source_page) + " — that is the NOFO page where these evaluation bullets appear.\n"
         bullets_instruction = (
-            "\n\nEXACT EVALUATION BULLETS FOR THIS CRITERION (extracted from NOFO — use these VERBATIM):\n"
+            "\n\nEXACT EVALUATION BULLETS FOR THIS CRITERION (extracted from NOFO page " + str(source_page or "?") + " — use these VERBATIM):\n"
             + bullets_text + "\n\n"
             "You MUST create exactly " + str(len(eval_bullets)) + " requirement_assessment entries — one per bullet above.\n"
             "Each requirement_text MUST be the EXACT text from the numbered bullet above — copy it word-for-word.\n"
             "Do NOT search the NOFO for different bullets. Do NOT paraphrase. Do NOT merge. Use THESE bullets.\n"
+            + page_instruction
         )
         sub_instruction = sub_instruction + bullets_instruction
 
