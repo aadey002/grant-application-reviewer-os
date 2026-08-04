@@ -598,10 +598,15 @@ VERIFICATION: The number of bullets you identify must match what a reviewer woul
       - For weaknesses: include nofo_requirement (exact NOFO text) and impact
    b. In strengths/mets/weaknesses lists: CONSOLIDATE related findings into fewer, broader statements for the reviewer worksheet. Group related bullets into a single sentence that covers multiple NOFO questions. Target a MAXIMUM of 3 entries per list (strengths, mets, weaknesses) per criterion. Each consolidated statement should cover 2-3 related NOFO bullets in one evaluative sentence. Weaknesses are the exception — keep each weakness as a separate entry with its own NOFO citation.
 
+   ABBREVIATION RULE FOR CONSOLIDATED STATEMENTS — CRITICAL: Each consolidated statement is a STANDALONE text that will be copied into the reviewer worksheet. EVERY abbreviation must be spelled out in full on FIRST USE within EACH statement. Do NOT assume the reader has seen a previous statement. Examples:
+   - WRONG: "The application describes SBIRT, MOUD, and FQHC billing."
+   - RIGHT: "The application describes Screening, Brief Intervention, and Referral to Treatment (SBIRT), medications for opioid use disorder (MOUD), and Federally Qualified Health Center (FQHC) billing."
+   This applies to ALL abbreviations: SBIRT, MOUD, FQHC, SUD, OUD, FTE, RCORP, HRSA, PRSS, QI/QA, PDSA, and any other acronym. Spell it out first, then parenthetical abbreviation.
+
 3. CRITICAL RULES:
    - requirement_assessments: ALWAYS one entry per NOFO bullet (exact count match). This is the structured data.
-   - strengths/mets lists: CONSOLIDATE into a maximum of 3 entries per list. Group related bullets into broader evaluative statements. These are for the reviewer worksheet — concise is better.
-   - weaknesses list: Keep each weakness SEPARATE with its own NOFO requirement citation and impact statement. Do not consolidate weaknesses.
+   - strengths/mets lists: CONSOLIDATE into a maximum of 3 entries per list. Group related bullets into broader evaluative statements. These are for the reviewer worksheet — concise is better. EVERY abbreviation must be spelled out on first use in EACH statement.
+   - weaknesses list: Keep each weakness SEPARATE with its own NOFO requirement citation and impact statement. Do not consolidate weaknesses. EVERY abbreviation must be spelled out on first use.
    - If a question has both strong and weak aspects, choose the DOMINANT assessment.
    - The number of entries in requirement_assessments must equal the number of NOFO evaluation bullets found for this criterion.
    - NEVER produce multiple findings that answer the same worksheet question.
