@@ -70,9 +70,9 @@ INVALID WEAKNESS PATTERNS — do NOT cite these as weaknesses:
 - A position being unfilled/TBD at submission when the FTE is budgeted and a hiring plan is described. Federal grants routinely have TBD positions — the NOFO asks about sufficiency of TIME ALLOCATION, not whether the person is already hired. An unfilled position with adequate FTE and a hiring timeline is Met, not a weakness.
 - Not naming a specific person for a role when the role, qualifications, FTE, and recruitment plan are described.
 - Deferring hiring to the post-award period when the NOFO does not require staff to be in place at submission.
-- Work plan missing measurable targets, expected outputs, or performance benchmarks when the NOFO work plan requirement only asks for activities, responsible staff, timelines, and goals. Measurable outcomes and performance measures belong under the Performance/Evaluation criterion, not the work plan. A work plan with activities, staff, and timelines is Met for the work plan bullet.
+- Work plan missing measurable targets, expected outputs, or performance benchmarks when the NOFO work plan requirement only asks for activities, responsible staff, timelines, and goals. Measurable outcomes and performance measures belong under the Performance/Evaluation criterion, not the work plan. A work plan with activities, staff, and timelines is Met for the work plan requirement.
 - A supervised clinician (e.g., Fellow, resident, trainee) providing services under supervision when the NOFO requires "qualified providers" or staff with adequate "skills, experience, and time." Supervised practice IS qualified practice — the NOFO does not require independent clinical authority unless it explicitly says so. A Fellow delivering MOUD under supervision meets the staffing requirement.
-- Citing "encouraged" NOFO language as a scoreable requirement. If the NOFO says "encouraged to consider," "may wish to," or "we recommend," that is guidance, not a mandatory requirement. Only "must," "shall," "required," or explicit evaluation bullets are scoreable. A missing "encouraged" item is NOT a weakness.
+- Citing "encouraged" NOFO language as a scoreable requirement. If the NOFO says "encouraged to consider," "may wish to," or "we recommend," that is guidance, not a mandatory requirement. Only "must," "shall," "required," or explicit evaluation requirements are scoreable. A missing "encouraged" item is NOT a weakness.
 - Embedding weakness language inside a Met finding (e.g., "addresses the requirement, though X is limited"). A Met finding should be a clean evaluative statement. If the shortfall is material, make it a separate weakness with a NOFO citation. If it is not material, omit the hedging language entirely.
 - Demanding specific numeric projections, targets, revenue forecasts, or payer-mix data when the NOFO evaluation bullet asks about "likelihood" or "how likely." Describing the MECHANISMS that will produce the outcome (e.g., new staff, expanded telehealth, billing through Medicaid) demonstrates likelihood. The NOFO asks reviewers to assess likelihood, not to verify specific numbers. An application that describes credible service expansion mechanisms without numeric targets is Met for a "how likely" bullet.
 - Demanding post-award financial projections, revenue models, or organizational financial commitments for sustainability when the NOFO asks about "how likely the budget plan is to support sustained activities." Naming third-party reimbursement sources (Medicaid, Medicare, commercial insurance) and describing integration of grant-funded positions into existing operations IS addressing sustainability. Concrete revenue projections are not required unless the NOFO explicitly asks for them.
@@ -439,11 +439,11 @@ def _score_single_criterion(client, model: str, application_text: str, criterion
         if source_page:
             page_instruction = "For ALL nofo_pages in requirement_assessments for this criterion, use page " + str(source_page) + " — that is the NOFO page where these evaluation bullets appear.\n"
         bullets_instruction = (
-            "\n\nEXACT EVALUATION BULLETS FOR THIS CRITERION (extracted from NOFO page " + str(source_page or "?") + " — use these VERBATIM):\n"
+            "\n\nEXACT EVALUATION REQUIREMENTS FOR THIS CRITERION (extracted from NOFO page " + str(source_page or "?") + " — use these VERBATIM):\n"
             + bullets_text + "\n\n"
-            "You MUST create exactly " + str(len(eval_bullets)) + " requirement_assessment entries — one per bullet above.\n"
-            "Each requirement_text MUST be the EXACT text from the numbered bullet above — copy it word-for-word.\n"
-            "Do NOT search the NOFO for different bullets. Do NOT paraphrase. Do NOT merge. Use THESE bullets.\n"
+            "You MUST create exactly " + str(len(eval_bullets)) + " requirement_assessment entries — one per requirement above.\n"
+            "Each requirement_text MUST be the EXACT text from the numbered requirement above — copy it word-for-word.\n"
+            "Do NOT search the NOFO for different requirements. Do NOT paraphrase. Do NOT merge. Use THESE requirements.\n"
             + page_instruction
         )
         sub_instruction = sub_instruction + bullets_instruction
@@ -567,10 +567,10 @@ The reviewer worksheet has ONE row per NOFO evaluation question. Your output MUS
 
 ABSOLUTE RULE — NO PARAPHRASING: Every requirement_text MUST be copied VERBATIM word-for-word from the NOFO. Do NOT paraphrase, summarize, merge multiple bullets into one, reword, or invent your own requirement language. If the NOFO says "How likely it is that the proposed project will lead to new or expanded evidence-based SUD prevention, treatment, and recovery services in rural areas" then requirement_text must contain that EXACT sentence. Paraphrasing causes the review to fail QA and must be re-done.
 
-ABSOLUTE RULE — NO MERGING: If the NOFO lists 5 bullets under a criterion, you MUST produce exactly 5 requirement_assessment entries — one per bullet. Do NOT combine two bullets into one entry. Do NOT skip any bullet. The count of requirement_assessments MUST equal the count of bullets in the NOFO for that criterion.
+ABSOLUTE RULE — NO MERGING: If the NOFO lists 5 requirements under a criterion, you MUST produce exactly 5 requirement_assessment entries — one per requirement. Do NOT combine two requirements into one entry. Do NOT skip any requirement. The count of requirement_assessments MUST equal the count of requirements in the NOFO for that criterion.
 
 CRITICAL — IDENTIFYING THE CORRECT EVALUATION QUESTIONS:
-The NOFO contains MULTIPLE sections that discuss each criterion. You MUST use ONLY the evaluation criteria bullets — NOT narrative guidance, program description, or application instructions. The evaluation criteria are found in the "Merit Review" or "Application Review" section (typically pages 45-55 of the NOFO) under headings like "Criterion 1: Need (X points)" followed by "The panel will review your application for:" and then bullet points.
+The NOFO contains MULTIPLE sections that discuss each criterion. You MUST use ONLY the evaluation criteria requirements — NOT narrative guidance, program description, or application instructions. The evaluation criteria are found in the "Merit Review" or "Application Review" section (typically pages 45-55 of the NOFO) under headings like "Criterion 1: Need (X points)" followed by "The panel will review your application for:" and then the evaluation requirements.
 
 DO NOT USE questions from:
 - The "Program Description" section (typically pages 5-20)
@@ -580,23 +580,23 @@ DO NOT USE questions from:
 
 ONLY USE questions from:
 - Sections headed "Criterion X: [Name] (X points)"
-- Bullets preceded by "The panel will review your application for:"
-- These are the EXACT bullets on the reviewer worksheet
+- Requirements preceded by "The panel will review your application for:"
+- These are the EXACT requirements on the reviewer worksheet
 
-VERIFICATION: The number of bullets you identify must match what a reviewer would see on their printed worksheet. If the NOFO's evaluation section lists 5 bullets under a criterion, you must have exactly 5 requirement_assessments — not 3, not 4.
+VERIFICATION: The number of requirements you identify must match what a reviewer would see on their printed worksheet. If the NOFO's evaluation section lists 5 requirements under a criterion, you must have exactly 5 requirement_assessments — not 3, not 4.
 
-1. Find EVERY evaluation bullet listed under this criterion in the EVALUATION CRITERIA section of the NOFO (NOT the narrative guidance section). Each bullet after "The panel will review" becomes one worksheet question. Count them.
+1. Find EVERY evaluation requirement listed under this criterion in the EVALUATION CRITERIA section of the NOFO (NOT the narrative guidance section). Each requirement after "The panel will review" becomes one worksheet question. Count them.
 
 2. For EACH worksheet question, produce EXACTLY ONE response:
    a. In requirement_assessments: ONE entry per question with:
-      - requirement_text: The EXACT VERBATIM NOFO question/bullet text — word for word, no changes, no paraphrasing
+      - requirement_text: The EXACT VERBATIM NOFO evaluation requirement text — word for word, no changes, no paraphrasing
       - nofo_pages: NOFO page(s) where this question appears
       - response_status: exceeds / fully_addressed / partially_addressed / not_addressed / unable_to_evaluate
       - finding_type: strength (if exceeds), met (if fully_addressed), weakness (if partially/not addressed)
       - explanation: 1-3 sentence reviewer comment — this is your ONE response to this question
       - application_pages: 1-3 most relevant pages
       - For weaknesses: include nofo_requirement (exact NOFO text) and impact
-   b. In strengths/mets/weaknesses lists: CONSOLIDATE related findings into fewer, broader statements for the reviewer worksheet. Group related bullets into a single sentence that covers multiple NOFO questions. Target a MAXIMUM of 3 entries per list (strengths, mets, weaknesses) per criterion. Each consolidated statement should cover 2-3 related NOFO bullets in one evaluative sentence. Weaknesses are the exception — keep each weakness as a separate entry with its own NOFO citation.
+   b. In strengths/mets/weaknesses lists: CONSOLIDATE related findings into fewer, broader statements for the reviewer worksheet. Group related requirements into a single sentence that covers multiple NOFO questions. Target a MAXIMUM of 3 entries per list (strengths, mets, weaknesses) per criterion. Each consolidated statement should cover 2-3 related NOFO requirements in one evaluative sentence. Every consolidated statement MUST begin with "The applicant" or "The application". Weaknesses are the exception — keep each weakness as a separate entry with its own NOFO citation.
 
    ABBREVIATION RULE FOR CONSOLIDATED STATEMENTS — CRITICAL: Each consolidated statement is a STANDALONE text that will be copied into the reviewer worksheet. EVERY abbreviation must be spelled out in full on FIRST USE within EACH statement. Do NOT assume the reader has seen a previous statement. Examples:
    - WRONG: "The application describes SBIRT, MOUD, and FQHC billing."
@@ -604,8 +604,8 @@ VERIFICATION: The number of bullets you identify must match what a reviewer woul
    This applies to ALL abbreviations: SBIRT, MOUD, FQHC, SUD, OUD, FTE, RCORP, HRSA, PRSS, QI/QA, PDSA, and any other acronym. Spell it out first, then parenthetical abbreviation.
 
 3. CRITICAL RULES:
-   - requirement_assessments: ALWAYS one entry per NOFO bullet (exact count match). This is the structured data.
-   - strengths/mets lists: CONSOLIDATE into a maximum of 3 entries per list. Group related bullets into broader evaluative statements. These are for the reviewer worksheet — concise is better. EVERY abbreviation must be spelled out on first use in EACH statement.
+   - requirement_assessments: ALWAYS one entry per NOFO requirement (exact count match). This is the structured data.
+   - strengths/mets lists: CONSOLIDATE into a maximum of 3 entries per list. Group related requirements into broader evaluative statements. These are for the reviewer worksheet — concise is better. Every statement MUST begin with "The applicant" or "The application". EVERY abbreviation must be spelled out on first use in EACH statement.
    - weaknesses list: Keep each weakness SEPARATE with its own NOFO requirement citation and impact statement. Do not consolidate weaknesses. EVERY abbreviation must be spelled out on first use.
    - If a question has both strong and weak aspects, choose the DOMINANT assessment.
    - The number of entries in requirement_assessments must equal the number of NOFO evaluation bullets found for this criterion.
