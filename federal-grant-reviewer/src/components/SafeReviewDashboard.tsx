@@ -2160,6 +2160,7 @@ const SafeReviewDashboard: React.FC = () => {
                             'EBI': 'Evidence-Based Intervention',
                             'PDC': 'Proportion of Days Covered',
                             'MCO': 'Managed Care Organization',
+                            'HIPAA': 'Health Insurance Portability and Accountability Act',
                           };
                           const allText = [...armStrengths, ...armMets, ...armWeaknesses].map((f: any) => f.comment || '').join(' ');
                           const usedAbbrs = Object.entries(abbrMap).filter(([abbr]) => {
