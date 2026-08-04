@@ -2120,12 +2120,65 @@ const SafeReviewDashboard: React.FC = () => {
                           const armMets = (c as any).mets || [];
                           const armWeaknesses = (c as any).weaknesses || [];
                           if (armStrengths.length === 0 && armMets.length === 0 && armWeaknesses.length === 0) return null;
+
+                          // Scan all comments for abbreviations and build a glossary
+                          const abbrMap: Record<string, string> = {
+                            'SBIRT': 'Screening, Brief Intervention, and Referral to Treatment',
+                            'MOUD': 'Medications for Opioid Use Disorder',
+                            'MAT': 'Medication-Assisted Treatment',
+                            'SUD': 'Substance Use Disorder',
+                            'OUD': 'Opioid Use Disorder',
+                            'FQHC': 'Federally Qualified Health Center',
+                            'RCORP': 'Rural Communities Opioid Response Program',
+                            'HRSA': 'Health Resources and Services Administration',
+                            'FORHP': 'Federal Office of Rural Health Policy',
+                            'FTE': 'Full-Time Equivalent',
+                            'MAHA': 'Making America Healthy Again',
+                            'PRSS': 'Peer Recovery Support Specialist',
+                            'PDSA': 'Plan-Do-Study-Act',
+                            'QI': 'Quality Improvement',
+                            'QA': 'Quality Assurance',
+                            'CQI': 'Continuous Quality Improvement',
+                            'EHR': 'Electronic Health Record',
+                            'HPSA': 'Health Professional Shortage Area',
+                            'MUA': 'Medically Underserved Area',
+                            'ED': 'Emergency Department',
+                            'NOFO': 'Notice of Funding Opportunity',
+                            'TA': 'Technical Assistance',
+                            'MOU': 'Memorandum of Understanding',
+                            'LOC': 'Letter of Commitment',
+                            'LOS': 'Letter of Support',
+                            'SF-424': 'Standard Form 424 (Application for Federal Assistance)',
+                            'SF-424A': 'Standard Form 424A (Budget Information)',
+                            'NSDUH': 'National Survey on Drug Use and Health',
+                            'CDC': 'Centers for Disease Control and Prevention',
+                            'SAMHSA': 'Substance Abuse and Mental Health Services Administration',
+                            'DEA': 'Drug Enforcement Administration',
+                            'CARA': 'Comprehensive Addiction and Recovery Act',
+                            'CSAP': 'Center for Substance Abuse Prevention',
+                            'SPF': 'Strategic Prevention Framework',
+                            'EBI': 'Evidence-Based Intervention',
+                            'PDC': 'Proportion of Days Covered',
+                            'MCO': 'Managed Care Organization',
+                          };
+                          const allText = [...armStrengths, ...armMets, ...armWeaknesses].map((f: any) => f.comment || '').join(' ');
+                          const usedAbbrs = Object.entries(abbrMap).filter(([abbr]) => {
+                            const re = new RegExp('\\b' + abbr + '\\b');
+                            return re.test(allText);
+                          });
+
                           return (
                             <div className="mt-3 rounded-lg border-2 border-indigo-200 bg-indigo-50/30 p-4">
                               <h4 className="text-sm font-bold text-indigo-800 mb-3 flex items-center gap-2">
                                 <span>📋</span> Consolidated ARM Statements
                                 <span className="text-xs font-normal text-indigo-500">(copy to reviewer worksheet)</span>
                               </h4>
+                              {usedAbbrs.length > 0 && (
+                                <div className="mb-3 rounded bg-slate-50 border border-slate-200 p-2.5">
+                                  <p className="text-xs font-bold text-slate-600 mb-1">Abbreviations Used</p>
+                                  <p className="text-xs text-slate-500 leading-relaxed">{usedAbbrs.map(([abbr, full]) => abbr + ' = ' + full).join(' | ')}</p>
+                                </div>
+                              )}
                               {armStrengths.length > 0 && (
                                 <div className="mb-3">
                                   <p className="text-xs font-bold text-emerald-700 uppercase mb-1">Strengths</p>
