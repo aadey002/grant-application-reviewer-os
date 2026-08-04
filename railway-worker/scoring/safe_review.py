@@ -83,6 +83,53 @@ def extract_document_pages(path: Path) -> list[str]:
         return [text]
     raise ValueError("NOFO must be PDF or DOCX")
 
+def _extract_evaluation_bullets(nearby_text: str) -> list[str]:
+    """Extract individual evaluation bullet points from text following a criterion heading.
+
+    Looks for bullets starting with bullet characters or 'How' / 'The' / 'Whether' patterns
+    that typically begin NOFO evaluation sub-criteria. Returns each bullet as a complete,
+    cleaned string — these are the exact texts that must appear verbatim in requirement_assessments.
+    """
+    # First, truncate at the next criterion heading to prevent bleeding into subsequent criteria
+    next_criterion = re.search(r'(?i)\n\s*Criterion\s+\d', nearby_text)
+    if next_criterion:
+        nearby_text = nearby_text[:next_criterion.start()]
+
+    # Also truncate at "Strengths" / "Weaknesses" / "Mets" section headers (reviewer worksheet markers)
+    section_break = re.search(r'(?i)\n\s*(?:Strengths|Weaknesses|Mets)\s*(?:\(|$|\n)', nearby_text)
+    if section_break:
+        nearby_text = nearby_text[:section_break.start()]
+
+    bullets = []
+    # Split on bullet markers: •, ·, -, *, or numbered patterns like "1."
+    lines = re.split(r'\n\s*[•·\u2022\u25e6\u2023\u2043\-\*]\s*|\n\s*\d+\.\s+', nearby_text)
+
+    # Also try splitting on the pattern "• How" or "• The" etc. if few results
+    if len(lines) <= 2:
+        bullet_pattern = re.compile(r'(?:^|\n)\s*(?:[•·\u2022\u25e6\-\*]\s*|(?=(?:How |The |Whether |Describes |Shows |Provides |Responds |Engages |Justifies )))')
+        lines = bullet_pattern.split(nearby_text)
+
+    for line in lines:
+        cleaned = " ".join(line.split()).strip()
+        if len(cleaned) < 20:
+            continue
+        # Stop if we hit another criterion heading
+        if re.match(r'(?i)criterion\s+\d', cleaned):
+            break
+        # Only keep lines that look like evaluation bullets
+        if re.match(r'(?i)(How |The |Whether |Describes |Shows |Provides |Responds |Engages |Justifies |Your |You |Proposed )', cleaned):
+            cleaned = cleaned.rstrip('.')
+            # Truncate at sentence boundaries that introduce non-bullet content
+            for stop_phrase in ['. We do not', '. We will', '. HRSA ', '. See ', '. Note:', '. If ']:
+                stop_idx = cleaned.find(stop_phrase)
+                if stop_idx > 20:
+                    cleaned = cleaned[:stop_idx]
+                    break
+            bullets.append(cleaned)
+
+    return bullets
+
+
 def extract_nofo_criteria(path: Path) -> dict[str, Any]:
     """Extract criterion headings, subcriteria, and point values with source-page provenance."""
     pages = extract_document_pages(path)
@@ -125,12 +172,15 @@ def extract_nofo_criteria(path: Path) -> dict[str, Any]:
                 if key in seen:
                     continue
                 seen.add(key)
-                nearby = text[match.end():match.end() + 1200]
+                nearby = text[match.end():match.end() + 2500]
                 keywords = [word.lower() for word in re.findall(r"[A-Za-z][A-Za-z-]{3,}", name) if word.lower() not in {"criterion", "review"}]
+                # Extract individual evaluation bullets from the nearby text
+                evaluation_bullets = _extract_evaluation_bullets(nearby)
                 criterion = {"number": int(number), "name": name, "points": int(points),
                               "keywords": keywords or [name.lower()], "source_page": page_number,
                               "source_heading": " ".join(match.group(0).split()),
-                              "context_preview": " ".join(nearby.split())[:500],
+                              "context_preview": " ".join(nearby.split())[:1500],
+                              "evaluation_bullets": evaluation_bullets,
                               "_pos": match.start(), "_page": page_number}
                 found.append(criterion)
 

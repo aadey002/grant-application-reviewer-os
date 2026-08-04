@@ -418,6 +418,19 @@ def _score_single_criterion(client, model: str, application_text: str, criterion
     else:
         sub_instruction = ""
 
+    # Build explicit evaluation bullets instruction if available
+    eval_bullets = criterion.get("evaluation_bullets", [])
+    if eval_bullets:
+        bullets_text = "\n".join("  " + str(i + 1) + ". " + b for i, b in enumerate(eval_bullets))
+        bullets_instruction = (
+            "\n\nEXACT EVALUATION BULLETS FOR THIS CRITERION (extracted from NOFO — use these VERBATIM):\n"
+            + bullets_text + "\n\n"
+            "You MUST create exactly " + str(len(eval_bullets)) + " requirement_assessment entries — one per bullet above.\n"
+            "Each requirement_text MUST be the EXACT text from the numbered bullet above — copy it word-for-word.\n"
+            "Do NOT search the NOFO for different bullets. Do NOT paraphrase. Do NOT merge. Use THESE bullets.\n"
+        )
+        sub_instruction = sub_instruction + bullets_instruction
+
     if agency.upper() in ("SAMHSA", "CSAP"):
         # --- SAMHSA-specific tool schema (qualitative descriptors, NOT equitable formula) ---
         samhsa_tool = {"name": "score_criterion", "description": f"Submit SAMHSA qualitative score for '{name}' ({points} points).", "input_schema": {"type": "object", "additionalProperties": False,
