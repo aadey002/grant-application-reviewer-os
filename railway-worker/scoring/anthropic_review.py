@@ -66,6 +66,11 @@ REVIEWER VOICE RULE — CRITICAL: NEVER include specific numbers, statistics, pe
 
 WEAKNESS RULES: Every weakness MUST cite the specific NOFO requirement the application falls short of, with the exact NOFO page number(s). Include application page(s) showing the shortfall and explain the material impact. Do not identify weaknesses based on reviewer preference or outside knowledge — only against explicitly stated NOFO requirements. If a weakness cannot be supported by a specific NOFO requirement, omit it rather than lowering the score.
 
+INVALID WEAKNESS PATTERNS — do NOT cite these as weaknesses:
+- A position being unfilled/TBD at submission when the FTE is budgeted and a hiring plan is described. Federal grants routinely have TBD positions — the NOFO asks about sufficiency of TIME ALLOCATION, not whether the person is already hired. An unfilled position with adequate FTE and a hiring timeline is Met, not a weakness.
+- Not naming a specific person for a role when the role, qualifications, FTE, and recruitment plan are described.
+- Deferring hiring to the post-award period when the NOFO does not require staff to be in place at submission.
+
 PAGE LIMIT — CRITICAL:
 If the application text includes a [PAGE LIMIT ENFORCED] warning, the application exceeds the NOFO page limit. Do NOT cite, reference, or use evidence from any page beyond the stated limit. Any finding that relies on evidence past the page limit must be removed. Per NOFO: "We will not review any pages that exceed the page limit."
 
@@ -129,6 +134,7 @@ R7 NO SPECULATIVE WEAKNESSES — CRITICAL, READ CAREFULLY:
   - Not providing enough detail on evaluation plan specifics that are due AFTER award (e.g., needs assessment due 04/30/27)
   - Insufficient detail on participant enrollment targets in timeline (timeline only requires dates, activities, staff)
   - Not addressing readiness for hypothetical future SAMHSA requirements
+  - A position being unfilled/TBD at submission when the FTE is budgeted and a hiring plan is described — federal grants routinely have TBD positions
   Before writing ANY weakness, ask: "Does the NOFO evaluation criterion EXPLICITLY require this?" If no, OMIT the weakness.
 
 R8 SECTION B HARD CAP: Missing ANY required SPF activity = max Acceptable (21-23). Required activities: Assessment, Capacity, Planning, Implementation, Evaluation (all 5 within specified timeframes). Allowable activities are optional — no penalty for omission. (GPO Richardson, RA Houde)
