@@ -596,12 +596,14 @@ VERIFICATION: The number of bullets you identify must match what a reviewer woul
       - explanation: 1-3 sentence reviewer comment — this is your ONE response to this question
       - application_pages: 1-3 most relevant pages
       - For weaknesses: include nofo_requirement (exact NOFO text) and impact
-   b. In strengths/mets/weaknesses lists: ONE corresponding entry per question, placed in the correct list based on finding_type. The comment must reference which NOFO question it answers.
+   b. In strengths/mets/weaknesses lists: CONSOLIDATE related findings into fewer, broader statements for the reviewer worksheet. Group related bullets into a single sentence that covers multiple NOFO questions. Target a MAXIMUM of 3 entries per list (strengths, mets, weaknesses) per criterion. Each consolidated statement should cover 2-3 related NOFO bullets in one evaluative sentence. Weaknesses are the exception — keep each weakness as a separate entry with its own NOFO citation.
 
-3. CRITICAL — ONE RESPONSE PER QUESTION RULES:
-   - If a question has both strong and weak aspects, choose the DOMINANT assessment. Do not split into separate strength and weakness findings for the same question.
+3. CRITICAL RULES:
+   - requirement_assessments: ALWAYS one entry per NOFO bullet (exact count match). This is the structured data.
+   - strengths/mets lists: CONSOLIDATE into a maximum of 3 entries per list. Group related bullets into broader evaluative statements. These are for the reviewer worksheet — concise is better.
+   - weaknesses list: Keep each weakness SEPARATE with its own NOFO requirement citation and impact statement. Do not consolidate weaknesses.
+   - If a question has both strong and weak aspects, choose the DOMINANT assessment.
    - The number of entries in requirement_assessments must equal the number of NOFO evaluation bullets found for this criterion.
-   - The total entries across strengths + mets + weaknesses must also equal the number of NOFO evaluation bullets.
    - NEVER produce multiple findings that answer the same worksheet question.
 
 4. CRITICAL — CRITERION PLACEMENT RULE:
