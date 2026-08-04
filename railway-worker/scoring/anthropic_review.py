@@ -554,6 +554,23 @@ The reviewer worksheet has ONE row per NOFO evaluation question. Your output MUS
    - The total entries across strengths + mets + weaknesses must also equal the number of NOFO evaluation bullets.
    - NEVER produce multiple findings that answer the same worksheet question.
 
+4. CRITICAL — CRITERION PLACEMENT RULE:
+   Each finding MUST come from the correct section of the application narrative AND match the correct NOFO criterion. Do NOT:
+   - Place Need content (problem description, data, barriers, burden) under Impact. Impact asks about likelihood of project OUTCOMES, not severity of need.
+   - Place Impact content (sustainability, long-term buy-in) under Need. Need asks about the problem, not the solution's durability.
+   - Place Resources content (staffing, FTE, qualifications) under Support Requested. Support Requested is about the budget.
+   - Place Network/Response content (partner commitments, governance) under Need or Resources.
+
+   NOFO sections map to application narrative sections:
+   - Criterion 1 (Need) → Introduction and Need sections of the narrative
+   - Criterion 2 (Response) → Approach, High-level work plan, Resolving challenges sections
+   - Criterion 3 (Performance) → Performance reporting and evaluation section
+   - Criterion 4 (Impact) → Approach, High-level work plan, Sustainability sections — but ONLY the parts about OUTCOMES, LIKELIHOOD OF SUCCESS, CONTINUATION, and BUY-IN
+   - Criterion 5 (Resources) → Organizational information section
+   - Criterion 6 (Support) → Budget and budget narrative section
+
+   If the application discusses need data in its Impact section, that evidence belongs in your Criterion 1 findings, not Criterion 4. Match the NOFO evaluation question, not the application's section heading.
+
 4. If this criterion has subcriteria, prefix each explanation with the subcriterion name in brackets (e.g., "[Overview] The applicant...").
 5. Classify the overall criterion (strength/met/minor_weakness/moderate_weakness/major_weakness/not_addressed).
 6. Apply the corresponding multiplier (1.0/0.9/0.7/0.5/0.25/0.0).
