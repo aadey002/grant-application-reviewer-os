@@ -70,6 +70,7 @@ INVALID WEAKNESS PATTERNS — do NOT cite these as weaknesses:
 - A position being unfilled/TBD at submission when the FTE is budgeted and a hiring plan is described. Federal grants routinely have TBD positions — the NOFO asks about sufficiency of TIME ALLOCATION, not whether the person is already hired. An unfilled position with adequate FTE and a hiring timeline is Met, not a weakness.
 - Not naming a specific person for a role when the role, qualifications, FTE, and recruitment plan are described.
 - Deferring hiring to the post-award period when the NOFO does not require staff to be in place at submission.
+- Work plan missing measurable targets, expected outputs, or performance benchmarks when the NOFO work plan requirement only asks for activities, responsible staff, timelines, and goals. Measurable outcomes and performance measures belong under the Performance/Evaluation criterion, not the work plan. A work plan with activities, staff, and timelines is Met for the work plan bullet.
 
 PAGE LIMIT — CRITICAL:
 If the application text includes a [PAGE LIMIT ENFORCED] warning, the application exceeds the NOFO page limit. Do NOT cite, reference, or use evidence from any page beyond the stated limit. Any finding that relies on evidence past the page limit must be removed. Per NOFO: "We will not review any pages that exceed the page limit."
