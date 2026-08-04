@@ -85,7 +85,7 @@ NOFO EVALUATION CRITERIA:
 Read the NOFO document provided in the user message to find the evaluation criteria. Look for the
 "Evaluation Criteria" or "Merit Review" section — it lists sections (A, B, C, D or numbered criteria)
 with point values and specific questions/bullets the applicant must address. Use the EXACT text from
-the NOFO for requirement_text fields. Find the ACTUAL page numbers where each criterion appears
+the NOFO for requirement_text fields — copy VERBATIM, never paraphrase. Find the ACTUAL page numbers where each criterion appears
 using the "--- NOFO PAGE X ---" markers in the provided text.
 
 SCORE BANDS:
@@ -242,7 +242,7 @@ def _tool(criteria: list[dict[str, Any]]) -> dict[str, Any]:
         "properties": {
             "comment": {"type": "string"},
             "application_pages": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}},
-            "nofo_requirement": {"type": "string", "description": "Exact or faithful paraphrase of the NOFO requirement the application falls short of"},
+            "nofo_requirement": {"type": "string", "description": "EXACT VERBATIM text of the NOFO requirement the application falls short of — copy word-for-word, never paraphrase"},
             "nofo_pages": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}},
             "impact": {"type": "string", "description": "Why the shortfall matters to this review criterion"}
         }
@@ -374,7 +374,7 @@ def _score_single_criterion(client, model: str, application_text: str, criterion
         "type": "object", "additionalProperties": False,
         "required": ["requirement_text", "nofo_pages", "response_status", "finding_type", "application_pages", "explanation"],
         "properties": {
-            "requirement_text": {"type": "string", "description": "The NOFO requirement bullet or evaluation question being assessed"},
+            "requirement_text": {"type": "string", "description": "The EXACT VERBATIM text of the NOFO requirement bullet or evaluation question. Copy word-for-word from the NOFO — do NOT paraphrase, summarize, merge, or reword in any way."},
             "nofo_pages": {"type": "array", "items": {"type": "integer", "minimum": 1}},
             "response_status": {"type": "string", "enum": ["exceeds", "fully_addressed", "partially_addressed", "not_addressed", "unable_to_evaluate"]},
             "finding_type": {"type": "string", "enum": ["strength", "met", "weakness"], "description": "Whether this requirement is a strength (exceeds), met (adequately addressed), or weakness (falls short)"},
@@ -535,6 +535,10 @@ CRITICAL SCORING CALIBRATION:
 INSTRUCTIONS — ONE RESPONSE PER WORKSHEET QUESTION:
 The reviewer worksheet has ONE row per NOFO evaluation question. Your output MUST match this structure exactly: ONE finding per question — no more, no less.
 
+ABSOLUTE RULE — NO PARAPHRASING: Every requirement_text MUST be copied VERBATIM word-for-word from the NOFO. Do NOT paraphrase, summarize, merge multiple bullets into one, reword, or invent your own requirement language. If the NOFO says "How likely it is that the proposed project will lead to new or expanded evidence-based SUD prevention, treatment, and recovery services in rural areas" then requirement_text must contain that EXACT sentence. Paraphrasing causes the review to fail QA and must be re-done.
+
+ABSOLUTE RULE — NO MERGING: If the NOFO lists 5 bullets under a criterion, you MUST produce exactly 5 requirement_assessment entries — one per bullet. Do NOT combine two bullets into one entry. Do NOT skip any bullet. The count of requirement_assessments MUST equal the count of bullets in the NOFO for that criterion.
+
 CRITICAL — IDENTIFYING THE CORRECT EVALUATION QUESTIONS:
 The NOFO contains MULTIPLE sections that discuss each criterion. You MUST use ONLY the evaluation criteria bullets — NOT narrative guidance, program description, or application instructions. The evaluation criteria are found in the "Merit Review" or "Application Review" section (typically pages 45-55 of the NOFO) under headings like "Criterion 1: Need (X points)" followed by "The panel will review your application for:" and then bullet points.
 
@@ -549,19 +553,19 @@ ONLY USE questions from:
 - Bullets preceded by "The panel will review your application for:"
 - These are the EXACT bullets on the reviewer worksheet
 
-VERIFICATION: The number of bullets you identify must match what a reviewer would see on their printed worksheet. If the NOFO's evaluation section lists 4 bullets under a criterion, you must have exactly 4 requirement_assessments — not 3, not 5.
+VERIFICATION: The number of bullets you identify must match what a reviewer would see on their printed worksheet. If the NOFO's evaluation section lists 5 bullets under a criterion, you must have exactly 5 requirement_assessments — not 3, not 4.
 
-1. Find EVERY evaluation bullet listed under this criterion in the EVALUATION CRITERIA section of the NOFO (NOT the narrative guidance section). Each bullet after "The panel will review" becomes one worksheet question.
+1. Find EVERY evaluation bullet listed under this criterion in the EVALUATION CRITERIA section of the NOFO (NOT the narrative guidance section). Each bullet after "The panel will review" becomes one worksheet question. Count them.
 
 2. For EACH worksheet question, produce EXACTLY ONE response:
    a. In requirement_assessments: ONE entry per question with:
-      - requirement_text: The VERBATIM NOFO question/bullet text (this IS the worksheet question)
+      - requirement_text: The EXACT VERBATIM NOFO question/bullet text — word for word, no changes, no paraphrasing
       - nofo_pages: NOFO page(s) where this question appears
       - response_status: exceeds / fully_addressed / partially_addressed / not_addressed / unable_to_evaluate
       - finding_type: strength (if exceeds), met (if fully_addressed), weakness (if partially/not addressed)
       - explanation: 1-3 sentence reviewer comment — this is your ONE response to this question
       - application_pages: 1-3 most relevant pages
-      - For weaknesses: include nofo_requirement and impact
+      - For weaknesses: include nofo_requirement (exact NOFO text) and impact
    b. In strengths/mets/weaknesses lists: ONE corresponding entry per question, placed in the correct list based on finding_type. The comment must reference which NOFO question it answers.
 
 3. CRITICAL — ONE RESPONSE PER QUESTION RULES:
@@ -587,12 +591,13 @@ VERIFICATION: The number of bullets you identify must match what a reviewer woul
 
    If the application discusses need data in its Impact section, that evidence belongs in your Criterion 1 findings, not Criterion 4. Match the NOFO evaluation question, not the application's section heading.
 
-4. If this criterion has subcriteria, prefix each explanation with the subcriterion name in brackets (e.g., "[Overview] The applicant...").
-5. Classify the overall criterion (strength/met/minor_weakness/moderate_weakness/major_weakness/not_addressed).
-6. Apply the corresponding multiplier (1.0/0.9/0.7/0.5/0.25/0.0).
-7. For strengths, use professional superlative language — "thoroughly documents," "comprehensively addresses," "clearly demonstrates exceptional."
-8. Calculate: calculated_score = round_half_up(maximum_points × multiplier). Set formula_version to "equitable-v1.2".
-9. Look for EXPLICIT evaluation questions in the NOFO. Copy them VERBATIM into question_responses. If none exist, return an EMPTY question_responses array.
+5. If this criterion has subcriteria, prefix each explanation with the subcriterion name in brackets (e.g., "[Overview] The applicant...").
+6. Classify the overall criterion (strength/met/minor_weakness/moderate_weakness/major_weakness/not_addressed).
+7. Apply the corresponding multiplier (1.0/0.9/0.7/0.5/0.25/0.0).
+8. For strengths, use professional superlative language — "thoroughly documents," "comprehensively addresses," "clearly demonstrates exceptional."
+9. Calculate: calculated_score = round_half_up(maximum_points × multiplier). Set formula_version to "equitable-v1.2".
+10. Also provide traditional strengths/mets/weaknesses lists for backward compatibility. Each finding in these lists should correspond to a requirement_assessment entry.
+11. Look for EXPLICIT evaluation questions in the NOFO. Copy them VERBATIM into question_responses. If none exist, return an EMPTY question_responses array.
 10. Give an overall score_rationale summarizing the criterion assessment.
 11. Each comment must be one concise sentence. No unexpanded acronyms.
 12. PAGE CITATIONS FORMAT: Prefix every application page citation with the reviewer initials "AOR". Example: "AOR App p. 12, 13" not "App p. 12, 13". This identifies the reviewer in the combined statement."""

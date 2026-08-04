@@ -215,7 +215,7 @@ def _score_samhsa_section(
         "required": ["question_id", "requirement_text", "nofo_pages", "response_status", "finding_type", "application_pages", "explanation"],
         "properties": {
             "question_id": {"type": "string", "description": "The question label, e.g. A.1, B.2"},
-            "requirement_text": {"type": "string", "description": "The NOFO evaluation question being assessed — use the EXACT text from the NOFO"},
+            "requirement_text": {"type": "string", "description": "The EXACT VERBATIM text of the NOFO evaluation question. Copy word-for-word — do NOT paraphrase, summarize, merge, or reword in any way."},
             "nofo_pages": {"type": "array", "minItems": 1, "maxItems": 2, "items": {"type": "integer", "minimum": 1}, "description": "1-2 NOFO pages where this requirement appears"},
             "response_status": {"type": "string", "enum": ["thoroughly_addressed", "addressed", "partially_addressed", "not_addressed"]},
             "finding_type": {"type": "string", "enum": ["strength", "met", "weakness"]},
@@ -292,6 +292,7 @@ APPLICATION:
 {application_text}
 
 INSTRUCTIONS:
+ABSOLUTE RULE — NO PARAPHRASING: Every requirement_text MUST be copied VERBATIM word-for-word from the NOFO. Do NOT paraphrase, summarize, merge, or reword. Do NOT skip any question. The count of requirement_assessments MUST equal the count of evaluation questions.
 1. For EACH evaluation question ({', '.join(q['id'] for q in questions)}), create one requirement_assessment entry.
 2. Also create labeled strength and weakness comments for the Strengths and Weaknesses boxes.
 3. Label every comment with the question ID (e.g., "A.1 The applicant clearly describes...").
