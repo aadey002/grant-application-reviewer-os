@@ -3,3 +3,4 @@ backend/uploads/
 node_modules/
 dist/
 .vercel
+.env*.local
