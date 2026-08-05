@@ -4,7 +4,7 @@ import {
   FileText, History, Loader2, LogOut, RefreshCw, Trash2, Upload, WifiOff, XCircle,
 } from 'lucide-react';
 import {
-  deleteApplicantData, deleteReview, extractRubric, ExtractedRubric, generateNofoBrief,
+  deleteApplicantData, deleteReview, deleteSingleApplication, extractRubric, ExtractedRubric, generateNofoBrief,
   getApplicationViewUrl, getNofoBrief, getNofoViewUrl,
   getNofoBriefDownload, getReviewResults,
   getConsensusResult, getWorksheetUrl, JobStatus, listReviews, NofoBrief, pollJobStatus,
@@ -1872,13 +1872,32 @@ const SafeReviewDashboard: React.FC = () => {
 
                 <div className="mb-6 flex flex-wrap gap-2">
                   {reviews.map((r, i) => (
-                    <button
-                      key={r.review_id}
-                      onClick={() => { setSelected(i); setFindingsFilter('all'); }}
-                      className={'rounded-lg border px-4 py-2 text-sm font-semibold ' + (selected === i ? 'border-blue-600 bg-blue-600 text-white' : 'bg-white')}
-                    >
-                      {r.applicant_name || 'Application ' + (i + 1)}
-                    </button>
+                    <div key={r.review_id} className="flex items-center gap-0.5">
+                      <button
+                        onClick={() => { setSelected(i); setFindingsFilter('all'); }}
+                        className={'rounded-l-lg border px-4 py-2 text-sm font-semibold ' + (selected === i ? 'border-blue-600 bg-blue-600 text-white' : 'bg-white')}
+                      >
+                        {r.applicant_name || 'Application ' + (i + 1)}
+                      </button>
+                      {reviews.length > 1 && (
+                        <button
+                          title="Remove this application"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!window.confirm('Remove "' + (r.applicant_name || 'Application ' + (i + 1)) + '" from this review?')) return;
+                            try {
+                              await deleteSingleApplication(r.application_id);
+                              setReviews(prev => prev.filter((_, idx) => idx !== i));
+                              setAppProgress(prev => prev.filter((_, idx) => idx !== i));
+                              if (selected >= reviews.length - 1) setSelected(Math.max(0, reviews.length - 2));
+                            } catch (err) { setError(err instanceof Error ? err.message : 'Failed to delete application'); }
+                          }}
+                          className={'rounded-r-lg border border-l-0 px-2 py-2 text-sm hover:bg-red-50 hover:text-red-600 ' + (selected === i ? 'border-blue-600 bg-blue-700 text-blue-200 hover:bg-red-600 hover:text-white' : 'bg-white text-slate-400')}
+                        >
+                          <XCircle size={14} />
+                        </button>
+                      )}
+                    </div>
                   ))}
                 </div>
 

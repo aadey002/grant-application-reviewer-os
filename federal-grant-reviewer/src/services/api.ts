@@ -345,6 +345,18 @@ export const deleteReview = async (reviewId: string): Promise<void> => {
 };
 
 // ---------------------------------------------------------------------------
+// Delete a single application from a batch review
+// ---------------------------------------------------------------------------
+
+export const deleteSingleApplication = async (applicationId: string): Promise<void> => {
+  await supabase.from('generated_documents').delete().eq('application_id', applicationId);
+  await supabase.from('review_findings').delete().eq('application_id', applicationId);
+  await supabase.from('criterion_scores').delete().eq('application_id', applicationId);
+  await supabase.from('processing_jobs').delete().eq('application_id', applicationId);
+  await supabase.from('applications').delete().eq('id', applicationId);
+};
+
+// ---------------------------------------------------------------------------
 // Retry a failed job — resets status and notifies worker
 // ---------------------------------------------------------------------------
 
