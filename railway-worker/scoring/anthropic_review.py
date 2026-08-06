@@ -572,10 +572,13 @@ APPLICATION:
 SCORING FORMULA (Equitable Formula v1):
 - Strength (1.00): ALL requirements exceeded, documented above-and-beyond evidence
 - Met (0.90): ALL requirements adequately addressed, no gaps, no exceedance
-- Minor weakness (0.70): Most addressed, limited gaps reduce confidence
-- Moderate weakness (0.50): Multiple partial/missing requirements
-- Major weakness (0.25): Mandatory element omitted or seriously deficient
+- Minor weakness (0.70): One requirement is genuinely MISSING from the application
+- Moderate weakness (0.50): Multiple requirements are genuinely MISSING from the application
+- Major weakness (0.25): A mandatory NOFO element is completely absent
 - Not addressed (0.00): No responsive information found
+
+WEAKNESS STANDARD — CRITICAL REMINDER:
+A weakness means the application DOES NOT ADDRESS a NOFO requirement — the response is MISSING, not merely brief or general. If the application addresses the requirement ANYWHERE — even briefly, even in a different section — that is Met, NOT a weakness. Do NOT flag brief, general, or less-detailed responses as weaknesses. Brief is Met. General is Met. Only MISSING or CONTRADICTORY is a weakness. Apply the 4-step test from your system instructions before writing ANY weakness.
 
 Score = round_half_up(maximum_points × multiplier)
 
