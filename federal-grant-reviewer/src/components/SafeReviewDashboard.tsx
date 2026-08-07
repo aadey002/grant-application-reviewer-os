@@ -1159,7 +1159,7 @@ const SafeReviewDashboard: React.FC = () => {
                   {c.subcriteria && c.subcriteria.length > 0 && (
                     <div className="ml-20 mt-2 space-y-1">
                       {c.subcriteria.map((sub, si) => (
-                        <div key={si} className="grid gap-3 md:grid-cols-[1fr_130px] text-sm">
+                        <div key={si} className="flex items-center gap-2 text-sm">
                           <span className="text-slate-600">↳ {sub.name}</span>
                           <label className="font-semibold text-slate-500">
                             <input className="ml-2 w-14 rounded border px-2 py-0.5 text-sm" type="number" value={sub.points} min="0"
@@ -1174,6 +1174,20 @@ const SafeReviewDashboard: React.FC = () => {
                               }}
                             /> pts
                           </label>
+                          <button
+                            title="Remove subcriterion"
+                            onClick={() => {
+                              const next = { ...rubric };
+                              const criteria = [...next.criteria];
+                              const subs = [...(criteria[i].subcriteria || [])].filter((_, idx) => idx !== si);
+                              criteria[i] = { ...criteria[i], subcriteria: subs };
+                              next.criteria = criteria;
+                              setRubric(next);
+                            }}
+                            className="text-slate-400 hover:text-red-600"
+                          >
+                            <XCircle size={14} />
+                          </button>
                         </div>
                       ))}
                     </div>
