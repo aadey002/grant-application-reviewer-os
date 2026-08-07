@@ -1228,9 +1228,14 @@ Do NOT write paragraphs. Do NOT repeat application content. Be evaluative, not d
         prompt = (f"Agency: {agency}\n\nRUBRIC:\n{rubric_list}\n\nNOFO GUIDANCE:\n{nofo_text[:15000]}\n\n"
                   f"APPLICATION (beginning + budget/end pages):\n{app_combined}\n\n"
                   "Complete the OVERVIEW PRESENTATION INFORMATION worksheet section and provide the budget recommendation.\n\n"
-                  "BUDGET INSTRUCTIONS: Extract the EXACT annual budget amounts for ALL years of the project period from the SF-424A or budget justification. "
-                  "The project period length is stated in the NOFO. If the NOFO says 5 years, you must provide 5 annual amounts. "
-                  "Do NOT leave years as null unless the application truly omits them. Budget data is typically in the last pages of the application.")
+                  "BUDGET INSTRUCTIONS: Extract the EXACT annual budget amounts for ALL years of the project period. "
+                  "Look in these locations IN ORDER: "
+                  "1. SF-424A SECTION E — 'BUDGET ESTIMATES OF FEDERAL FUNDS NEEDED FOR BALANCE OF THE PROJECT' — this table lists federal funding by year across all budget periods. "
+                  "2. SF-424A SECTION B — 'BUDGET CATEGORIES' — shows Object Class Categories with totals per grant year/budget period. "
+                  "3. Budget Narrative / Budget Justification — often includes annual totals at the end of each year's section. "
+                  "4. SF-424 face page — 'Estimated Funding: Federal' field shows total federal request. "
+                  "The project period length is stated in the NOFO. If the NOFO says 4 years, provide 4 annual amounts; if 5 years, provide 5. "
+                  "Do NOT leave years as null unless the application truly omits them. Do NOT return 'unable_to_determine' if any of the above sources contain budget data — extract the amounts.")
         resp = client.messages.create(model=model, max_tokens=4000, temperature=0, system=overview_system,
             messages=[{"role": "user", "content": prompt}], tools=[overview_tool], tool_choice={"type": "tool", "name": "submit_overview"})
         tu = next((b for b in resp.content if b.type == "tool_use"), None)
