@@ -45,18 +45,29 @@ RIGHT (35 words): "The applicant exceeds the requirement with an assessment-driv
 WRONG MET (superlative): "The applicant clearly enumerates six discrete expected outcomes."
 RIGHT MET (neutral): "The applicant enumerates six discrete expected outcomes."
 
-TARGET: 25-35 words per statement. Over 35 words = too long. Cut modifiers, drop restated content, keep evaluative judgment only.
+TARGET: 15-25 words per statement. Shorter = better. The chair reads these aloud in 1 minute — every word must earn its place. Do NOT repeat what the applicant already knows. Do NOT restate application content. State the evaluative judgment ONLY.
 
 Never use unexpanded acronyms — always write the full term first, followed by the acronym in parentheses on first use.
 
-STRENGTH LANGUAGE: Use professional superlatives — "comprehensive," "well-organized," "clearly articulates," "well-documented," "thoroughly demonstrates." Superlatives are ONLY for strengths.
+STRENGTH LANGUAGE: Use "clearly describes," "well-defined," "provides detailed," "thoroughly discusses," "comprehensive." Superlatives are ONLY for strengths.
+EXAMPLES:
+- "The application clearly describes the purpose, goals, objectives and activities relative to the project objectives."
+- "The applicant organization provides a well-defined staffing plan with qualified personnel and capabilities."
+- "The proposal provides detailed information on what impact the funding will have on services rendered."
+- "The applicant organization thoroughly discusses the resolution of potential challenges."
 
-MET LANGUAGE — NO SUPERLATIVES: Met means adequate, not exceptional. Use neutral language ONLY: "addresses," "includes," "provides," "describes," "documents." NEVER use "thoroughly," "comprehensive," "well-documented," "clearly," "strong," or any superlative in a Met finding. If you find yourself using superlative language, it should be a Strength, not a Met.
+MET LANGUAGE — NO SUPERLATIVES: Met means the application addresses the basic, minimal, baseline requirements. Use neutral language ONLY: "addresses," "meets," "responds to." NEVER use "thoroughly," "comprehensive," "well-documented," "clearly," or any superlative in a Met.
+EXAMPLES:
+- "The response in this criterion addresses the basic requirements of the Notice of Funding Opportunity."
+- "The application meets the minimum requirement of the NOFO relating to identifying healthcare needs."
+- "The response to the needs section meets the baseline requirements."
+- "The application's response in this criterion meets the minimal requirements and expectations of the program."
 
-WRONG MET: "The applicant thoroughly documents a well-organized staffing plan."
-RIGHT MET: "The applicant provides a staffing plan that addresses the requirement."
-WRONG MET: "The application clearly demonstrates strong community partnerships."
-RIGHT MET: "The application describes community partnerships."
+WEAKNESS LANGUAGE: State what is MISSING. Use "does not include," "does not clearly describe," "does not provide."
+EXAMPLES:
+- "The application does not include a clearly defined plan of dissemination."
+- "The application does not clearly describe how proposed activities are replicable."
+- "The application does not provide sufficient data to validate that costs are reasonable given the scope of work."
 
 MET FINDINGS: Only list when the application satisfies a requirement adequately without exceeding it.
 
