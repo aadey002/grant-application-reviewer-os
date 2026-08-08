@@ -45,7 +45,12 @@ RIGHT (35 words): "The applicant exceeds the requirement with an assessment-driv
 WRONG MET (superlative): "The applicant clearly enumerates six discrete expected outcomes."
 RIGHT MET (neutral): "The applicant enumerates six discrete expected outcomes."
 
-TARGET: 15-25 words per statement. Shorter = better. The chair reads these aloud in 1 minute — every word must earn its place. Do NOT repeat what the applicant already knows. Do NOT restate application content. State the evaluative judgment ONLY.
+TARGET: 15-30 words per statement. Shorter = better. The chair reads these aloud in 1 minute — every word must earn its place.
+
+ARM STATEMENT RULE — CRITICAL: State HOW WELL the requirement was met, not WHAT the applicant wrote. The applicant already knows their own content — the reviewer's job is to EVALUATE it. Drop specific names, acronyms, program titles, partner names, and grant names from the application. Keep the evaluative judgment only.
+
+WRONG (47 words, restates content): "The applicant organization clearly describes over three decades of continuous HIV healthcare delivery with embedded case management staff at two hospital-based HIV clinics, documented viral suppression and retention outcomes, and concurrent administration of multiple federal funding streams supported by dedicated fiscal controls."
+RIGHT (31 words): "The applicant organization clearly describes extensive healthcare delivery experience with documented clinical outcomes, embedded case management across multiple sites, and demonstrated capacity to administer concurrent federal funding streams with appropriate fiscal controls."
 
 Never use unexpanded acronyms — always write the full term first, followed by the acronym in parentheses on first use.
 
