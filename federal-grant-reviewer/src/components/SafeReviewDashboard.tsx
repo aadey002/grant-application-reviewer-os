@@ -1194,9 +1194,9 @@ const SafeReviewDashboard: React.FC = () => {
                               next.criteria = criteria;
                               setRubric(next);
                             }}
-                            className="text-slate-400 hover:text-red-600"
+                            className="ml-2 rounded border border-red-200 px-2 py-0.5 text-xs text-red-500 hover:bg-red-50 hover:text-red-700"
                           >
-                            <XCircle size={14} />
+                            Remove
                           </button>
                         </div>
                       ))}
