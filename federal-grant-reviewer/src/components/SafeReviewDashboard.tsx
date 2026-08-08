@@ -2157,6 +2157,17 @@ const SafeReviewDashboard: React.FC = () => {
                           </div>
                         </div>
 
+                        {/* Subcriteria scores */}
+                        {(c as any).subcriteria && (c as any).subcriteria.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-3">
+                            {(c as any).subcriteria.map((sub: any, si: number) => (
+                              <span key={si} className="rounded-md bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                                {sub.name}: <span className="font-bold">{sub.score ?? '—'}/{sub.maximum_points}</span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
                         {/* Consolidated ARM Statements — at top for easy copy */}
                         {(() => {
                           const armStrengths = (c as any).strengths || [];
