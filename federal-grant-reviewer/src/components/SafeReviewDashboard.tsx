@@ -319,6 +319,16 @@ const SafeReviewDashboard: React.FC = () => {
       })));
     }
 
+    // Restore rubric from grant_reviews so user doesn't have to re-enter on refresh
+    try {
+      const { data: grData } = await supabase.from('grant_reviews').select('extracted_rubric,nofo_storage_path,agency').eq('id', reviewId).single();
+      if (grData?.extracted_rubric) {
+        setRubric(grData.extracted_rubric as ExtractedRubric);
+        if (grData.nofo_storage_path) setNofoStoragePath(grData.nofo_storage_path);
+        if (grData.agency) setAgency(grData.agency);
+      }
+    } catch { /* rubric restore is best-effort */ }
+
     // Try to get results from Supabase (works even without localStorage)
     try {
       const fetched = await getReviewResults(reviewId);
