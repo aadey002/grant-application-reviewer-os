@@ -580,25 +580,38 @@ NOFO TEXT (find the evaluation questions/bullets for this criterion):
 APPLICATION:
 {application_text}
 
-SCORING FORMULA (Equitable Formula v1):
-- Strength (1.00): ALL requirements exceeded, documented above-and-beyond evidence
-- Met (0.90): ALL requirements adequately addressed, no gaps, no exceedance
-- Minor weakness (0.70): One requirement is genuinely MISSING from the application
-- Moderate weakness (0.50): Multiple requirements are genuinely MISSING from the application
-- Major weakness (0.25): A mandatory NOFO element is completely absent
-- Not addressed (0.00): No responsive information found
+HRSA QUALITATIVE SCORING RUBRIC — FOLLOW THIS EXACTLY:
+
+STEP 1: Determine the qualitative descriptor FIRST based on strengths and weaknesses found:
+- Outstanding (classification="strength", multiplier=1.00): ALL elements clearly addressed, well-conceived, thoroughly developed. No deficiencies or weaknesses. All strengths are above and beyond baseline requirements. No restatements of application or NOFO.
+- Very Good (classification="met", multiplier=0.93): Elements clearly addressed with necessary detail. Any weaknesses will likely have MINOR impact on implementation.
+- Good (classification="minor_weakness", multiplier=0.85): Elements addressed but some lack detail. Some strengths but at least ONE weakness with likely MODERATE impact on implementation.
+- Satisfactory (classification="moderate_weakness", multiplier=0.75): Most elements addressed but lack detail. Few strengths and some weaknesses. Only ONE major weakness that could potentially impact implementation.
+- Poor (classification="major_weakness", multiplier=0.35): Few if any elements addressed. Very few strengths, numerous major weaknesses. Weaknesses will prevent successful implementation. OR responses do not meet NOFO programmatic intent.
+
+STEP 2: Look up the score from this table (use EXACT values based on maximum points):
+Max Pts | Outstanding | Very Good | Good      | Satisfactory | Poor
+5       | 5           | 5         | 4         | 3            | 2-0
+10      | 10          | 9         | 8         | 7            | 6-0
+15      | 15          | 14        | 13-12     | 11           | 10-0
+20      | 20          | 19-18     | 17-16     | 15-14        | 13-0
+25      | 25-24       | 23        | 22-20     | 19-18        | 17-0
+30      | 30-29       | 28-27     | 26-24     | 23-21        | 20-0
+35      | 35-34       | 33-32     | 31-28     | 27-25        | 24-0
+40      | 40-39       | 38-36     | 35-32     | 31-28        | 27-0
+45      | 45-43       | 42-41     | 40-36     | 35-32        | 31-0
+
+STEP 3: Assign calculated_score from the band. Pick the TOP of the band unless weaknesses justify lower.
 
 WEAKNESS STANDARD — CRITICAL REMINDER:
 A weakness means the application DOES NOT ADDRESS a NOFO requirement — the response is MISSING, not merely brief or general. If the application addresses the requirement ANYWHERE — even briefly, even in a different section — that is Met, NOT a weakness. Do NOT flag brief, general, or less-detailed responses as weaknesses. Brief is Met. General is Met. Only MISSING or CONTRADICTORY is a weakness. Apply the 4-step test from your system instructions before writing ANY weakness.
 
-Score = round_half_up(maximum_points × multiplier)
-
 CRITICAL SCORING CALIBRATION:
-- Met (90%) is the expected score when all requirements are fully and adequately addressed. This is a strong score.
-- Strength (100%) is earned when the applicant provides documented evidence of meaningfully exceeding the NOFO requirement — not merely addressing it thoroughly. Strength is legitimate when earned but should be justified by specific above-and-beyond evidence.
-- "fully_addressed" is the correct requirement status when the applicant adequately addresses what was asked. "exceeds" requires the applicant to provide something the NOFO did not require that materially adds value.
-- Do NOT award Strength merely because the writing is polished or no weakness was found. That is Met.
-- Do NOT confuse thoroughness with exceedance. A complete, well-organized response to exactly what was asked is Met.
+- ZERO weaknesses → descriptor MUST be Outstanding. You cannot score lower than Outstanding if no weaknesses are found.
+- Very Good (90-95%) is the expected score when all requirements are adequately addressed with minor weaknesses only.
+- Outstanding (96-100%) requires documented evidence of meaningfully EXCEEDING the NOFO requirement — not merely addressing it thoroughly. All strengths must be above and beyond baseline.
+- Do NOT award Outstanding merely because the writing is polished or no weakness was found. Zero weaknesses = Outstanding, but the strengths must demonstrate exceedance, not just completeness.
+- Do NOT confuse thoroughness with exceedance. A complete, well-organized response to exactly what was asked may still be Outstanding if there are zero weaknesses.
 
 INSTRUCTIONS — ONE RESPONSE PER WORKSHEET QUESTION:
 The reviewer worksheet has ONE row per NOFO evaluation question. Your output MUST match this structure exactly: ONE finding per question — no more, no less.
