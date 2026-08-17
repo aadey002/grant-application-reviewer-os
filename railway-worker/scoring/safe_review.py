@@ -83,7 +83,7 @@ def extract_document_pages(path: Path) -> list[str]:
         return [text]
     raise ValueError("NOFO must be PDF or DOCX")
 
-def _extract_evaluation_bullets(nearby_text: str) -> list[str]:
+def _extract_evaluation_bullets(nearby_text: str, truncate_at_subheadings: bool = False) -> list[str]:
     """Extract individual evaluation bullet points from text following a criterion heading.
 
     Looks for bullets starting with bullet characters or 'How' / 'The' / 'Whether' patterns
@@ -94,6 +94,12 @@ def _extract_evaluation_bullets(nearby_text: str) -> list[str]:
     next_criterion = re.search(r'(?i)\n\s*Criterion\s+\d', nearby_text)
     if next_criterion:
         nearby_text = nearby_text[:next_criterion.start()]
+
+    # When extracting for a subcriterion, truncate at the next "Name (N points)" heading
+    if truncate_at_subheadings:
+        next_sub = re.search(r'\n\s*[A-Z][A-Za-z][A-Za-z,\-: ]{2,80}?\s*\(\s*\d+\s*points?\s*\)', nearby_text)
+        if next_sub:
+            nearby_text = nearby_text[:next_sub.start()]
 
     # Also truncate at "Strengths" / "Weaknesses" / "Mets" section headers (reviewer worksheet markers)
     section_break = re.search(r'(?i)\n\s*(?:Strengths|Weaknesses|Mets)\s*(?:\(|$|\n)', nearby_text)
@@ -156,7 +162,8 @@ def extract_nofo_criteria(path: Path) -> dict[str, Any]:
 
     # Unnumbered subcriterion: "Overall methodology (10 points)" — no "Criterion" prefix
     # Match lines like "Name here (N points)" that don't start with "Criterion"
-    sub_unnumbered_pattern = re.compile(r"\n\s*([A-Z][A-Za-z][A-Za-z,\- ]{2,80}?)\s*\(\s*(\d+)\s*points?\s*\)")
+    # Allow colons, digits for headings like "High-level work plan: Attachment 7 (7 points)"
+    sub_unnumbered_pattern = re.compile(r"\n\s*([A-Z][A-Za-z][A-Za-z0-9,\-: ]{2,80}?)\s*\(\s*(\d+)\s*points?\s*\)")
 
     found = []
     all_point_entries: list[dict] = []  # all entries with points, sorted by page/position
@@ -206,28 +213,41 @@ def extract_nofo_criteria(path: Path) -> dict[str, Any]:
         for match in sub_unnumbered_pattern.finditer(text):
             name, points = match.groups()
             name = " ".join(name.split()).strip(" :-–—")
-            if name.lower() in main_names:
+            pts = int(points)
+            # Skip if name starts with "Criterion" — it's a main criterion heading
+            if re.match(r"(?i)criterion\s+\d", name):
                 continue
-            if int(points) >= 30:  # likely a main criterion, not sub
+            # Skip if this IS a main criterion (same name AND same points)
+            main_match = next((c for c in found if c["name"].lower() == name.lower() and c["points"] == pts), None)
+            if main_match:
+                continue
+            if pts >= 30:  # likely a main criterion, not sub
                 continue
             all_sub_candidates.append({
-                "name": name, "points": int(points), "parent_hint": None,
+                "name": name, "points": pts, "parent_hint": None,
                 "source_page": page_number, "_pos": match.start(),
             })
 
-    # Pass 3: Assign subcriteria to parent criteria by page proximity
+    # Pass 3: Assign subcriteria to parent criteria by page/position proximity
     for sub in all_sub_candidates:
-        # Find the main criterion whose page range contains this subcriterion
+        # Find the closest preceding main criterion
         best_parent = None
-        for ci, criterion in enumerate(found):
-            c_page = criterion.get("_page", criterion["source_page"])
-            next_page = found[ci + 1].get("_page", found[ci + 1]["source_page"]) if ci + 1 < len(found) else 9999
-            if sub.get("parent_hint") and sub["parent_hint"] == criterion["number"]:
-                best_parent = ci
-                break
-            if c_page <= sub["source_page"] <= next_page + 1:
-                # Sub appears on same or next page as this criterion
-                if sub["points"] < criterion["points"]:
+        if sub.get("parent_hint"):
+            # Numbered sub explicitly says which parent (e.g. "2.1" -> parent 2)
+            best_parent = next((ci for ci, c in enumerate(found) if c["number"] == sub["parent_hint"]), None)
+        if best_parent is None:
+            # Pick the last criterion that starts BEFORE this sub in document order
+            # (same page + earlier position, or earlier page)
+            sub_page = sub["source_page"]
+            sub_pos = sub.get("_pos", 0)
+            for ci, criterion in enumerate(found):
+                c_page = criterion.get("_page", criterion["source_page"])
+                c_pos = criterion.get("_pos", 0)
+                if sub["points"] >= criterion["points"]:
+                    continue  # sub can't have more points than parent
+                if c_page < sub_page:
+                    best_parent = ci
+                elif c_page == sub_page and c_pos < sub_pos:
                     best_parent = ci
         if best_parent is not None:
             if "subcriteria" not in found[best_parent]:
@@ -238,6 +258,28 @@ def extract_nofo_criteria(path: Path) -> dict[str, Any]:
                 found[best_parent]["subcriteria"].append({
                     "name": sub["name"], "points": sub["points"], "source_page": sub["source_page"],
                 })
+
+    # Pass 4: Extract evaluation bullets for each subcriterion from its source page
+    for criterion in found:
+        for sub in criterion.get("subcriteria", []):
+            sp = sub.get("source_page")
+            if not sp or sp < 1 or sp > len(pages):
+                continue
+            # Find the subcriterion heading on its page and extract bullets after it
+            page_text = pages[sp - 1]
+            # Escape regex-special characters in subcriterion name
+            escaped = re.escape(sub["name"])
+            # Allow optional extra text (e.g. ": Attachment 7") between name and points
+            heading_match = re.search(
+                r"(?i)" + escaped + r"[^(\n]{0,40}\(\s*\d+\s*points?\s*\)",
+                page_text,
+            )
+            if heading_match:
+                nearby = page_text[heading_match.end():heading_match.end() + 2500]
+                sub_bullets = _extract_evaluation_bullets(nearby, truncate_at_subheadings=True)
+                if sub_bullets:
+                    sub["evaluation_bullets"] = sub_bullets
+                    sub["eval_source_page"] = sp
 
     # Clean up internal fields
     for c in found:

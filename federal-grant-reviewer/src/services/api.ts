@@ -57,6 +57,7 @@ export interface JobStatus {
 export interface RunJobsResult {
   review_id: string;
   job_ids: string[];
+  nofo_storage_path: string;
 }
 
 export interface ReviewResults {
@@ -209,7 +210,7 @@ export const createReviewAndUpload = async (
     });
   }
 
-  return { review_id: reviewId, job_ids: jobIds };
+  return { review_id: reviewId, job_ids: jobIds, nofo_storage_path: nofoPath };
 };
 
 // Keep old name as alias

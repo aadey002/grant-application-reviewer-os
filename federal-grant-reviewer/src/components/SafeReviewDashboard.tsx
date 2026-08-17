@@ -614,7 +614,22 @@ const SafeReviewDashboard: React.FC = () => {
 
       savedReviewId = result.review_id;
       setCurrentReviewId(result.review_id);
+      setNofoStoragePath(result.nofo_storage_path);
       window.location.hash = '#/reviews/' + result.review_id;
+
+      // Fire off NOFO brief generation in the background (non-blocking)
+      if (rubric && result.nofo_storage_path) {
+        generateNofoBrief(
+          result.review_id,
+          result.nofo_storage_path,
+          agency,
+          JSON.stringify(rubric.criteria),
+        ).then(() => {
+          startBriefPolling(result.review_id);
+        }).catch(() => {
+          // Worker unavailable — brief won't be generated but scoring continues
+        });
+      }
 
       const stored: StoredReview = {
         review_id: result.review_id,

@@ -471,15 +471,30 @@ def _score_single_criterion(client, model: str, application_text: str, criterion
         sub_instruction = ""
 
     # Build explicit evaluation bullets instruction if available
-    eval_bullets = criterion.get("evaluation_bullets", [])
+    # Collect bullets from parent criterion AND subcriteria
+    eval_bullets = list(criterion.get("evaluation_bullets", []))
     source_page = criterion.get("source_page", None)
+    # Append subcriterion-specific bullets so each gets its own requirement_assessment rows
+    for sub_def in subcriteria_defs:
+        sub_bullets = sub_def.get("evaluation_bullets", [])
+        for sb in sub_bullets:
+            if sb not in eval_bullets:
+                eval_bullets.append(sb)
     if eval_bullets:
         bullets_text = "\n".join("  " + str(i + 1) + ". " + b for i, b in enumerate(eval_bullets))
-        page_instruction = ""
+        # Build page references from both parent and subcriterion source pages
+        all_pages = set()
         if source_page:
-            page_instruction = "For ALL nofo_pages in requirement_assessments for this criterion, use page " + str(source_page) + " — that is the NOFO page where these evaluation bullets appear.\n"
+            all_pages.add(source_page)
+        for sub_def in subcriteria_defs:
+            if sub_def.get("eval_source_page"):
+                all_pages.add(sub_def["eval_source_page"])
+        page_str = ", ".join(str(p) for p in sorted(all_pages)) if all_pages else "?"
+        page_instruction = ""
+        if all_pages:
+            page_instruction = "For nofo_pages in requirement_assessments, use the NOFO page where each specific bullet appears (pages " + page_str + ").\n"
         bullets_instruction = (
-            "\n\nEXACT EVALUATION REQUIREMENTS FOR THIS CRITERION (extracted from NOFO page " + str(source_page or "?") + " — use these VERBATIM):\n"
+            "\n\nEXACT EVALUATION REQUIREMENTS FOR THIS CRITERION (extracted from NOFO pages " + page_str + " — use these VERBATIM):\n"
             + bullets_text + "\n\n"
             "You MUST create exactly " + str(len(eval_bullets)) + " requirement_assessment entries — one per requirement above.\n"
             "Each requirement_text MUST be the EXACT text from the numbered requirement above — copy it word-for-word.\n"
