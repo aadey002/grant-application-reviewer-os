@@ -1279,7 +1279,11 @@ Do NOT write paragraphs. Do NOT repeat application content. Be evaluative, not d
                   "3. Budget Narrative / Budget Justification — often includes annual totals at the end of each year's section. "
                   "4. SF-424 face page — 'Estimated Funding: Federal' field shows total federal request. "
                   "The project period length is stated in the NOFO. If the NOFO says 4 years, provide 4 annual amounts; if 5 years, provide 5. "
-                  "Do NOT leave years as null unless the application truly omits them. Do NOT return 'unable_to_determine' if any of the above sources contain budget data — extract the amounts.")
+                  "Do NOT leave years as null unless the application truly omits them. Do NOT return 'unable_to_determine' if any of the above sources contain budget data — extract the amounts.\n\n"
+                  "FUNDING CEILING RULE — CRITICAL: The NOFO funding range (e.g. '$115,000 to $2,000,000') is the PER-YEAR per-award ceiling, NOT the total across all years. "
+                  "To check compliance, compare EACH YEAR's requested amount against the ceiling — not the multi-year total. "
+                  "Example: if the ceiling is $2,000,000/year and the applicant requests $525,262/year for 4 years ($2,101,048 total), this is UNDER the ceiling and should be recommended 'as_requested'. "
+                  "Only recommend 'as_reduced' if a SINGLE YEAR's request exceeds the per-year ceiling listed in the NOFO or Appendix B for the applicant's service area.")
         resp = client.messages.create(model=model, max_tokens=4000, temperature=0, system=overview_system,
             messages=[{"role": "user", "content": prompt}], tools=[overview_tool], tool_choice={"type": "tool", "name": "submit_overview"})
         tu = next((b for b in resp.content if b.type == "tool_use"), None)
