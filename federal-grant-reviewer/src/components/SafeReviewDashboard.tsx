@@ -938,6 +938,12 @@ const SafeReviewDashboard: React.FC = () => {
           </div>
           <div className="flex items-center gap-3">
             <button
+              onClick={() => { window.location.hash = '#/inventory'; }}
+              className="flex items-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+            >
+              <BarChart3 size={16} /> Inventory
+            </button>
+            <button
               onClick={() => { setStep('history'); setStoredReviews(loadStoredReviews()); window.location.hash = '#/reviews'; }}
               className="flex items-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
             >
