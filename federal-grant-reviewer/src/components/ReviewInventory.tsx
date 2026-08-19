@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { BarChart3, ChevronRight, Download, ExternalLink, LogOut, Search, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, BarChart3, ChevronRight, Download, ExternalLink, LogOut, Search, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -265,8 +265,8 @@ const ReviewInventory: React.FC = () => {
           <p style={{ fontSize: 13, color: '#94a3b8', margin: '4px 0 0' }}>Track and manage all federal grant application reviews</p>
         </div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <button onClick={() => { window.location.hash = '#/app'; }} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-            New Review
+          <button onClick={() => { window.location.hash = '#/app'; }} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <ArrowLeft size={14} /> Back to Reviews
           </button>
           <button onClick={signOut} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#94a3b8', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
             <LogOut size={14} /> Sign Out
