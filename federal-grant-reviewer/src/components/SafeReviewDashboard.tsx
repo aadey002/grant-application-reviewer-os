@@ -575,7 +575,7 @@ const SafeReviewDashboard: React.FC = () => {
     try {
       const item: ReviewPackage = { agency, nofo, applications, rubric: supportRubric, worksheet };
 
-      let result: { review_id: string; job_ids: string[] } | null = null;
+      let result: { review_id: string; job_ids: string[]; nofo_storage_path: string } | null = null;
 
       try {
         result = await runSafeReviews(item, rubric, (stage, detail) => {
