@@ -442,7 +442,12 @@ def run_consensus_review(
         user_flag_instruction = f"""
 
 USER'S REVIEWER IDENTITY: "{user_reviewer_name}"
-When a statement's reviewer citation matches or contains "{user_reviewer_name}", set is_mine: true. Otherwise is_mine: false."""
+Set is_mine: true when ANY of these match:
+1. The statement's reviewer citation contains "{user_reviewer_name}"
+2. The statement's page references/citations contain "{user_reviewer_name}" (e.g., "AOR App p. 31" means this is {user_reviewer_name}'s statement)
+3. The reviewer label that corresponds to statements with "{user_reviewer_name}" in their page citations
+
+PROCESS: First scan ALL statements to find which reviewer label uses "{user_reviewer_name}" in their page citations. Once identified (e.g., "Reviewer A" always has "AOR App p." citations), set is_mine: true on ALL statements from that reviewer — not just the ones with explicit page citations."""
     elif user_review_fingerprints:
         # Build fingerprint block for auto-detection
         fp_sample = user_review_fingerprints[:25]  # limit to keep prompt manageable
