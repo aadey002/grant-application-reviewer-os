@@ -2006,6 +2006,37 @@ const SafeReviewDashboard: React.FC = () => {
                     <div className="grid gap-3 text-sm">
                       {current.applicant_name && <div><span className="font-semibold text-slate-500">Applicant:</span> {current.applicant_name}</div>}
                       {current.application_number && <div><span className="font-semibold text-slate-500">Application #:</span> {current.application_number}</div>}
+                      {/* Per-year funding from full_result.budget */}
+                      {(() => {
+                        const fr = typeof current.full_result === 'string' ? (() => { try { return JSON.parse(current.full_result as string); } catch { return null; } })() : current.full_result;
+                        const budget = (fr as any)?.budget;
+                        const annual = budget?.annual_requested_funding || budget?.annual_recommended_funding;
+                        const totalReq = budget?.total_requested;
+                        const projectName = (fr as any)?.project_name;
+                        const discipline = (fr as any)?.discipline;
+                        const period = (fr as any)?.period_of_performance;
+                        return (
+                          <>
+                            {projectName && <div><span className="font-semibold text-slate-500">Project:</span> {projectName}</div>}
+                            {discipline && <div><span className="font-semibold text-slate-500">Discipline:</span> {discipline}</div>}
+                            {period?.start_date && <div><span className="font-semibold text-slate-500">Period:</span> {period.start_date} – {period.end_date} ({period.years} years)</div>}
+                            {annual && annual.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-3 text-xs">
+                                {annual.map((amt: number | null, i: number) => amt != null && (
+                                  <span key={i} className="rounded bg-blue-50 px-2 py-1 font-mono font-semibold text-blue-800">
+                                    Yr {i + 1}: ${amt.toLocaleString()}
+                                  </span>
+                                ))}
+                                {totalReq != null && (
+                                  <span className="rounded bg-blue-100 px-2 py-1 font-mono font-bold text-blue-900">
+                                    Total: ${totalReq.toLocaleString()}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 )}
@@ -2042,6 +2073,17 @@ const SafeReviewDashboard: React.FC = () => {
                 </div>
 
                 {error && <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-800">{error}</div>}
+
+                {/* ARM Statement Rules Card — always visible */}
+                <div className="mb-4 rounded-xl border bg-white p-4">
+                  <h3 className="font-bold text-sm mb-2">ARM Statement Rules Applied</h3>
+                  <div className="grid grid-cols-2 gap-3 text-xs text-slate-700">
+                    <div><strong className="text-emerald-700">Strengths:</strong> Start &quot;The applicant organization...&quot; Use superlatives — &quot;clearly describes,&quot; &quot;well-defined,&quot; &quot;provides detailed.&quot; 15–30 words. End with <strong>AOR Pg. #</strong>.</div>
+                    <div><strong className="text-blue-700">Mets:</strong> Start &quot;The applicant organization...&quot; Neutral language ONLY — &quot;addresses,&quot; &quot;meets,&quot; &quot;documents.&quot; NO superlatives. 15–30 words. End with <strong>AOR Pg. #</strong>.</div>
+                    <div><strong className="text-red-700">Weaknesses:</strong> Start &quot;The applicant organization does not...&quot; State what is MISSING. Cite NOFO requirement verbatim + <strong>NOFO Pg. #</strong> + <strong>AOR Pg. #</strong>. 15–30 words.</div>
+                    <div><strong className="text-slate-900">Universal:</strong> No specific numbers, names, statistics, dollar amounts, or partner names. No prescriptive language. No comparisons. Third person. Each sub-criterion gets its own S/M/W block.</div>
+                  </div>
+                </div>
 
                 {/* Feature 1: Discipline Mismatch Banner */}
                 {(() => {
@@ -2362,9 +2404,16 @@ const SafeReviewDashboard: React.FC = () => {
 
                         {/* Feature 4 & 5: Requirement Assessments Table + Per-Subcriteria grouping */}
                         {(() => {
-                          const reqs = (c as any).requirement_assessments || [];
+                          // requirement_assessments live in full_result.criteria[], not criterion_scores
+                          const fr = typeof current.full_result === 'string' ? (() => { try { return JSON.parse(current.full_result as string); } catch { return null; } })() : current.full_result;
+                          const frCriteria = (fr as any)?.criteria || [];
+                          const frCrit = frCriteria.find((fc: any) => typeof fc === 'object' && fc?.name?.toLowerCase() === c.name.toLowerCase());
+                          const reqs = frCrit?.requirement_assessments || (c as any).requirement_assessments || [];
                           if (reqs.length === 0) return null;
-                          const subs = (c as any).subcriteria || [];
+                          // subcriteria may be on c (from DB) or frCrit (from full_result) — try both
+                          let subs = (c as any).subcriteria || [];
+                          if (typeof subs === 'string') { try { subs = JSON.parse(subs); } catch { subs = []; } }
+                          if ((!subs || subs.length === 0) && frCrit?.subcriteria) subs = frCrit.subcriteria;
                           const hasSubs = subs.length > 0;
 
                           // Detect verb type from requirement text
