@@ -1338,10 +1338,17 @@ def score_application_with_claude(application: Path, criteria: list[dict[str, An
 
     def _get_overview():
         overview_tool = {"name": "submit_overview", "description": "Submit the OVERVIEW PRESENTATION INFORMATION and budget recommendation.", "input_schema": {"type": "object", "additionalProperties": False,
-            "required": ["applicant_name", "application_number", "overview", "budget", "overall_summary"],
+            "required": ["applicant_name", "application_number", "project_name", "discipline", "period_of_performance", "overview", "budget", "overall_summary"],
             "properties": {
-                "applicant_name": {"type": "string", "description": "Full legal name of the applicant organization"},
+                "applicant_name": {"type": "string", "description": "Full legal name of the applicant organization from SF-424 Box 5"},
                 "application_number": {"type": "string", "description": "Application or grant number from SF-424 or cover page"},
+                "project_name": {"type": "string", "description": "Descriptive title of the applicant's project from SF-424 Box 11 or Box 15 (e.g. 'Enriching Nursing Resources to Impact Community Health (ENRICH-Midwifery)')"},
+                "discipline": {"type": "string", "description": "Health professions discipline (e.g. 'BSN Nursing', 'MSN Nurse-Midwifery', 'Doctor of Pharmacy', 'MSW Social Work')"},
+                "period_of_performance": {"type": "object", "additionalProperties": False, "required": ["start_date", "end_date", "years"], "properties": {
+                    "start_date": {"type": "string", "description": "Start date from SF-424 Box 12 (e.g. '09/01/2026')"},
+                    "end_date": {"type": "string", "description": "End date from SF-424 Box 12 (e.g. '08/31/2031')"},
+                    "years": {"type": "integer", "description": "Number of years in the period of performance"},
+                }},
                 "overview": {"type": "object", "additionalProperties": False,
                     "required": ["applicant_information", "target_population", "project_description", "goals_objectives", "significant_findings", "other_information"],
                     "properties": {
@@ -1352,9 +1359,10 @@ def score_application_with_claude(application: Path, criteria: list[dict[str, An
                         "significant_findings": {"type": "string", "description": "Exactly 1 strength + 1 weakness. Format: Strength: • [one sentence]. Weakness: • [one sentence]. If no weakness: Weakness: • None identified."},
                         "other_information": {"type": "string", "description": "'None.' unless something unusual. Max 1 sentence."},
                     }},
-                "budget": {"type": "object", "additionalProperties": False, "required": ["recommendation", "annual_recommended_funding", "reduction_rationale"], "properties": {
+                "budget": {"type": "object", "additionalProperties": False, "required": ["recommendation", "annual_requested_funding", "total_requested", "reduction_rationale"], "properties": {
                     "recommendation": {"type": "string", "enum": ["as_requested", "as_reduced", "unable_to_determine"]},
-                    "annual_recommended_funding": {"type": "array", "items": {"type": ["number", "null"]}, "maxItems": 5},
+                    "annual_requested_funding": {"type": "array", "description": "EXACT dollar amount requested per budget period — do NOT round. Copy the precise figure from the SF-424/budget forms.", "items": {"type": ["number", "null"]}, "maxItems": 10},
+                    "total_requested": {"type": ["number", "null"], "description": "EXACT total federal funds requested across all years — do NOT round. Sum of annual amounts."},
                     "reduction_rationale": {"type": "string"}}},
                 "overall_summary": {"type": "string", "description": "2-3 sentence overall assessment of the application's competitiveness."},
                 "reviewer_intelligence": {"type": "array", "description": "Deep-read findings that demonstrate thorough review. Each item is a non-obvious observation a surface-level review would miss.", "items": {
@@ -1403,6 +1411,16 @@ FORMAT RULES — CRITICAL:
 - other_information: "None." unless truly unusual. Max 1 sentence.
 
 Do NOT write paragraphs. Do NOT repeat application content. Be evaluative, not descriptive. Never use unexpanded acronyms.
+
+PROJECT IDENTIFICATION — CRITICAL:
+- project_name: Extract the EXACT project title from SF-424 Box 11 or Box 15. Copy it verbatim — do not paraphrase or shorten.
+- discipline: Identify the specific health professions discipline (e.g. 'BSN Nursing', 'MSN Nurse-Midwifery/WHNP', 'Doctor of Pharmacy', 'MSW Social Work').
+- period_of_performance: Extract exact start and end dates from SF-424 Box 12.
+
+BUDGET AMOUNTS — CRITICAL:
+- Extract the EXACT dollar amount for EACH budget period. Do NOT round up or down. If the application says $646,542, report $646,542 — not $647,000 or $646,000.
+- annual_requested_funding: One entry per budget period. Copy the precise figure from SF-424A Section E, R&R Budget form, or budget narrative.
+- total_requested: EXACT sum across all years. Do NOT estimate. If the SF-424 shows $1,152,995, report $1,152,995.
 
 REVIEWER INTELLIGENCE — CRITICAL:
 You MUST populate reviewer_intelligence with 4-8 deep-read findings that demonstrate thorough review of the application. These are observations a surface-level reader would miss. For each, pick the most specific category tag.
