@@ -285,6 +285,87 @@ def _consensus_tool(criteria: list[dict[str, Any]]) -> dict[str, Any]:
 # Main entry point
 # ---------------------------------------------------------------------------
 
+def _build_consensus_intelligence_context(
+    budget_rules: dict | None = None,
+    reviewer_intelligence: list | None = None,
+) -> str:
+    """Build context injection for consensus review from budget rules and reviewer intelligence."""
+    parts = []
+
+    if budget_rules and budget_rules.get("status") == "extracted":
+        parts.append("\n\nNOFO BUDGET RULES (use to validate budget-related statements):")
+        fp = budget_rules.get("funding_parameters", {})
+        ps = budget_rules.get("personnel_salary_rules", {})
+        idc = budget_rules.get("indirect_cost_rules", {})
+        pts = budget_rules.get("participant_trainee_support", {})
+
+        if fp.get("max_award_per_year"):
+            parts.append(f"- Max award/year: ${fp['max_award_per_year']:,.0f} (NOFO p. {fp.get('max_award_per_year_nofo_page', '?')})")
+        if ps.get("allowable_personnel") and ps["allowable_personnel"] != "N/A":
+            parts.append(f"- Allowable personnel: {ps['allowable_personnel']} (NOFO p. {ps.get('allowable_personnel_nofo_page', '?')})")
+        if ps.get("max_fte_pd") and ps["max_fte_pd"] != "N/A":
+            parts.append(f"- PD max FTE: {ps['max_fte_pd']} (NOFO p. {ps.get('max_fte_pd_nofo_page', '?')})")
+        if ps.get("salary_rate_cap"):
+            parts.append(f"- Salary cap: {ps.get('salary_rate_cap_description', 'N/A')} (NOFO p. {ps.get('salary_rate_cap_nofo_page', '?')})")
+        if not ps.get("other_staff_salary_allowed", True):
+            parts.append(f"- Other staff salary: NOT ALLOWED (NOFO p. {ps.get('other_staff_salary_nofo_page', '?')})")
+        if idc.get("idc_rate_cap") and idc["idc_rate_cap"] != "N/A":
+            parts.append(f"- IDC: {idc['idc_rate_cap']} on {idc.get('idc_base_includes', 'N/A')} (NOFO p. {idc.get('idc_rate_cap_nofo_page', '?')})")
+
+        unallowable = budget_rules.get("unallowable_costs", [])
+        if unallowable:
+            parts.append("- Unallowable costs:")
+            for item in unallowable:
+                parts.append(f'  * {item["cost_description"]}: "{item["nofo_text"]}" (NOFO p. {item["nofo_page"]})')
+
+        parts.append("")
+        parts.append("USE THESE RULES TO:")
+        parts.append("- REMOVE any weakness claiming a budget violation that is actually compliant per these rules")
+        parts.append("- REMOVE any strength claiming budget compliance for a rule that doesn't exist in this NOFO")
+        parts.append("- VALIDATE budget-related statements against the actual NOFO constraints, not general federal rules")
+
+        # Verb map
+        verb_map = budget_rules.get("nofo_verb_map", [])
+        if verb_map:
+            parts.append("\n\nNOFO VERB MAP (use to validate demonstrate-vs-plan statements):")
+            for entry in verb_map:
+                parts.append(f"- {entry['criterion']}: {', '.join(entry['key_verbs'])} -> expects: {entry['expects']}")
+            parts.append("")
+            parts.append("USE THIS TO:")
+            parts.append('- KEEP weaknesses that correctly flag "plan to" responses where the NOFO requires "demonstrates"')
+            parts.append('- REMOVE weaknesses that demand past evidence where the NOFO only asks applicants to "describe how they will"')
+            parts.append('- REMOVE strengths that praise "demonstrated" outcomes for criteria that only ask for a plan')
+
+        # Prior experience signals
+        prior = budget_rules.get("prior_experience_signals", {})
+        if prior.get("asks_for_past_performance_data") or prior.get("references_current_recipients"):
+            parts.append("\n\nPRIOR EXPERIENCE SIGNALS FROM NOFO:")
+            if prior.get("asks_for_past_performance_data"):
+                parts.append(f"- NOFO asks for past performance data: {prior.get('past_performance_detail', 'yes')}")
+            if prior.get("references_current_recipients"):
+                parts.append(f"- NOFO references current recipients: {prior.get('current_recipients_detail', 'yes')}")
+            if prior.get("asks_for_track_record"):
+                parts.append(f"- NOFO asks for track record: {prior.get('track_record_detail', 'yes')}")
+
+    if reviewer_intelligence and isinstance(reviewer_intelligence, list):
+        parts.append("\n\nREVIEWER INTELLIGENCE FINDINGS (from deep-read analysis — use to validate/refute statements):")
+        for item in reviewer_intelligence:
+            cat = item.get("category", "OTHER")
+            finding = item.get("finding", "")
+            detail = item.get("detail", "")
+            parts.append(f"- [{cat}] {finding}")
+            if detail:
+                parts.append(f"  {detail}")
+        parts.append("")
+        parts.append("USE THESE TO:")
+        parts.append("- REFUTE reviewer weaknesses that contradict verified intelligence findings")
+        parts.append("- SUPPORT reviewer strengths that align with intelligence findings")
+        parts.append("- FLAG gaps where no reviewer addressed a finding that the intelligence identified")
+        parts.append("- Add missing_questions entries for NOFO requirements the intelligence flagged but no reviewer addressed")
+
+    return "\n".join(parts) if parts else ""
+
+
 def run_consensus_review(
     combined_statement_path: Path,
     nofo_text: str,
@@ -293,6 +374,8 @@ def run_consensus_review(
     user_review_fingerprints: list[str] | None = None,
     page_limit: int = 0,
     application_text: str = "",
+    budget_rules: dict | None = None,
+    reviewer_intelligence: list | None = None,
 ) -> dict[str, Any]:
     """Run the consensus review on a combined statements document.
 
@@ -305,6 +388,8 @@ def run_consensus_review(
             Used to auto-detect which reviewer in the combined statement is the user.
         page_limit: NOFO page limit for the application. Findings citing pages past this are flagged.
         application_text: Extracted application text for fact-checking reviewer statements.
+        budget_rules: Extracted NOFO budget rules dict (from extract_nofo_budget_rules).
+        reviewer_intelligence: List of reviewer intelligence findings from the overview.
 
     Returns:
         Consensus review result dict.
@@ -375,13 +460,16 @@ PROCESS:
 2. The reviewer whose statements have the most matches is the user.
 3. Once you identify the user's reviewer label, flag ALL statements with that label as is_mine: true."""
 
+    # Build intelligence context from budget rules and reviewer intelligence
+    intelligence_context = _build_consensus_intelligence_context(budget_rules, reviewer_intelligence)
+
     prompt = f"""Perform a Committee Consensus Review on the combined reviewer statements below.
 
 CRITERIA:
 {chr(10).join(criteria_desc)}
 
 NOFO TEXT (use this to validate statements and identify worksheet questions per criterion):
-{nofo_text[:30000]}
+{nofo_text[:30000]}{intelligence_context}
 
 COMBINED REVIEWER STATEMENTS (preserve every statement verbatim — do NOT shorten):
 {combined_text}

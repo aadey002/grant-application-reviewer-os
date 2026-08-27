@@ -1870,6 +1870,31 @@ async def consensus_review(
             except Exception as app_exc:
                 logger.warning("Could not extract application text for fact-checking: %s", app_exc)
 
+            # Retrieve budget rules and reviewer intelligence for consensus validation
+            _consensus_budget_rules = None
+            _consensus_intelligence = None
+            try:
+                brief_rows = _select(sb, "nofo_briefs", {"review_id": review_id})
+                for br in brief_rows:
+                    stored_br = br.get("budget_rules_json")
+                    if stored_br:
+                        _consensus_budget_rules = json.loads(stored_br) if isinstance(stored_br, str) else stored_br
+                        if _consensus_budget_rules.get("status") == "extracted":
+                            break
+                        _consensus_budget_rules = None
+            except Exception:
+                pass
+
+            try:
+                app_row_for_intel = _select(sb, "applications", {"id": application_id})
+                if app_row_for_intel:
+                    fr = app_row_for_intel[0].get("full_result")
+                    if fr:
+                        stored_full = json.loads(fr) if isinstance(fr, str) else fr
+                        _consensus_intelligence = stored_full.get("reviewer_intelligence")
+            except Exception:
+                pass
+
             try:
                 run_consensus = _lazy_consensus_scoring()
                 result = run_consensus(
@@ -1880,6 +1905,8 @@ async def consensus_review(
                     user_review_fingerprints=user_review_fingerprints,
                     page_limit=page_limit,
                     application_text=application_text,
+                    budget_rules=_consensus_budget_rules,
+                    reviewer_intelligence=_consensus_intelligence,
                 )
             finally:
                 cs_tmp.unlink(missing_ok=True)
