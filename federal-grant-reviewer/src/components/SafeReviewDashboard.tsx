@@ -8,7 +8,7 @@ import {
   getApplicationViewUrl, getNofoBrief, getNofoViewUrl,
   getNofoBriefDownload, getReviewResults,
   getConsensusResult, getWorksheetUrl, JobStatus, listReviews, NofoBrief, pollJobStatus,
-  ReviewPackage, runSafeReviews, SafeReview, updateReviewValidation,
+  ReviewPackage, runSafeReviews, runWithStoredNofo, SafeReview, updateReviewValidation,
 } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -565,14 +565,15 @@ const SafeReviewDashboard: React.FC = () => {
   // Step 2b — run reviews (async with job polling) — called from brief step
   // ---------------------------------------------------------------------------
   const run = async () => {
-    if (!nofo || !rubric) return;
+    if ((!nofo && !selectedStoredNofo) || !rubric) return;
 
     // Duplicate detection (only if we don't already have a currentReviewId from brief step)
-    if (!currentReviewId && nofo && applications.length) {
+    const nofoName = nofo?.name || storedNofos.find(n => n.id === selectedStoredNofo)?.nofo_filename || '';
+    if (!currentReviewId && nofoName && applications.length) {
       const all = loadStoredReviews();
       const dupe = all.find(r =>
         r.status === 'processing' &&
-        r.nofo_name === nofo.name &&
+        r.nofo_name === nofoName &&
         r.app_names.length === applications.length &&
         r.app_names.every((n, i) => n === applications[i]?.name)
       );
@@ -605,22 +606,40 @@ const SafeReviewDashboard: React.FC = () => {
     let savedReviewId: string | null = currentReviewId;
 
     try {
-      const item: ReviewPackage = { agency, nofo, applications, rubric: supportRubric, worksheet };
-
       let result: { review_id: string; job_ids: string[]; nofo_storage_path: string } | null = null;
+      const progressCb = (stage: string, detail: string) => {
+        setAppProgress([{
+          jobId: 'uploading',
+          applicationName: detail,
+          status: 'uploaded' as const,
+          progress: 0,
+          message: stage,
+          score: null,
+          errorMessage: null,
+        }]);
+      };
 
       try {
-        result = await runSafeReviews(item, rubric, (stage, detail) => {
-          setAppProgress([{
-            jobId: 'uploading',
-            applicationName: detail,
-            status: 'uploaded' as const,
-            progress: 0,
-            message: stage,
-            score: null,
-            errorMessage: null,
-          }]);
-        });
+        if (selectedStoredNofo && !nofo) {
+          // Use stored NOFO — skip NOFO upload
+          const stored = storedNofos.find(n => n.id === selectedStoredNofo);
+          if (!stored) throw new Error('Stored NOFO not found');
+          result = await runWithStoredNofo(
+            stored.id,
+            stored.nofo_storage_path,
+            stored.nofo_filename,
+            applications,
+            agency,
+            rubric,
+            worksheet,
+            progressCb,
+          );
+        } else if (nofo) {
+          const item: ReviewPackage = { agency, nofo, applications, rubric: supportRubric, worksheet };
+          result = await runSafeReviews(item, rubric, progressCb);
+        } else {
+          throw new Error('No NOFO selected or uploaded');
+        }
       } catch (fetchErr) {
         const msg = fetchErr instanceof Error ? fetchErr.message : '';
         if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('network')) {
@@ -628,7 +647,7 @@ const SafeReviewDashboard: React.FC = () => {
           setError('Connection lost — checking server...');
           const all = loadStoredReviews();
           const recent = all.find(r =>
-            r.nofo_name === nofo?.name &&
+            r.nofo_name === nofoName &&
             r.app_names.length === applications.length &&
             r.app_names.every((n, i) => n === applications[i]?.name)
           );

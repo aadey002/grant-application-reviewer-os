@@ -216,6 +216,120 @@ export const createReviewAndUpload = async (
 // Keep old name as alias
 export const runSafeReviews = createReviewAndUpload;
 
+// Run with a stored NOFO — skip NOFO upload, reuse existing review's storage path
+export const runWithStoredNofo = async (
+  storedReviewId: string,
+  storedNofoPath: string,
+  storedNofoFilename: string,
+  applications: File[],
+  agency: string,
+  criteria: ExtractedRubric,
+  worksheet: File | null,
+  onProgress?: (stage: string, detail: string) => void,
+): Promise<RunJobsResult> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id || 'anonymous-test';
+  const reviewId = crypto.randomUUID();
+  const prefix = userId + '/' + reviewId;
+
+  // STEP 1: Create new grant_review reusing the stored NOFO path
+  onProgress?.('creating', 'Creating review record (reusing stored NOFO)...');
+  const { error: reviewError } = await supabase.from('grant_reviews').insert({
+    id: reviewId,
+    user_id: userId,
+    agency,
+    nofo_filename: storedNofoFilename,
+    nofo_storage_path: storedNofoPath,
+    status: 'uploading',
+    extracted_rubric: criteria,
+    total_points: criteria.total_points,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  });
+  if (reviewError) throw new Error('Failed to create review: ' + reviewError.message);
+
+  // Copy budget_rules_json from the stored review's nofo_briefs if available
+  try {
+    const { data: briefRows } = await supabase.from('nofo_briefs').select('budget_rules_json').eq('review_id', storedReviewId).not('budget_rules_json', 'is', null).limit(1);
+    if (briefRows && briefRows.length > 0 && briefRows[0].budget_rules_json) {
+      await supabase.from('nofo_briefs').insert({
+        id: crypto.randomUUID(),
+        review_id: reviewId,
+        nofo_storage_path: storedNofoPath,
+        agency,
+        status: 'ready',
+        budget_rules_json: briefRows[0].budget_rules_json,
+        created_at: new Date().toISOString(),
+      });
+    }
+  } catch { /* best effort — budget rules will re-extract if missing */ }
+
+  // STEP 2: Upload optional worksheet
+  let worksheetPath = '';
+  if (worksheet) {
+    onProgress?.('uploading', 'Uploading worksheet: ' + worksheet.name);
+    worksheetPath = await uploadToStorage('worksheet-templates', prefix + '/worksheet/' + worksheet.name, worksheet);
+    await supabase.from('grant_reviews').update({
+      worksheet_storage_path: worksheetPath,
+      updated_at: new Date().toISOString(),
+    }).eq('id', reviewId);
+  }
+
+  // STEP 3: Upload each application + create DB records
+  const jobIds: string[] = [];
+  for (let i = 0; i < applications.length; i++) {
+    const file = applications[i];
+    const appId = crypto.randomUUID();
+    const jobId = crypto.randomUUID();
+
+    onProgress?.('uploading', `Uploading application ${i + 1}/${applications.length}: ${file.name}`);
+    const appPath = await uploadToStorage('grant-applications', prefix + '/applications/' + i + '_' + file.name, file);
+
+    await supabase.from('applications').insert({
+      id: appId,
+      review_id: reviewId,
+      user_id: userId,
+      filename: file.name,
+      storage_path: appPath,
+      status: 'uploaded',
+      agency,
+      criteria: JSON.stringify(criteria.criteria),
+      nofo_storage_path: storedNofoPath,
+      worksheet_storage_path: worksheetPath,
+      created_at: new Date().toISOString(),
+    });
+
+    await supabase.from('processing_jobs').insert({
+      id: jobId,
+      application_id: appId,
+      review_id: reviewId,
+      user_id: userId,
+      status: 'queued',
+      agency,
+      criteria: JSON.stringify(criteria.criteria),
+      nofo_storage_path: storedNofoPath,
+      worksheet_storage_path: worksheetPath,
+      created_at: new Date().toISOString(),
+    });
+
+    jobIds.push(jobId);
+  }
+
+  // STEP 4: Update review status + notify worker
+  await supabase.from('grant_reviews').update({
+    status: 'processing',
+    updated_at: new Date().toISOString(),
+  }).eq('id', reviewId);
+
+  onProgress?.('enqueuing', 'Starting review processing...');
+  const authHeader = await getAuthHeader();
+  for (const jobId of jobIds) {
+    fetch(API_BASE_URL + '/jobs/' + jobId + '/process', { method: 'POST', headers: authHeader }).catch(() => {});
+  }
+
+  return { review_id: reviewId, job_ids: jobIds, nofo_storage_path: storedNofoPath };
+};
+
 // ---------------------------------------------------------------------------
 // Poll job status — reads directly from Supabase
 // ---------------------------------------------------------------------------
