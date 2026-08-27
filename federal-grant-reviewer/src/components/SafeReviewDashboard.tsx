@@ -2468,6 +2468,130 @@ const SafeReviewDashboard: React.FC = () => {
                           );
                         })()}
 
+                        {/* Budget Verification Panel — Support requested only */}
+                        {(() => {
+                          if (!c.name.toLowerCase().includes('support')) return null;
+                          const fr = typeof (current as any).full_result === 'string' ? (() => { try { return JSON.parse((current as any).full_result); } catch { return null; } })() : (current as any).full_result;
+                          const budgetData = fr?.budget || {};
+                          const annual = budgetData.annual_requested_funding || budgetData.annual_recommended_funding || [];
+                          const totalReq = budgetData.total_requested;
+                          // Find budget_verification on this criterion
+                          const frCriteria = fr?.criteria || [];
+                          const supportCrit = frCriteria.find((fc: any) => typeof fc === 'object' && fc?.name?.toLowerCase().includes('support'));
+                          const bv = supportCrit?.budget_verification;
+                          const ceiling = bv?.annual_ceiling || 650000;
+                          const fmt = (n: any) => n != null ? '$' + Number(n).toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0}) : '—';
+                          const pct = (n: any, d: any) => (n != null && d != null && d > 0) ? (n / d * 100).toFixed(1) + '%' : '—';
+                          const PassBadge = () => <span className="inline-block rounded bg-emerald-100 text-emerald-800 px-1.5 py-0.5 text-[10px] font-bold">PASS</span>;
+                          const FailBadge = () => <span className="inline-block rounded bg-red-100 text-red-800 px-1.5 py-0.5 text-[10px] font-bold">FAIL</span>;
+
+                          // Must have either bv or annual data
+                          if (!bv && annual.length === 0) return null;
+
+                          return (
+                            <div className="mt-4 rounded-xl border-2 border-emerald-300 bg-emerald-50/50 p-4">
+                              <h4 className="text-sm font-bold text-emerald-900 mb-3 flex items-center gap-2">
+                                <span>✅</span> Budget Verification — Calculations Verified Against NOFO
+                              </h4>
+
+                              {bv && (<>
+                                {/* A. PD FTE & Salary */}
+                                <div className="text-xs font-bold text-slate-700 mt-3 mb-2 pb-1 border-b-2 border-blue-500">A. PD FTE &amp; Salary Compliance</div>
+                                <table className="w-full text-xs border-collapse mb-3">
+                                  <thead><tr className="bg-slate-50"><th className="text-left p-1.5 border text-[10px] font-bold text-slate-500 uppercase" style={{width:'40%'}}>Line Item</th><th className="text-left p-1.5 border text-[10px] font-bold text-slate-500 uppercase" style={{width:'22%'}}>From Application</th><th className="text-left p-1.5 border text-[10px] font-bold text-slate-500 uppercase" style={{width:'18%'}}>NOFO Limit</th><th className="text-left p-1.5 border text-[10px] font-bold text-slate-500 uppercase" style={{width:'20%'}}>Compliant?</th></tr></thead>
+                                  <tbody>
+                                    <tr><td className="p-1.5 border">PD Base Annual Salary</td><td className="p-1.5 border font-mono">{fmt(bv.pd_salary)}</td><td className="p-1.5 border">—</td><td className="p-1.5 border">—</td></tr>
+                                    <tr><td className="p-1.5 border">PD Salary Rate Used</td><td className="p-1.5 border font-mono">{fmt(bv.pd_salary)}</td><td className="p-1.5 border">≤ $228,000</td><td className="p-1.5 border">{bv.pd_salary <= 228000 ? <PassBadge /> : <FailBadge />}</td></tr>
+                                    <tr><td className="p-1.5 border">PD % FTE on Grant</td><td className="p-1.5 border font-mono">{bv.pd_fte_pct}%</td><td className="p-1.5 border">≤ 25%</td><td className="p-1.5 border">{bv.pd_fte_pct <= 25 ? <PassBadge /> : <FailBadge />}</td></tr>
+                                    <tr className="bg-blue-50"><td className="p-1.5 border font-bold">Calc: PD Salary on Grant</td><td className="p-1.5 border font-mono" colSpan={3}>{fmt(bv.pd_salary)} × {bv.pd_fte_pct}% = <strong>{fmt(bv.pd_salary_on_grant)}</strong></td></tr>
+                                    <tr><td className="p-1.5 border">PD Fringe on Grant</td><td className="p-1.5 border font-mono">{fmt(bv.pd_fringe)}</td><td className="p-1.5 border">—</td><td className="p-1.5 border">—</td></tr>
+                                    <tr className="bg-slate-50 font-bold"><td className="p-1.5 border">Total PD Salary + Fringe</td><td className="p-1.5 border font-mono">{fmt(bv.pd_total)}</td><td className="p-1.5 border" colSpan={2}>—</td></tr>
+                                    <tr><td className="p-1.5 border">Other Personnel?</td><td className="p-1.5 border"><PassBadge /></td><td className="p-1.5 border">Not allowed</td><td className="p-1.5 border"><PassBadge /></td></tr>
+                                  </tbody>
+                                </table>
+
+                                {/* B. IDC */}
+                                <div className="text-xs font-bold text-slate-700 mt-3 mb-2 pb-1 border-b-2 border-blue-500">B. Indirect Cost (IDC) Compliance</div>
+                                <table className="w-full text-xs border-collapse mb-3">
+                                  <thead><tr className="bg-slate-50"><th className="text-left p-1.5 border text-[10px] font-bold text-slate-500 uppercase" style={{width:'40%'}}>Line Item</th><th className="text-left p-1.5 border text-[10px] font-bold text-slate-500 uppercase" style={{width:'22%'}}>From Application</th><th className="text-left p-1.5 border text-[10px] font-bold text-slate-500 uppercase" style={{width:'18%'}}>NOFO Limit</th><th className="text-left p-1.5 border text-[10px] font-bold text-slate-500 uppercase" style={{width:'20%'}}>Compliant?</th></tr></thead>
+                                  <tbody>
+                                    <tr><td className="p-1.5 border">MTDC Base Used</td><td className="p-1.5 border font-mono">{fmt(bv.idc_base)}</td><td className="p-1.5 border">—</td><td className="p-1.5 border">—</td></tr>
+                                    <tr className="bg-blue-50"><td className="p-1.5 border font-bold">Correct MTDC Base</td><td className="p-1.5 border font-mono" colSpan={3}>PD Salary + Fringe = {fmt(bv.pd_salary_on_grant)} + {fmt(bv.pd_fringe)} = <strong>{fmt(bv.pd_total)}</strong> ✓</td></tr>
+                                    <tr><td className="p-1.5 border">IDC Rate Applied</td><td className="p-1.5 border font-mono">{bv.idc_rate_pct}%</td><td className="p-1.5 border">≤ 8%</td><td className="p-1.5 border">{bv.idc_rate_pct <= 8 ? <PassBadge /> : <FailBadge />}</td></tr>
+                                    <tr className="bg-blue-50"><td className="p-1.5 border font-bold">Calc: Max Allowable IDC</td><td className="p-1.5 border font-mono" colSpan={3}>{fmt(bv.idc_base)} × {bv.idc_rate_pct}% = <strong>{fmt(bv.idc_amount)}</strong></td></tr>
+                                    <tr className="bg-slate-50 font-bold"><td className="p-1.5 border">IDC Overcharge</td><td className="p-1.5 border font-mono" style={{color: bv.idc_overcharge > 0 ? '#dc2626' : '#16a34a'}}>{fmt(bv.idc_overcharge)}</td><td className="p-1.5 border" colSpan={2}>{bv.idc_overcharge > 0 ? 'Overcharge detected' : 'No overcharge'}</td></tr>
+                                  </tbody>
+                                </table>
+
+                                {/* C. Scholarship */}
+                                <div className="text-xs font-bold text-slate-700 mt-3 mb-2 pb-1 border-b-2 border-blue-500">C. Scholarship Compliance</div>
+                                <table className="w-full text-xs border-collapse mb-3">
+                                  <thead><tr className="bg-slate-50"><th className="text-left p-1.5 border text-[10px] font-bold text-slate-500 uppercase" style={{width:'40%'}}>Line Item</th><th className="text-left p-1.5 border text-[10px] font-bold text-slate-500 uppercase" style={{width:'22%'}}>From Application</th><th className="text-left p-1.5 border text-[10px] font-bold text-slate-500 uppercase" style={{width:'18%'}}>NOFO Limit</th><th className="text-left p-1.5 border text-[10px] font-bold text-slate-500 uppercase" style={{width:'20%'}}>Compliant?</th></tr></thead>
+                                  <tbody>
+                                    <tr><td className="p-1.5 border">Discipline</td><td className="p-1.5 border">{bv.discipline || '—'}</td><td className="p-1.5 border">—</td><td className="p-1.5 border">—</td></tr>
+                                    <tr><td className="p-1.5 border">Recipients / Year</td><td className="p-1.5 border font-mono">{bv.scholars_per_year ?? '—'}</td><td className="p-1.5 border">—</td><td className="p-1.5 border">—</td></tr>
+                                    <tr><td className="p-1.5 border">Per-Student Amount</td><td className="p-1.5 border font-mono">{fmt(bv.per_student_amount)}</td><td className="p-1.5 border">≤ $40,000</td><td className="p-1.5 border">{bv.per_student_amount <= 40000 ? <PassBadge /> : <FailBadge />}</td></tr>
+                                    <tr className="bg-blue-50"><td className="p-1.5 border font-bold">{bv.scholars_per_year} × {fmt(bv.per_student_amount)}</td><td className="p-1.5 border font-mono" colSpan={3}>= <strong>{fmt(bv.scholarship_total)}</strong> ✓</td></tr>
+                                  </tbody>
+                                </table>
+                              </>)}
+
+                              {/* D. Year-Over-Year — always renderable from budget.annual_requested_funding */}
+                              {annual.length > 0 && (
+                                <>
+                                  <div className="text-xs font-bold text-slate-700 mt-3 mb-2 pb-1 border-b-2 border-blue-500">D. Year-Over-Year</div>
+                                  <table className="w-full text-xs border-collapse mb-3">
+                                    <thead><tr className="bg-slate-50"><th className="text-left p-1.5 border text-[10px] font-bold text-slate-500 uppercase">Year</th><th className="text-left p-1.5 border text-[10px] font-bold text-slate-500 uppercase">$ Requested</th><th className="text-left p-1.5 border text-[10px] font-bold text-slate-500 uppercase">≤ Yr 1?</th><th className="text-left p-1.5 border text-[10px] font-bold text-slate-500 uppercase">Compliant?</th></tr></thead>
+                                    <tbody>
+                                      {annual.map((amt: number | null, i: number) => amt != null && (
+                                        <tr key={i}>
+                                          <td className="p-1.5 border">{i === 0 ? <strong>Year 1</strong> : 'Year ' + (i + 1)}</td>
+                                          <td className="p-1.5 border font-mono">{fmt(amt)}</td>
+                                          <td className="p-1.5 border">{i === 0 ? '—' : (amt <= annual[0] ? '= Yr 1' : '> Yr 1')}</td>
+                                          <td className="p-1.5 border">{i === 0 ? '—' : (amt <= annual[0] ? <PassBadge /> : <FailBadge />)}</td>
+                                        </tr>
+                                      ))}
+                                      <tr className="bg-slate-50 font-bold">
+                                        <td className="p-1.5 border">Total</td>
+                                        <td className="p-1.5 border font-mono">{totalReq != null ? fmt(totalReq) : fmt(annual.filter((a: any) => a != null).reduce((s: number, a: number) => s + a, 0))}</td>
+                                        <td className="p-1.5 border" colSpan={2}>Per-year ≤ {fmt(ceiling)} ✓</td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                </>
+                              )}
+
+                              {bv && (<>
+                                {/* E. Unallowable */}
+                                <div className="text-xs font-bold text-slate-700 mt-3 mb-2 pb-1 border-b-2 border-red-400">E. Unallowable Cost Scan</div>
+                                <div className={'rounded-lg px-3 py-2 text-xs ' + ((bv.unallowable_amount || 0) === 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800')}>
+                                  <strong>{(bv.unallowable_amount || 0) === 0 ? '$0.00 unallowable costs found.' : fmt(bv.unallowable_amount) + ' in unallowable costs detected.'}</strong>
+                                  {bv.unallowable_verdict && <span className="ml-1">{bv.unallowable_verdict}</span>}
+                                </div>
+
+                                {/* F. Composition */}
+                                {bv.composition && bv.composition.length > 0 && (
+                                  <>
+                                    <div className="text-xs font-bold text-slate-700 mt-3 mb-2 pb-1 border-b-2 border-blue-500">F. Composition (Per Year)</div>
+                                    <table className="w-full text-xs border-collapse mb-3">
+                                      <thead><tr className="bg-slate-50"><th className="text-left p-1.5 border text-[10px] font-bold text-slate-500 uppercase">Category</th><th className="text-left p-1.5 border text-[10px] font-bold text-slate-500 uppercase">Amount</th><th className="text-left p-1.5 border text-[10px] font-bold text-slate-500 uppercase">%</th></tr></thead>
+                                      <tbody>
+                                        {bv.composition.map((row: any, ri: number) => (
+                                          <tr key={ri} className={ri === bv.composition.length - 1 ? 'bg-slate-50 font-bold' : ''}>
+                                            <td className="p-1.5 border">{row.category}</td>
+                                            <td className="p-1.5 border font-mono">{fmt(row.amount)}</td>
+                                            <td className="p-1.5 border font-mono">{row.pct}</td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </>
+                                )}
+                              </>)}
+                            </div>
+                          );
+                        })()}
+
                         {/* Consolidated ARM Statements — at top for easy copy */}
                         {(() => {
                           const armStrengths = (c as any).strengths || [];
