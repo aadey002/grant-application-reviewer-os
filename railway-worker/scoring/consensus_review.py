@@ -69,7 +69,7 @@ In the rationale, always state: "NOFO p.XX requires: '[exact text]'. This weakne
 
 11. Do NOT increase the budget recommendation. If reviewers recommend a reduction, the rationale must be provided.
 
-12. Number all statements sequentially: W1, W2, W3... for weaknesses; S1, S2, S3... for strengths; M1, M2, M3... for mets. Numbers restart per criterion.
+12. Number all statements sequentially: W1, W2, W3... for weaknesses; S1, S2, S3... for strengths; M1, M2, M3... for mets. Numbers restart at 1 for EACH sub-criterion. For example: 2.1 Approach has S1, S2, M1; 2.2 Work Plan starts fresh at S1, M1; 2.3 Resolution starts fresh at S1, W1. Do NOT continue numbering across sub-criteria.
 
 13. For the user's own statements (flagged in the input), mark them with is_mine: true so the UI can flag them.
 
