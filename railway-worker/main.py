@@ -40,10 +40,10 @@ from pydantic import BaseModel
 # Lazy imports for heavy dependencies (PyMuPDF, anthropic, python-docx)
 # ---------------------------------------------------------------------------
 def _lazy_scoring():
-    from scoring.safe_review import extract_nofo_criteria, safe_extract_application_zip
+    from scoring.safe_review import extract_nofo_criteria, safe_extract_application_zip, extract_nofo_budget_rules
     from scoring.anthropic_review import score_application_with_claude
     from scoring.worksheet_writer import populate_reviewer_worksheet
-    return extract_nofo_criteria, safe_extract_application_zip, score_application_with_claude, populate_reviewer_worksheet
+    return extract_nofo_criteria, safe_extract_application_zip, score_application_with_claude, populate_reviewer_worksheet, extract_nofo_budget_rules
 
 def _lazy_samhsa_scoring():
     from scoring.samhsa_review import score_samhsa_application
@@ -1232,12 +1232,32 @@ def _process_job(
                     guidance=guidance_text,
                 )
             else:
-                _, _, score_application_with_claude, _ = _lazy_scoring()
+                _, _, score_application_with_claude, _, extract_nofo_budget_rules_fn = _lazy_scoring()
+                # Extract NOFO budget rules for budget verification
+                _budget_rules = None
+                if nofo_bytes:
+                    nofo_tmp_for_budget = None
+                    try:
+                        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as ntmp:
+                            ntmp.write(nofo_bytes)
+                            nofo_tmp_for_budget = Path(ntmp.name)
+                        _budget_rules = extract_nofo_budget_rules_fn(nofo_tmp_for_budget)
+                        if _budget_rules.get("status") == "extracted":
+                            logger.info("NOFO budget rules extracted successfully")
+                        else:
+                            logger.warning("NOFO budget rules extraction returned status=%s", _budget_rules.get("status"))
+                            _budget_rules = None
+                    except Exception as br_exc:
+                        logger.warning("NOFO budget rules extraction failed (non-fatal): %s", br_exc)
+                    finally:
+                        if nofo_tmp_for_budget:
+                            nofo_tmp_for_budget.unlink(missing_ok=True)
                 review_result = score_application_with_claude(
                     application=app_tmp_path,
                     criteria=criteria,
                     agency=agency,
                     guidance=guidance_text,
+                    budget_rules=_budget_rules,
                 )
         finally:
             app_tmp_path.unlink(missing_ok=True)

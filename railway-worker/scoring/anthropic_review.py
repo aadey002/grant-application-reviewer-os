@@ -401,7 +401,100 @@ def _validate(review: dict[str, Any], criteria: list[dict[str, Any]], page_count
     return review
 
 
-def _score_single_criterion(client, model: str, application_text: str, criterion: dict, agency: str, nofo_text: str, page_count: int) -> dict[str, Any]:
+def _build_budget_prompt(budget_rules: dict) -> str:
+    """Build the budget verification prompt injection from extracted NOFO budget rules."""
+    if not budget_rules or budget_rules.get("status") != "extracted":
+        return ""
+
+    lines = ["\n\nNOFO BUDGET CONSTRAINTS FOR THIS PROGRAM (extracted from NOFO — verify each against the application budget):"]
+
+    # Funding parameters
+    fp = budget_rules.get("funding_parameters", {})
+    if fp.get("max_award_per_year"):
+        lines.append(f"- Max award per year: ${fp['max_award_per_year']:,.0f} (NOFO p. {fp.get('max_award_per_year_nofo_page', '?')})")
+    if fp.get("year2_cap_rule") and fp["year2_cap_rule"] != "N/A":
+        lines.append(f"- Year 2+ rule: {fp['year2_cap_rule']} (NOFO p. {fp.get('year2_cap_rule_nofo_page', '?')})")
+
+    # Personnel/salary
+    ps = budget_rules.get("personnel_salary_rules", {})
+    if ps.get("allowable_personnel") and ps["allowable_personnel"] != "N/A":
+        lines.append(f"- Allowable personnel: {ps['allowable_personnel']} (NOFO p. {ps.get('allowable_personnel_nofo_page', '?')})")
+    if ps.get("max_fte_pd") and ps["max_fte_pd"] != "N/A":
+        lines.append(f"- PD max FTE: {ps['max_fte_pd']} (NOFO p. {ps.get('max_fte_pd_nofo_page', '?')})")
+    if ps.get("salary_rate_cap"):
+        lines.append(f"- Salary rate cap: {ps.get('salary_rate_cap_description', 'N/A')} (NOFO p. {ps.get('salary_rate_cap_nofo_page', '?')})")
+    if not ps.get("other_staff_salary_allowed", True):
+        lines.append(f"- Other staff salary: NOT ALLOWED — \"{ps.get('other_staff_salary_nofo_text', '')}\" (NOFO p. {ps.get('other_staff_salary_nofo_page', '?')})")
+
+    # IDC
+    idc = budget_rules.get("indirect_cost_rules", {})
+    if idc.get("idc_rate_cap") and idc["idc_rate_cap"] != "N/A":
+        lines.append(f"- IDC rate cap: {idc['idc_rate_cap']} (NOFO p. {idc.get('idc_rate_cap_nofo_page', '?')})")
+        lines.append(f"- IDC MTDC base INCLUDES: {idc.get('idc_base_includes', 'N/A')}")
+        lines.append(f"- IDC MTDC base EXCLUDES: {idc.get('idc_base_excludes', 'N/A')}")
+
+    # Participant support
+    pts = budget_rules.get("participant_trainee_support", {})
+    if pts.get("allowed"):
+        caps = pts.get("per_participant_caps", [])
+        for cap in caps:
+            if cap.get("cap_amount"):
+                lines.append(f"- Per-student cap ({cap['discipline']}): ${cap['cap_amount']:,.0f} (NOFO p. {cap.get('nofo_page', '?')})")
+        if pts.get("min_amount_rule") and pts["min_amount_rule"] != "N/A":
+            lines.append(f"- Min scholarship: {pts['min_amount_rule']} (NOFO p. {pts.get('min_amount_rule_nofo_page', '?')})")
+        if pts.get("budget_formula") and pts["budget_formula"] != "N/A":
+            lines.append(f"- Budget formula: {pts['budget_formula']} (NOFO p. {pts.get('budget_formula_nofo_page', '?')})")
+
+    # Unallowable costs
+    unallowable = budget_rules.get("unallowable_costs", [])
+    if unallowable:
+        lines.append("- UNALLOWABLE COSTS (flag as weakness if found in application budget):")
+        for item in unallowable:
+            lines.append(f"  * {item['cost_description']}: \"{item['nofo_text']}\" (NOFO p. {item['nofo_page']})")
+
+    lines.append("")
+    lines.append("BUDGET VERIFICATION REQUIREMENTS — YOU MUST:")
+    lines.append("A. Extract PD salary rate and FTE% from application budget. Calculate: Salary × FTE% = amount on grant. Verify rate ≤ cap and FTE ≤ max.")
+    lines.append("B. Verify IDC base used by applicant matches NOFO MTDC definition. Calculate: correct base × rate cap = max allowable IDC. Flag overcharge.")
+    lines.append("C. Verify per-student scholarship amounts against caps and minimum rules.")
+    lines.append("D. If budget formula exists, verify: formula inputs × calculation = expected total vs actual requested.")
+    lines.append("E. Verify year-over-year amounts comply with cap rules.")
+    lines.append("F. Scan all budget line items for unallowable costs. List any found with amounts.")
+    lines.append("")
+    lines.append("Include the CALCULATIONS in your score_rationale (show the math, not just pass/fail).")
+    lines.append("If you find unallowable costs, include the total amount and recommend budget reduction.")
+
+    return "\n".join(lines)
+
+
+def _build_verb_map_prompt(budget_rules: dict, criterion_name: str) -> str:
+    """Build verb map prompt injection for a specific criterion."""
+    if not budget_rules or budget_rules.get("status") != "extracted":
+        return ""
+    verb_map = budget_rules.get("nofo_verb_map", [])
+    if not verb_map:
+        return ""
+
+    # Find matching entry for this criterion
+    name_lower = criterion_name.lower()
+    matching = [v for v in verb_map if v["criterion"].lower() in name_lower or name_lower in v["criterion"].lower()]
+    if not matching:
+        return ""
+
+    lines = ["\n\nNOFO VERB ANALYSIS FOR THIS CRITERION:"]
+    for entry in matching:
+        lines.append(f"  Criterion: {entry['criterion']}")
+        lines.append(f"  Key verbs: {', '.join(entry['key_verbs'])}")
+        lines.append(f"  Expects: {entry['expects']}")
+    lines.append("")
+    lines.append("SCORING RULE: If the NOFO uses 'demonstrates', 'provides evidence of', or 'describes success in' —")
+    lines.append("the applicant MUST show documented past data/outcomes to score Met or above.")
+    lines.append("If the applicant only states 'we plan to' or 'we will' when the NOFO requires demonstrated evidence,")
+    lines.append("that is a weakness — the response falls short of the NOFO requirement.")
+    return "\n".join(lines)
+
+
+def _score_single_criterion(client, model: str, application_text: str, criterion: dict, agency: str, nofo_text: str, page_count: int, budget_rules: dict | None = None) -> dict[str, Any]:
     """Score one criterion in isolation. Called in parallel."""
     import logging
     logger = logging.getLogger("grant_worker")
@@ -588,11 +681,22 @@ The evaluation criteria (Sections A, B, C, D with point values) are located in t
   - If the NOFO text shows "--- NOFO PAGE 24 ---" before the evaluation criteria, use page 24
   - The evaluation criteria pages are where the numbered questions (A.1, A.2, B.1, etc.) appear with point allocations"""
     else:
+        # Build optional budget and verb map injections
+        budget_prompt = ""
+        verb_map_prompt = ""
+        if budget_rules:
+            # Inject budget verification for budget/support criteria
+            name_lower = name.lower()
+            if any(kw in name_lower for kw in ("budget", "support requested", "cost", "funding")):
+                budget_prompt = _build_budget_prompt(budget_rules)
+            # Inject verb map for all criteria
+            verb_map_prompt = _build_verb_map_prompt(budget_rules, name)
+
         scoring_instructions = f"""Score this single criterion using the Equitable Federal Grant Scoring Formula v1.
 
 CRITERION: {name}
 MAXIMUM POINTS: {points}
-AGENCY: {agency}{sub_instruction}
+AGENCY: {agency}{sub_instruction}{budget_prompt}{verb_map_prompt}
 
 NOFO TEXT (find the evaluation questions/bullets for this criterion):
 {nofo_text[:15000]}
@@ -1210,7 +1314,7 @@ def _audit_weakness_facts(client, model: str, review: dict[str, Any], pages: lis
     return review
 
 
-def score_application_with_claude(application: Path, criteria: list[dict[str, Any]], agency: str, guidance: str = "", page_limit: int = 0) -> dict[str, Any]:
+def score_application_with_claude(application: Path, criteria: list[dict[str, Any]], agency: str, guidance: str = "", page_limit: int = 0, budget_rules: dict | None = None) -> dict[str, Any]:
     api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
     if not api_key:
         raise RuntimeError("ANTHROPIC_API_KEY is not configured.")
@@ -1296,7 +1400,7 @@ Do NOT write paragraphs. Do NOT repeat application content. Be evaluative, not d
     from concurrent.futures import ThreadPoolExecutor, as_completed
     with ThreadPoolExecutor(max_workers=3) as pool:
         criterion_futures = {
-            pool.submit(_score_single_criterion, client, model, application_text, crit, agency, nofo_text, len(pages)): i
+            pool.submit(_score_single_criterion, client, model, application_text, crit, agency, nofo_text, len(pages), budget_rules): i
             for i, crit in enumerate(criteria)
         }
         overview_future = pool.submit(_get_overview)
