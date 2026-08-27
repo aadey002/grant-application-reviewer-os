@@ -1356,8 +1356,42 @@ def score_application_with_claude(application: Path, criteria: list[dict[str, An
                     "recommendation": {"type": "string", "enum": ["as_requested", "as_reduced", "unable_to_determine"]},
                     "annual_recommended_funding": {"type": "array", "items": {"type": ["number", "null"]}, "maxItems": 5},
                     "reduction_rationale": {"type": "string"}}},
-                "overall_summary": {"type": "string", "description": "2-3 sentence overall assessment of the application's competitiveness."}}}}
+                "overall_summary": {"type": "string", "description": "2-3 sentence overall assessment of the application's competitiveness."},
+                "reviewer_intelligence": {"type": "array", "description": "Deep-read findings that demonstrate thorough review. Each item is a non-obvious observation a surface-level review would miss.", "items": {
+                    "type": "object", "additionalProperties": False,
+                    "required": ["category", "finding", "detail"],
+                    "properties": {
+                        "category": {"type": "string", "enum": [
+                            "PRIOR AWARD", "ACCREDITATION", "DATA CONSISTENCY",
+                            "BUDGET FORMULA", "VERB COMPLIANCE", "POSITIONING",
+                            "SUSTAINABILITY", "DOJ COMPLIANCE", "CROSS-REFERENCE",
+                            "TIMELINE", "STAFFING", "ATTACHMENT GAP", "OTHER"
+                        ], "description": "Category tag for the finding"},
+                        "finding": {"type": "string", "description": "1-sentence headline of the finding"},
+                        "detail": {"type": "string", "description": "1-2 sentence explanation of why this matters and what to verify"},
+                    },
+                }},
+            }}}
         rubric_list = "\n".join(f"- {c['name']}: {int(c['points'])} points" for c in criteria)
+        # Build budget rules context for overview if available
+        budget_context = ""
+        if budget_rules and budget_rules.get("status") == "extracted":
+            fp = budget_rules.get("funding_parameters", {})
+            ps = budget_rules.get("personnel_salary_rules", {})
+            pts = budget_rules.get("participant_trainee_support", {})
+            prior = budget_rules.get("prior_experience_signals", {})
+            budget_context = "\n\nNOFO BUDGET RULES (use for budget recommendation and reviewer intelligence):"
+            if fp.get("max_award_per_year"):
+                budget_context += f"\n- Max award/year: ${fp['max_award_per_year']:,.0f}"
+            if ps.get("allowable_personnel"):
+                budget_context += f"\n- Allowable personnel: {ps['allowable_personnel']}"
+            if ps.get("max_fte_pd") and ps['max_fte_pd'] != 'N/A':
+                budget_context += f"\n- PD max FTE: {ps['max_fte_pd']}"
+            if prior.get("asks_for_past_performance_data"):
+                budget_context += f"\n- NOFO asks for past performance data: {prior.get('past_performance_detail', 'yes')}"
+            if prior.get("references_current_recipients"):
+                budget_context += f"\n- NOFO references current recipients: {prior.get('current_recipients_detail', 'yes')}"
+
         overview_system = f"""You are completing the OVERVIEW PRESENTATION INFORMATION section of a {agency} reviewer worksheet. This is a 1-MINUTE verbal overview — it must be extremely concise. The Chair reads this aloud to the panel.
 
 FORMAT RULES — CRITICAL:
@@ -1368,7 +1402,26 @@ FORMAT RULES — CRITICAL:
 - significant_findings: Exactly ONE most significant strength and ONE most significant weakness. Format: "Strength: • [single most important strength in 1 sentence]. Weakness: • [single most important weakness in 1 sentence]." If no weakness exists, state "Weakness: • None identified."
 - other_information: "None." unless truly unusual. Max 1 sentence.
 
-Do NOT write paragraphs. Do NOT repeat application content. Be evaluative, not descriptive. Never use unexpanded acronyms."""
+Do NOT write paragraphs. Do NOT repeat application content. Be evaluative, not descriptive. Never use unexpanded acronyms.
+
+REVIEWER INTELLIGENCE — CRITICAL:
+You MUST populate reviewer_intelligence with 4-8 deep-read findings that demonstrate thorough review of the application. These are observations a surface-level reader would miss. For each, pick the most specific category tag.
+
+Look for and report on ALL of the following:
+1. PRIOR AWARD: Does the applicant reference a prior award of the same or similar program? If yes, do they cite documented outcomes from it?
+2. ACCREDITATION: Any flags, probation, recent changes, or gaps in accreditation coverage for the period of performance?
+3. DATA CONSISTENCY: Do numbers in different parts of the application match? (enrollment in narrative vs. Program Specific Form, budget narrative vs. SF-424, etc.)
+4. BUDGET FORMULA: If the NOFO specifies a formula, does the requested amount align with the calculated formula result?
+5. VERB COMPLIANCE: Where the NOFO says "demonstrates" or "provides evidence of," does the applicant provide past data or only future plans?
+6. POSITIONING: What makes this applicant distinct? Only program in the state? HPSA location? Unique population served?
+7. SUSTAINABILITY: Does the application describe institutional investments independent of the grant, or is the entire program dependent on federal funding?
+8. DOJ COMPLIANCE: Does the application include the required DOJ unlawful discrimination compliance plan? (FY2026 new requirement — many applicants miss this.)
+9. CROSS-REFERENCE: Any contradictions between sections? (e.g., narrative says 30 students but budget funds 24)
+10. TIMELINE: Are Q1 activities feasible given the award date? Any unrealistic timelines?
+11. STAFFING: Key positions unfilled? FTE allocations that don't add up?
+12. ATTACHMENT GAP: Required attachments missing or incomplete? (Letters of support unsigned? Accreditation docs expired?)
+
+Do NOT fabricate findings. Only report what you observe in the application. If an item isn't relevant, skip it. Each finding must cite what you actually found in the application text.{budget_context}"""
         # Include beginning (cover/narrative) + end (budget pages) of application
         app_start = application_text[:40000]
         app_end = application_text[-25000:] if len(application_text) > 65000 else ""
