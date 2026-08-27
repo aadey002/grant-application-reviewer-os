@@ -633,7 +633,7 @@ MAXIMUM POINTS: {points}
 AGENCY: SAMHSA / CSAP{sub_instruction}
 
 NOFO TEXT (find the evaluation criteria for this section — look for section headings with point values):
-{nofo_text[:15000]}
+{nofo_text[:50000]}
 
 APPLICATION:
 {application_text}
@@ -699,7 +699,7 @@ MAXIMUM POINTS: {points}
 AGENCY: {agency}{sub_instruction}{budget_prompt}{verb_map_prompt}
 
 NOFO TEXT (find the evaluation questions/bullets for this criterion):
-{nofo_text[:15000]}
+{nofo_text[:50000]}
 
 APPLICATION:
 {application_text}
@@ -824,7 +824,7 @@ VERIFICATION: The number of requirements you identify must match what a reviewer
     response = client.messages.create(model=model, max_tokens=needed_tokens,
         system=[{"type": "text", "text": get_system_prompt(agency), "cache_control": {"type": "ephemeral"}}],
         messages=[{"role": "user", "content": [
-            {"type": "text", "text": f"NOFO TEXT:\n{nofo_text[:15000]}\n\nAPPLICATION:\n{application_text}", "cache_control": {"type": "ephemeral"}},
+            {"type": "text", "text": f"NOFO TEXT:\n{nofo_text[:50000]}\n\nAPPLICATION:\n{application_text}", "cache_control": {"type": "ephemeral"}},
             {"type": "text", "text": criterion_instruction},
         ]}],
         tools=[tool], tool_choice={"type": "tool", "name": "score_criterion"})
@@ -1442,7 +1442,7 @@ Do NOT fabricate findings. Only report what you observe in the application. If a
         app_start = application_text[:40000]
         app_end = application_text[-25000:] if len(application_text) > 65000 else ""
         app_combined = app_start + ("\n\n[...middle pages omitted for brevity...]\n\n" + app_end if app_end else "")
-        prompt = (f"Agency: {agency}\n\nRUBRIC:\n{rubric_list}\n\nNOFO GUIDANCE:\n{nofo_text[:15000]}\n\n"
+        prompt = (f"Agency: {agency}\n\nRUBRIC:\n{rubric_list}\n\nNOFO GUIDANCE:\n{nofo_text[:50000]}\n\n"
                   f"APPLICATION (beginning + budget/end pages):\n{app_combined}\n\n"
                   "Complete the OVERVIEW PRESENTATION INFORMATION worksheet section and provide the budget recommendation.\n\n"
                   "BUDGET INSTRUCTIONS: Extract the EXACT annual budget amounts for ALL years of the project period. "

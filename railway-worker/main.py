@@ -1184,7 +1184,7 @@ def _process_job(
                         proc = None
                     if proc:
                         doc_result = proc.process_document(str(ntmp_path))
-                        guidance_text = doc_result.get("text_content", "")[:30000]
+                        guidance_text = doc_result.get("text_content", "")[:80000]
             finally:
                 ntmp_path.unlink(missing_ok=True)
         except Exception as exc:
