@@ -6,6 +6,6 @@ python-docx
 pdfplumber
 supabase
 httpx
-anthropic
+anthropic>=0.49.0,<1.0.0
 python-dotenv
 # v2 consensus review
