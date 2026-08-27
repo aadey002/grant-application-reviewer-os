@@ -622,7 +622,8 @@ def extract_nofo_budget_rules(path: Path) -> dict[str, Any]:
     if len(nofo_text) > 150000:
         nofo_text = nofo_text[:150000] + "\n\n[TRUNCATED]"
 
-    model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6-20250514")
+    # Use Haiku for budget extraction — structured tool_use, not evaluative judgment
+    model = os.getenv("BUDGET_EXTRACTION_MODEL", "claude-haiku-4-5-20251001")
     client = anthropic.Anthropic(api_key=api_key, timeout=180.0)
 
     try:
