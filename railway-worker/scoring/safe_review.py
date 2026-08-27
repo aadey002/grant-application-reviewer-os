@@ -433,3 +433,226 @@ def run_manifest(manifest_path: Path, output_dir: Path) -> list[dict[str, Any]]:
         (review_dir / "review.md").write_text(render_markdown(result), encoding="utf-8")
         results.append(result)
     return results
+
+
+# ---------------------------------------------------------------------------
+# NOFO Budget Rules Extraction (Claude-powered)
+# ---------------------------------------------------------------------------
+
+NOFO_BUDGET_RULES_TOOL = {
+    "name": "submit_nofo_budget_rules",
+    "description": "Extract structured budget constraints, salary rules, IDC rules, allowable/unallowable costs, and NOFO verb analysis from a NOFO document.",
+    "input_schema": {
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "funding_parameters", "personnel_salary_rules", "indirect_cost_rules",
+            "participant_trainee_support", "unallowable_costs", "nofo_verb_map",
+            "prior_experience_signals",
+        ],
+        "properties": {
+            "funding_parameters": {
+                "type": "object", "additionalProperties": False,
+                "required": [
+                    "max_award_per_year", "total_available_funding",
+                    "period_of_performance_years", "number_of_budget_periods",
+                    "year2_cap_rule", "application_type", "cost_sharing_required",
+                    "maintenance_of_effort_required",
+                ],
+                "properties": {
+                    "max_award_per_year": {"type": ["number", "null"], "description": "Maximum award per year in dollars, or null if not specified"},
+                    "max_award_per_year_nofo_page": {"type": ["integer", "null"]},
+                    "total_available_funding": {"type": ["number", "null"]},
+                    "period_of_performance_years": {"type": ["integer", "null"]},
+                    "number_of_budget_periods": {"type": ["integer", "null"]},
+                    "year2_cap_rule": {"type": "string", "description": "e.g. 'Cannot exceed Year 1 request' or 'N/A'"},
+                    "year2_cap_rule_nofo_page": {"type": ["integer", "null"]},
+                    "application_type": {"type": "string", "description": "New, Competing Continuation, Both, etc."},
+                    "cost_sharing_required": {"type": "boolean"},
+                    "maintenance_of_effort_required": {"type": "boolean"},
+                },
+            },
+            "personnel_salary_rules": {
+                "type": "object", "additionalProperties": False,
+                "required": [
+                    "allowable_personnel", "max_fte_pd", "salary_rate_cap",
+                    "other_staff_salary_allowed", "fringe_allowed_for",
+                    "consultant_rate_cap",
+                ],
+                "properties": {
+                    "allowable_personnel": {"type": "string", "description": "Who can be on personnel lines, e.g. 'PD only', 'Key staff', 'N/A — not restricted'"},
+                    "allowable_personnel_nofo_page": {"type": ["integer", "null"]},
+                    "max_fte_pd": {"type": "string", "description": "e.g. '25%', '50%', 'N/A — no FTE restriction'"},
+                    "max_fte_pd_nofo_page": {"type": ["integer", "null"]},
+                    "salary_rate_cap": {"type": ["number", "null"], "description": "Salary rate ceiling in dollars, or null if no cap beyond the standard executive level"},
+                    "salary_rate_cap_nofo_page": {"type": ["integer", "null"]},
+                    "salary_rate_cap_description": {"type": "string", "description": "e.g. '$228,000 (Executive Level II, Jan 2026)' or 'N/A'"},
+                    "other_staff_salary_allowed": {"type": "boolean"},
+                    "other_staff_salary_nofo_page": {"type": ["integer", "null"]},
+                    "other_staff_salary_nofo_text": {"type": "string", "description": "Verbatim NOFO text on this rule, or 'N/A'"},
+                    "fringe_allowed_for": {"type": "string", "description": "e.g. 'PD only', 'All key personnel', 'N/A'"},
+                    "consultant_rate_cap": {"type": "string", "description": "e.g. '$650/day', 'N/A — not addressed in NOFO'"},
+                },
+            },
+            "indirect_cost_rules": {
+                "type": "object", "additionalProperties": False,
+                "required": ["idc_rate_cap", "idc_base_includes", "idc_base_excludes"],
+                "properties": {
+                    "idc_rate_cap": {"type": "string", "description": "e.g. '8%', '10%', 'Negotiated rate', 'N/A'"},
+                    "idc_rate_cap_nofo_page": {"type": ["integer", "null"]},
+                    "idc_base_includes": {"type": "string", "description": "What the MTDC base includes, e.g. 'PD salary + fringe only', 'All direct costs minus exclusions'"},
+                    "idc_base_excludes": {"type": "string", "description": "What is excluded from MTDC base"},
+                    "idc_base_nofo_page": {"type": ["integer", "null"]},
+                },
+            },
+            "participant_trainee_support": {
+                "type": "object", "additionalProperties": False,
+                "required": ["allowed", "per_participant_caps", "min_amount_rule", "budget_formula"],
+                "properties": {
+                    "allowed": {"type": "boolean"},
+                    "per_participant_caps": {
+                        "type": "array",
+                        "items": {
+                            "type": "object", "additionalProperties": False,
+                            "required": ["discipline", "cap_amount", "nofo_page"],
+                            "properties": {
+                                "discipline": {"type": "string"},
+                                "cap_amount": {"type": ["number", "null"]},
+                                "nofo_page": {"type": ["integer", "null"]},
+                            },
+                        },
+                    },
+                    "min_amount_rule": {"type": "string", "description": "e.g. '>= half of annual tuition' or 'N/A'"},
+                    "min_amount_rule_nofo_page": {"type": ["integer", "null"]},
+                    "allowable_support_costs": {"type": "string", "description": "List of allowable participant cost types"},
+                    "budget_formula": {"type": "string", "description": "e.g. '3-yr avg enrollment x 3-yr avg financial need' or 'N/A'"},
+                    "budget_formula_nofo_page": {"type": ["integer", "null"]},
+                },
+            },
+            "unallowable_costs": {
+                "type": "array",
+                "items": {
+                    "type": "object", "additionalProperties": False,
+                    "required": ["cost_description", "nofo_page", "nofo_text"],
+                    "properties": {
+                        "cost_description": {"type": "string", "description": "Short name, e.g. 'Child care expenses'"},
+                        "nofo_page": {"type": "integer", "minimum": 1},
+                        "nofo_text": {"type": "string", "description": "Verbatim NOFO language prohibiting this cost"},
+                    },
+                },
+            },
+            "nofo_verb_map": {
+                "type": "array",
+                "description": "For each scoring criterion, extract the key verbs to distinguish 'demonstrate/provide evidence' (requires past data) from 'describe how you will/propose' (forward plan acceptable).",
+                "items": {
+                    "type": "object", "additionalProperties": False,
+                    "required": ["criterion", "key_verbs", "expects"],
+                    "properties": {
+                        "criterion": {"type": "string", "description": "Criterion name or number, e.g. '1. Need' or '2.1 Approach'"},
+                        "key_verbs": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "The exact verbs used in NOFO evaluation language, e.g. 'Demonstrates success in', 'Describes how you will'",
+                        },
+                        "expects": {"type": "string", "enum": ["past_evidence_required", "forward_plan_acceptable", "mixed"], "description": "What the NOFO expects: documented proof, forward plan, or a mix"},
+                    },
+                },
+            },
+            "prior_experience_signals": {
+                "type": "object", "additionalProperties": False,
+                "required": [
+                    "asks_for_past_performance_data", "references_current_recipients",
+                    "asks_for_track_record", "asks_for_graduate_outcomes",
+                    "asks_for_prior_grant_history",
+                ],
+                "properties": {
+                    "asks_for_past_performance_data": {"type": "boolean"},
+                    "past_performance_detail": {"type": "string", "description": "e.g. 'Academic Years 2022-2025' or 'N/A'"},
+                    "references_current_recipients": {"type": "boolean"},
+                    "current_recipients_detail": {"type": "string"},
+                    "asks_for_track_record": {"type": "boolean"},
+                    "track_record_detail": {"type": "string"},
+                    "asks_for_graduate_outcomes": {"type": "boolean"},
+                    "graduate_outcomes_detail": {"type": "string"},
+                    "asks_for_prior_grant_history": {"type": "boolean"},
+                    "prior_grant_detail": {"type": "string"},
+                },
+            },
+        },
+    },
+}
+
+NOFO_BUDGET_SYSTEM_PROMPT = """You are an expert federal grant budget analyst extracting structured budget constraints from a Notice of Funding Opportunity (NOFO).
+
+RULES:
+1. Extract ONLY what the NOFO explicitly states. Do NOT infer, assume, or add requirements not in the NOFO.
+2. If the NOFO does not address a field, return null for numbers or 'N/A' for strings.
+3. For every rule you extract, provide the NOFO page number where it appears.
+4. For unallowable costs, quote the NOFO language verbatim.
+5. For the verb map, extract the EXACT verbs used in each scoring criterion's evaluation language — distinguish between verbs that require documented past performance ('demonstrates', 'provides evidence of', 'describes success in') vs. verbs that accept forward-looking plans ('describes how you will', 'proposes', 'explain approaches').
+6. For prior experience signals, determine whether the NOFO asks applicants to provide data from prior performance periods, references current award recipients, or asks for track record evidence.
+7. Be precise about the IDC base — many programs restrict the MTDC base to specific cost categories. State exactly what is included and excluded.
+8. For salary caps, note both the dollar amount AND any FTE restrictions. These are separate constraints."""
+
+
+def extract_nofo_budget_rules(path: Path) -> dict[str, Any]:
+    """Extract structured budget constraints from a NOFO using Claude tool_use.
+
+    Returns the budget rules dict on success, or a dict with status='failed' on error.
+    """
+    import os
+    import logging
+    logger = logging.getLogger("grant_worker")
+
+    api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+    if not api_key:
+        return {"status": "failed", "error": "ANTHROPIC_API_KEY not configured"}
+
+    try:
+        import anthropic
+    except ImportError:
+        return {"status": "failed", "error": "anthropic package not installed"}
+
+    # Extract NOFO text with page markers
+    pages = extract_document_pages(path)
+    nofo_text = ""
+    for i, page in enumerate(pages, start=1):
+        nofo_text += f"\n\n--- NOFO PAGE {i} ---\n{page}"
+    # Truncate to stay within context limits
+    if len(nofo_text) > 150000:
+        nofo_text = nofo_text[:150000] + "\n\n[TRUNCATED]"
+
+    model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6-20250514")
+    client = anthropic.Anthropic(api_key=api_key, timeout=180.0)
+
+    try:
+        response = client.messages.create(
+            model=model,
+            max_tokens=8000,
+            system=NOFO_BUDGET_SYSTEM_PROMPT,
+            tools=[NOFO_BUDGET_RULES_TOOL],
+            tool_choice={"type": "tool", "name": "submit_nofo_budget_rules"},
+            messages=[{
+                "role": "user",
+                "content": f"Extract all budget constraints, salary rules, IDC rules, allowable/unallowable costs, NOFO verb analysis, and prior experience signals from this NOFO:\n\n{nofo_text}",
+            }],
+        )
+
+        tool_block = next(
+            (b for b in response.content if b.type == "tool_use" and b.name == "submit_nofo_budget_rules"),
+            None,
+        )
+        if not tool_block:
+            logger.error("Claude did not return submit_nofo_budget_rules tool call")
+            return {"status": "failed", "error": "No tool_use block in response"}
+
+        result = tool_block.input
+        result["status"] = "extracted"
+        result["source_file"] = path.name
+        result["source_pages"] = len(pages)
+        logger.info("Extracted NOFO budget rules from %s (%d pages)", path.name, len(pages))
+        return result
+
+    except Exception as exc:
+        logger.exception("extract_nofo_budget_rules failed")
+        return {"status": "failed", "error": str(exc)[:500]}
