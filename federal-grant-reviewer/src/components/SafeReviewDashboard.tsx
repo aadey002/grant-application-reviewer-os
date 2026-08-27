@@ -2043,6 +2043,29 @@ const SafeReviewDashboard: React.FC = () => {
 
                 {error && <div className="mb-4 rounded-lg bg-red-50 p-4 text-red-800">{error}</div>}
 
+                {/* Feature 1: Discipline Mismatch Banner */}
+                {(() => {
+                  const fr = typeof current.full_result === 'string' ? (() => { try { return JSON.parse(current.full_result); } catch { return null; } })() : current.full_result;
+                  const dm = fr?.discipline_mismatch;
+                  if (!dm) return null;
+                  const isDisq = dm.disqualifying;
+                  return (
+                    <div className={'mb-4 rounded-xl border-2 p-4 flex items-start gap-3 ' + (isDisq ? 'border-red-400 bg-red-50' : 'border-amber-400 bg-amber-50')}>
+                      <span className="text-2xl shrink-0">{isDisq ? '🚫' : '⚠️'}</span>
+                      <div>
+                        <p className={'font-bold text-lg ' + (isDisq ? 'text-red-900' : 'text-amber-900')}>
+                          DISCIPLINE MISMATCH {isDisq ? '— APPLICATION MAY BE DISQUALIFIED' : '— REVIEW CAREFULLY'}
+                        </p>
+                        <p className={'text-sm mt-1 ' + (isDisq ? 'text-red-800' : 'text-amber-800')}>
+                          <strong>Program Specific Form:</strong> {dm.form_discipline} &nbsp;/&nbsp;
+                          <strong>Narrative:</strong> {dm.narrative_discipline}
+                        </p>
+                        {dm.notes && <p className={'text-xs mt-1 ' + (isDisq ? 'text-red-700' : 'text-amber-700')}>{dm.notes}</p>}
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 <div className="grid gap-4 lg:grid-cols-[1fr_250px]">
                   <div className="space-y-4">
                     {/* Overview Presentation Information */}
@@ -2136,6 +2159,55 @@ const SafeReviewDashboard: React.FC = () => {
                             </div>
                           ) : null)}
                         </div>
+
+                        {/* Feature 2: Reviewer Intelligence + Pre-Review Checklist */}
+                        {(() => {
+                          const fr = typeof (current as any).full_result === 'string' ? (() => { try { return JSON.parse((current as any).full_result); } catch { return null; } })() : (current as any).full_result;
+                          const intel = fr?.reviewer_intelligence as Array<{category: string; finding: string; detail: string}> | undefined;
+                          const checklist = fr?.pre_review_checklist as Array<{item: string; status: string; notes: string}> | undefined;
+                          if ((!intel || intel.length === 0) && (!checklist || checklist.length === 0)) return null;
+                          const catColors: Record<string, string> = {
+                            'PRIOR AWARD': 'bg-emerald-100 text-emerald-800', 'ACCREDITATION': 'bg-amber-100 text-amber-800',
+                            'DATA CONSISTENCY': 'bg-blue-100 text-blue-800', 'BUDGET FORMULA': 'bg-emerald-100 text-emerald-800',
+                            'VERB COMPLIANCE': 'bg-indigo-100 text-indigo-800', 'POSITIONING': 'bg-purple-100 text-purple-800',
+                            'SUSTAINABILITY': 'bg-amber-100 text-amber-800', 'DOJ COMPLIANCE': 'bg-emerald-100 text-emerald-800',
+                            'CROSS-REFERENCE': 'bg-blue-100 text-blue-800', 'DISCIPLINE MISMATCH': 'bg-red-100 text-red-800',
+                            'TIMELINE': 'bg-amber-100 text-amber-800', 'STAFFING': 'bg-amber-100 text-amber-800',
+                            'ATTACHMENT GAP': 'bg-red-100 text-red-800',
+                          };
+                          return (
+                            <div className="mt-4 rounded-xl border-2 border-purple-200 bg-purple-50/30 p-4">
+                              <h4 className="text-sm font-bold text-purple-800 mb-3 flex items-center gap-2">
+                                <span>🔍</span> Reviewer Intelligence
+                              </h4>
+                              {checklist && checklist.length > 0 && (
+                                <div className="mb-3 rounded-lg bg-white border border-purple-200 p-3">
+                                  <p className="text-xs font-bold text-purple-700 uppercase mb-2">Pre-Review Checklist</p>
+                                  {checklist.map((item, i) => (
+                                    <div key={i} className="flex items-center gap-2 py-1 text-sm">
+                                      <span className={'rounded-full px-2 py-0.5 text-xs font-bold ' + (item.status === 'pass' ? 'bg-emerald-100 text-emerald-800' : item.status === 'fail' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800')}>
+                                        {item.status === 'pass' ? '✓' : item.status === 'fail' ? '✗' : '⚠'} {item.status.toUpperCase()}
+                                      </span>
+                                      <span className="text-slate-700">{item.item}</span>
+                                      {item.notes && <span className="text-xs text-slate-500 ml-1">— {item.notes}</span>}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {intel && intel.map((item, i) => (
+                                <div key={i} className="flex items-start gap-2 py-2 border-b border-purple-100 last:border-0 text-sm">
+                                  <span className={'shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold ' + (catColors[item.category] || 'bg-slate-100 text-slate-600')}>
+                                    {item.category}
+                                  </span>
+                                  <div>
+                                    <span className="font-semibold text-slate-800">{item.finding}</span>
+                                    {item.detail && <span className="text-slate-500 ml-1">{item.detail}</span>}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
 
@@ -2208,6 +2280,10 @@ const SafeReviewDashboard: React.FC = () => {
                             </tr>
                           </tbody>
                         </table>
+                      </div>
+                      {/* Feature 3: Scoring Multiplier Legend */}
+                      <div className="mt-2 rounded-lg bg-slate-50 px-4 py-2 text-xs text-slate-500">
+                        <strong>Scoring Multipliers:</strong> Outstanding=1.00 | Very Good=0.93 | Good=0.85 | Satisfactory=0.75 | Poor=0.35
                       </div>
                     </div>
 
@@ -2283,6 +2359,114 @@ const SafeReviewDashboard: React.FC = () => {
                             ))}
                           </div>
                         )}
+
+                        {/* Feature 4 & 5: Requirement Assessments Table + Per-Subcriteria grouping */}
+                        {(() => {
+                          const reqs = (c as any).requirement_assessments || [];
+                          if (reqs.length === 0) return null;
+                          const subs = (c as any).subcriteria || [];
+                          const hasSubs = subs.length > 0;
+
+                          // Detect verb type from requirement text
+                          const getVerb = (text: string) => {
+                            const proofVerbs = ['demonstrates', 'provides evidence', 'describes success', 'shows'];
+                            const planVerbs = ['describes how', 'proposes', 'explain', 'discuss', 'describe a plan'];
+                            const tl = text.toLowerCase();
+                            for (const v of proofVerbs) if (tl.includes(v)) return { label: v.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' '), cls: 'bg-amber-100 text-amber-800' };
+                            for (const v of planVerbs) if (tl.includes(v)) return { label: v.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' '), cls: 'bg-indigo-100 text-indigo-800' };
+                            return { label: 'Addresses', cls: 'bg-slate-100 text-slate-600' };
+                          };
+
+                          const renderReqTable = (items: any[], qOffset: number = 0) => (
+                            <div className="overflow-x-auto mb-3">
+                              <table className="w-full text-sm border">
+                                <thead>
+                                  <tr className="bg-slate-50">
+                                    <th className="text-left p-2 border w-8 text-xs">Q#</th>
+                                    <th className="text-left p-2 border text-xs" style={{width:'22%'}}>NOFO Requirement</th>
+                                    <th className="text-left p-2 border w-16 text-xs">Verb</th>
+                                    <th className="text-left p-2 border text-xs" style={{width:'28%'}}>Applicant Response</th>
+                                    <th className="text-left p-2 border w-16 text-xs">D/P</th>
+                                    <th className="text-left p-2 border w-20 text-xs">Rating</th>
+                                    <th className="text-left p-2 border text-xs" style={{width:'12%'}}>Notes</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {items.map((ra: any, ri: number) => {
+                                    const ft = ra.finding_type || 'met';
+                                    const verb = getVerb(ra.requirement_text || '');
+                                    const explanation = (ra.explanation || '').replace(/^\[[^\]]+\]\s*/, '');
+                                    const isWeakness = ft === 'weakness';
+                                    const demo = ra.response_status === 'exceeds' || ft === 'strength' ? 'Demonstrated' : (ft === 'met' || ra.response_status === 'fully_addressed' ? 'Plan OK' : 'Gap');
+                                    return (
+                                      <tr key={ri} className={isWeakness ? 'bg-red-50' : ''}>
+                                        <td className="p-2 border text-center font-mono text-xs font-bold text-slate-500">Q{qOffset + ri + 1}</td>
+                                        <td className="p-2 border text-xs">
+                                          {ra.requirement_text}
+                                          {ra.nofo_pages?.length > 0 && (
+                                            <div className="mt-1"><span className="rounded bg-amber-100 text-amber-800 px-1.5 py-0.5 text-[10px] font-bold">NOFO Pg. {ra.nofo_pages.join(', ')}</span></div>
+                                          )}
+                                        </td>
+                                        <td className="p-2 border"><span className={'rounded px-1.5 py-0.5 text-[10px] font-bold ' + verb.cls}>{verb.label}</span></td>
+                                        <td className="p-2 border text-xs">
+                                          {explanation}
+                                          {ra.application_pages?.length > 0 && (
+                                            <div className="mt-1"><span className="rounded bg-blue-100 text-blue-800 px-1.5 py-0.5 text-[10px] font-bold">AOR Pg. {ra.application_pages.join(', ')}</span></div>
+                                          )}
+                                        </td>
+                                        <td className="p-2 border"><span className={'rounded px-1.5 py-0.5 text-[10px] font-bold ' + (demo === 'Demonstrated' ? 'bg-emerald-100 text-emerald-800' : demo === 'Plan OK' ? 'bg-indigo-100 text-indigo-800' : 'bg-red-100 text-red-800')}>{demo}</span></td>
+                                        <td className="p-2 border"><span className={'rounded-full px-2 py-0.5 text-xs font-bold ' + (ft === 'strength' ? 'bg-emerald-100 text-emerald-800' : ft === 'weakness' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800')}>{ft === 'strength' ? 'Strength' : ft === 'weakness' ? 'Weakness' : 'Met'}</span></td>
+                                        <td className="p-2 border"><textarea className="w-full text-xs border rounded p-1 min-h-[40px] resize-y bg-amber-50 focus:bg-white focus:ring-1 focus:ring-blue-400" placeholder="Add comments..." /></td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          );
+
+                          if (hasSubs) {
+                            // Feature 5: Group by subcriterion prefix
+                            const subGroups: Record<string, any[]> = {};
+                            for (const s of subs) subGroups[s.name] = [];
+                            for (const ra of reqs) {
+                              const prefixMatch = (ra.explanation || '').match(/^\[([^\]]+)\]/);
+                              const prefix = prefixMatch ? prefixMatch[1] : '';
+                              const matched = subs.find((s: any) => s.name.toLowerCase().includes(prefix.toLowerCase()) || prefix.toLowerCase().includes(s.name.toLowerCase()));
+                              const key = matched ? matched.name : subs[0].name;
+                              if (!subGroups[key]) subGroups[key] = [];
+                              subGroups[key].push(ra);
+                            }
+                            let qOff = 0;
+                            return (
+                              <div className="mt-4">
+                                <p className="text-xs font-bold uppercase text-slate-500 mb-2">NOFO Evaluation Questions</p>
+                                {subs.map((sub: any) => {
+                                  const items = subGroups[sub.name] || [];
+                                  const startQ = qOff;
+                                  qOff += items.length;
+                                  return (
+                                    <div key={sub.name} className="mb-4">
+                                      <div className="flex items-center gap-2 mb-2 mt-3 pb-1 border-b-2 border-blue-500">
+                                        <h4 className="text-sm font-bold text-slate-800">{sub.name}</h4>
+                                        <span className="text-xs font-bold text-blue-700">{sub.score ?? '—'}/{sub.maximum_points}</span>
+                                      </div>
+                                      {items.length > 0 ? renderReqTable(items, startQ) : <p className="text-xs text-slate-400 italic ml-2">No requirement assessments for this sub-criterion.</p>}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            );
+                          }
+
+                          // No subcriteria — single table
+                          return (
+                            <div className="mt-4">
+                              <p className="text-xs font-bold uppercase text-slate-500 mb-2">NOFO Evaluation Questions</p>
+                              {renderReqTable(reqs)}
+                            </div>
+                          );
+                        })()}
 
                         {/* Consolidated ARM Statements — at top for easy copy */}
                         {(() => {
