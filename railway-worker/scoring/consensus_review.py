@@ -508,7 +508,6 @@ INSTRUCTIONS:
     with client.messages.stream(
         model=model,
         max_tokens=20000,
-        temperature=0,
         system=[{
             "type": "text",
             "text": CONSENSUS_SYSTEM_PROMPT,

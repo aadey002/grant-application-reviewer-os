@@ -821,7 +821,7 @@ VERIFICATION: The number of requirements you identify must match what a reviewer
     # Split prompt: cacheable blocks (app text, NOFO) + criterion-specific instruction
     criterion_instruction = prompt.split("APPLICATION:")[0] + prompt.split(application_text)[-1] if application_text in prompt else prompt
     active_system_prompt = get_system_prompt(agency)
-    response = client.messages.create(model=model, max_tokens=needed_tokens, temperature=0,
+    response = client.messages.create(model=model, max_tokens=needed_tokens,
         system=[{"type": "text", "text": get_system_prompt(agency), "cache_control": {"type": "ephemeral"}}],
         messages=[{"role": "user", "content": [
             {"type": "text", "text": f"NOFO TEXT:\n{nofo_text[:15000]}\n\nAPPLICATION:\n{application_text}", "cache_control": {"type": "ephemeral"}},
@@ -1017,7 +1017,6 @@ def _audit_nofo_citations(client, model: str, review: dict[str, Any], nofo_text:
         response = client.messages.create(
             model=model,
             max_tokens=4000,
-            temperature=0,
             system="You are a precise citation auditor. Your only job is to verify whether claimed NOFO text exists on the claimed pages. Be strict and factual.",
             messages=[{"role": "user", "content": [
                 {"type": "text", "text": "NOFO TEXT:\n" + nofo_text[:80000], "cache_control": {"type": "ephemeral"}},
@@ -1217,7 +1216,6 @@ def _audit_weakness_facts(client, model: str, review: dict[str, Any], pages: lis
         response = client.messages.create(
             model=model,
             max_tokens=4000,
-            temperature=0,
             system=(
                 "You are a factual accuracy auditor for federal grant reviews. "
                 "For each weakness finding, you are given the reviewer's claim AND the actual application text from the cited pages. "
@@ -1459,7 +1457,7 @@ Do NOT fabricate findings. Only report what you observe in the application. If a
                   "To check compliance, compare EACH YEAR's requested amount against the ceiling — not the multi-year total. "
                   "Example: if the ceiling is $2,000,000/year and the applicant requests $525,262/year for 4 years ($2,101,048 total), this is UNDER the ceiling and should be recommended 'as_requested'. "
                   "Only recommend 'as_reduced' if a SINGLE YEAR's request exceeds the per-year ceiling listed in the NOFO or Appendix B for the applicant's service area.")
-        resp = client.messages.create(model=model, max_tokens=4000, temperature=0, system=overview_system,
+        resp = client.messages.create(model=model, max_tokens=4000, system=overview_system,
             messages=[{"role": "user", "content": prompt}], tools=[overview_tool], tool_choice={"type": "tool", "name": "submit_overview"})
         tu = next((b for b in resp.content if b.type == "tool_use"), None)
         result = tu.input if tu else {}

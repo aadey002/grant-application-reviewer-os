@@ -323,7 +323,7 @@ ABSOLUTE RULE — NO PARAPHRASING: Every requirement_text MUST be copied VERBATI
         instructions_only = instructions_only.rstrip() + "\n\nINSTRUCTIONS:" + prompt.split("INSTRUCTIONS:")[-1] if "INSTRUCTIONS:" in prompt else instructions_only
 
     response = client.messages.create(
-        model=model, max_tokens=needed_tokens, temperature=0,
+        model=model, max_tokens=needed_tokens,
         system=[{"type": "text", "text": SAMHSA_SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
         messages=[{"role": "user", "content": [
             {"type": "text", "text": f"=== NOFO EVALUATION CRITERIA ===\n{nofo_criteria}\n\n=== GRANT APPLICATION (score THIS document) ===\n{application_text}", "cache_control": {"type": "ephemeral"}},
@@ -455,7 +455,7 @@ APPLICATION (including attachments):
 {cpp_app_text[:60000]}"""
 
     response = client.messages.create(
-        model=model, max_tokens=2000, temperature=0,
+        model=model, max_tokens=2000,
         system="You are a SAMHSA peer reviewer assessing Confidentiality and Participant Protection. Be thorough but fair.",
         messages=[{"role": "user", "content": prompt}],
         tools=[tool], tool_choice={"type": "tool", "name": "score_cpp"},

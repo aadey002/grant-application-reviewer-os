@@ -630,7 +630,6 @@ def _run_nofo_brief(brief_id: str, review_id: str, nofo_storage_path: str, agenc
             # Use Haiku for NOFO brief extraction — structured tool_use, not evaluative
             model=os.getenv("NOFO_BRIEF_MODEL", "claude-haiku-4-5-20251001"),
             max_tokens=16000,
-            temperature=0,
             system=NOFO_BRIEF_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": prompt}],
             tools=[NOFO_BRIEF_TOOL_SCHEMA],
