@@ -627,7 +627,8 @@ def _run_nofo_brief(brief_id: str, review_id: str, nofo_storage_path: str, agenc
             timeout=600.0,
         )
         response = client.messages.create(
-            model=os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6-20250514"),
+            # Use Haiku for NOFO brief extraction — structured tool_use, not evaluative
+            model=os.getenv("NOFO_BRIEF_MODEL", "claude-haiku-4-5-20251001"),
             max_tokens=16000,
             temperature=0,
             system=NOFO_BRIEF_SYSTEM_PROMPT,
