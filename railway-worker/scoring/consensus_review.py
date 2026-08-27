@@ -1,7 +1,7 @@
 """Committee Consensus Review — consolidates combined reviewer statements.
 
 Reads a Combined Statements PDF (all reviewers' S/M/W findings merged),
-validates each statement against NOFO reviewer worksheet questions, and
+validates each statement against NOFO reviewer NOFO evaluation questions, and
 produces a consensus draft with KEEP / MERGE / REVISE / REMOVE actions.
 Preserves verbatim wording and reviewer citations.
 """
@@ -24,11 +24,11 @@ CONSENSUS_SYSTEM_PROMPT = """You are the Summary Statement Operator (SSO) for an
 
 RULES — follow exactly:
 
-1. REVIEWER WORKSHEET is the controlling question-by-question validation framework. Every statement must be validated against the specific worksheet questions for that criterion.
+1. The NOFO EVALUATION CRITERIA are the controlling question-by-question validation framework. Every statement must be validated against the specific NOFO evaluation questions for that criterion.
 
-2. A statement is RETAINED (KEEP) when it accurately answers ANY criterion question from the worksheet — even if it was originally placed under a different question.
+2. A statement is RETAINED (KEEP) when it accurately answers ANY criterion question from the NOFO — even if it was originally placed under a different question.
 
-3. True DUPLICATES addressing the SAME worksheet question from multiple reviewers are MERGED — keep the most complete version. State which statements were merged.
+3. True DUPLICATES addressing the SAME NOFO evaluation question from multiple reviewers are MERGED — keep the most complete version. State which statements were merged.
 
 4. A statement is REMOVED when:
    a. It is factually incorrect — the application text on the cited pages contradicts the claim. Cite the application page.
@@ -74,10 +74,10 @@ In the rationale, always state: "NOFO p.XX requires: '[exact text]'. This weakne
 13. For the user's own statements (flagged in the input), mark them with is_mine: true so the UI can flag them.
 
 NOFO REQUIREMENT REFERENCE — CRITICAL:
-For EVERY statement, provide the verbatim NOFO requirement text that the statement addresses in the nofo_requirement_text field. Copy the exact NOFO language for the worksheet question this statement answers. Include the NOFO page number. This lets the Chair verify each statement against the actual NOFO language.
+For EVERY statement, provide the verbatim NOFO requirement text that the statement addresses in the nofo_requirement_text field. Copy the exact NOFO language for the NOFO evaluation question this statement answers. Include the NOFO page number. This lets the Chair verify each statement against the actual NOFO language.
 
 CROSS-QUESTION CONFLICT DETECTION — CRITICAL:
-After mapping every statement to its worksheet question, check for CONFLICTS within each question:
+After mapping every statement to its NOFO evaluation question, check for CONFLICTS within each question:
 - If a question has a STRENGTH from one reviewer and a WEAKNESS from another — this is a CONFLICT. Set is_conflict: true on both. The Chair must discuss.
 - If a question has a MET from one reviewer and a WEAKNESS from another — this is a CONFLICT. A question cannot be both met and weak. Set is_conflict: true on both. Go to the NOFO requirement text and determine which assessment is correct. State in the rationale: "CONFLICT: [Reviewer] says met because [X], [Reviewer] says weakness because [Y]. NOFO p.XX requires: '[verbatim NOFO text]'. Chair should discuss."
 - If a question has a STRENGTH from one reviewer and a MET from another — NOT a conflict. The STRENGTH supersedes the met. Mark the met as action MERGE into the strength.
@@ -131,7 +131,7 @@ def _consensus_tool(criteria: list[dict[str, Any]]) -> dict[str, Any]:
             },
             "worksheet_question": {
                 "type": "string",
-                "description": "Which reviewer worksheet question (Q1, Q2, etc.) this statement answers",
+                "description": "Which reviewer NOFO evaluation question (Q1, Q2, etc.) this statement answers",
             },
             "subcriterion": {
                 "type": "string",
@@ -139,7 +139,7 @@ def _consensus_tool(criteria: list[dict[str, Any]]) -> dict[str, Any]:
             },
             "nofo_requirement_text": {
                 "type": "string",
-                "description": "The VERBATIM NOFO requirement text for the worksheet question this statement answers. Copy the exact NOFO language. Include NOFO page number at the end, e.g. '...effectively served through this award. (NOFO p. 45)'",
+                "description": "The VERBATIM NOFO requirement text for the NOFO evaluation question this statement answers. Copy the exact NOFO language. Include NOFO page number at the end, e.g. '...effectively served through this award. (NOFO p. 45)'",
             },
             "action": {
                 "type": "string",
@@ -163,7 +163,7 @@ def _consensus_tool(criteria: list[dict[str, Any]]) -> dict[str, Any]:
             },
             "is_conflict": {
                 "type": "boolean",
-                "description": "True if this statement was part of a strength/weakness conflict on the same worksheet question. Rationale should explain the conflict resolution.",
+                "description": "True if this statement was part of a strength/weakness conflict on the same NOFO evaluation question. Rationale should explain the conflict resolution.",
             },
         },
     }
@@ -272,7 +272,7 @@ def _consensus_tool(criteria: list[dict[str, Any]]) -> dict[str, Any]:
                                     "question_text": {"type": "string", "description": "The NOFO requirement text that no reviewer addressed"},
                                 },
                             },
-                            "description": "Worksheet questions that NO reviewer provided feedback on. Empty array if all questions covered.",
+                            "description": "NOFO evaluation questions that NO reviewer provided feedback on. Empty array if all questions covered.",
                         },
                     },
                 },
@@ -468,7 +468,7 @@ PROCESS:
 CRITERIA:
 {chr(10).join(criteria_desc)}
 
-NOFO TEXT (use this to validate statements and identify worksheet questions per criterion):
+NOFO TEXT (use this to validate statements and identify NOFO evaluation questions per criterion):
 {nofo_text[:30000]}{intelligence_context}
 
 COMBINED REVIEWER STATEMENTS (preserve every statement verbatim — do NOT shorten):
@@ -483,10 +483,10 @@ APPLICATION PAGE LIMIT: {page_limit}
 Any statement citing evidence from pages beyond page {page_limit} must be REMOVED with rationale: "PAGE LIMIT VIOLATION: cites page(s) past the NOFO limit of {page_limit}." If a statement cites both in-limit and over-limit pages, REVISE it to reference only evidence within the limit.
 """ if page_limit > 0 else ""}
 INSTRUCTIONS:
-1. For EACH criterion, first identify the NOFO evaluation questions (the worksheet questions) — these are the bullets under each criterion that say what "the panel will review."
+1. For EACH criterion, first identify the NOFO evaluation questions (the NOFO evaluation questions) — these are the bullets under each criterion that say what "the panel will review."
 2. Then go through EVERY statement in the combined document for that criterion IN THE SAME ORDER as the combined statement document. Do NOT reorder or rearrange. The HRSA combined statement has a specific structure — preserve it exactly.
 3. For each statement:
-   a. Map it to the worksheet question it answers (Q1, Q2, etc.)
+   a. Map it to the NOFO evaluation question it answers (Q1, Q2, etc.)
    b. Determine the action: KEEP, MERGE, REVISE, or REMOVE
    c. State what needs to be done — the rationale should be an actionable instruction (e.g., "DELETE — duplicate of W1", "KEEP — accurately addresses Q2", "REVISE — remove reference to pages past 60")
    d. Preserve the FULL verbatim text — do not shorten or paraphrase
@@ -496,7 +496,7 @@ INSTRUCTIONS:
 6. SUBCRITERIA: If a criterion has subcriteria (e.g., Response has "2.1 Overview", "2.2 Network building", "2.3 Assessment & action planning", "2.4 Service provider preparation"), tag each statement with its subcriterion name in the subcriterion field. Group statements by subcriterion within each finding type. Use the exact subcriterion name from the NOFO/combined statement.
 6. Provide a suggested score range and budget recommendation.
 7. Provide a summary with counts of each action type.
-8. GAP CHECK: After mapping all statements to worksheet questions, check if ANY worksheet question has NO reviewer feedback at all. For each criterion, compare the list of worksheet questions (Q1, Q2, Q3...) against the questions actually addressed by statements. List any unanswered questions in the criterion's worksheet_questions array with a note. Also add unanswered questions to the missing_questions field in the summary."""
+8. GAP CHECK: After mapping all statements to NOFO evaluation questions, check if ANY NOFO evaluation question has NO reviewer feedback at all. For each criterion, compare the list of NOFO evaluation questions (Q1, Q2, Q3...) against the questions actually addressed by statements. List any unanswered questions in the criterion's worksheet_questions array with a note. Also add unanswered questions to the missing_questions field in the summary."""
 
     # --- Call Claude ---
     client = anthropic.Anthropic()
