@@ -1052,6 +1052,127 @@ def _extract_fon_from_worksheet(ws_bytes: bytes) -> str | None:
         return None
 
 
+def _extract_discipline_mismatch(app_bytes: bytes) -> dict[str, Any] | None:
+    """Check if the Program Specific Form discipline matches the narrative discipline.
+
+    CRITICAL HRSA CHECK: The Program Specific Form lists the health professions discipline
+    the applicant is applying under. If this doesn't match what the narrative describes,
+    the application may be disqualified. For example, if the Form says "Nursing Diploma"
+    but the narrative describes a BSN program, the application is ineligible.
+
+    Returns a dict with findings if mismatch detected, None if OK or unable to check.
+    """
+    import fitz
+    try:
+        doc = fitz.open(stream=app_bytes, filetype="pdf")
+        full_text = ""
+        psf_text = ""
+        narrative_text = ""
+        in_psf = False
+        in_narrative = False
+
+        for i in range(len(doc)):
+            page_text = doc[i].get_text()
+            full_text += page_text + "\n"
+
+            # Detect Program Specific Form pages
+            if "Program Specific Form" in page_text or "Scholarships for Disadvantaged Students" in page_text:
+                if "Section" in page_text or "Health Professions" in page_text:
+                    psf_text += page_text + "\n"
+                    in_psf = True
+
+            # Detect narrative pages (usually after SF-424 and before attachments)
+            if "PROJECT NARRATIVE" in page_text or "INTRODUCTION" in page_text:
+                in_narrative = True
+            if in_narrative and i < min(len(doc), 60):
+                narrative_text += page_text + "\n"
+
+        doc.close()
+
+        if not psf_text:
+            # Try to find discipline from any page mentioning "Health Professions Discipline"
+            discipline_match = re.search(
+                r'(?:Health\s+Professions?\s+Discipline|Degree\s+Program|Program\s+Type)\s*[:\-]?\s*([^\n]{5,80})',
+                full_text, re.IGNORECASE
+            )
+            if not discipline_match:
+                return None  # Can't find form discipline
+
+        # Extract discipline from Program Specific Form
+        form_discipline = None
+        discipline_patterns = [
+            r'(?:Health\s+Professions?\s+Discipline|Degree\s+Program|Program\s+Type)\s*[:\-]?\s*([^\n]{5,80})',
+            r'(?:Nursing|Medicine|Dentistry|Pharmacy|Public\s+Health|Allied\s+Health|Behavioral|Chiropractic|Podiatric|Optometry|Veterinary|Physician\s+Assistant|Midwifery)\s+(?:Diploma|Associate|Bachelor|Master|Doctor|Graduate|Certificate)',
+        ]
+        search_text = psf_text if psf_text else full_text[:30000]
+        for pattern in discipline_patterns:
+            match = re.search(pattern, search_text, re.IGNORECASE)
+            if match:
+                form_discipline = match.group(0).strip() if match.lastindex is None else match.group(1).strip()
+                break
+
+        if not form_discipline:
+            return None
+
+        # Extract what the narrative describes
+        narrative_discipline = None
+        narrative_patterns = [
+            r'(?:Bachelor\s+of\s+Science\s+in\s+Nursing|BSN)',
+            r'(?:Master\s+of\s+Science\s+in\s+Nursing|MSN)',
+            r'(?:Doctor\s+of\s+(?:Nursing|Pharmacy|Medicine|Chiropractic|Optometry|Podiatric))',
+            r'(?:Nursing\s+Diploma)',
+            r'(?:Associate\s+(?:Degree|of\s+Science)\s+in\s+Nursing|ADN)',
+            r'(?:Doctor\s+of\s+Dental|DDS|DMD)',
+            r'(?:PharmD|Doctor\s+of\s+Pharmacy)',
+            r'(?:MPH|Master\s+of\s+Public\s+Health)',
+            r'(?:MSW|Master\s+of\s+Social\s+Work)',
+            r'(?:Physician\s+Assistant)',
+            r'(?:Nurse.Midwife|Midwifery|CNM|WHNP)',
+        ]
+        for pattern in narrative_patterns:
+            match = re.search(pattern, narrative_text or full_text[10000:50000], re.IGNORECASE)
+            if match:
+                narrative_discipline = match.group(0).strip()
+                break
+
+        if not narrative_discipline:
+            return None
+
+        # Compare — check for clear mismatches
+        form_lower = form_discipline.lower()
+        narr_lower = narrative_discipline.lower()
+
+        # Known mismatches that would disqualify
+        mismatches = [
+            ('diploma', 'bachelor'),
+            ('diploma', 'bsn'),
+            ('associate', 'bachelor'),
+            ('associate', 'bsn'),
+            ('bachelor', 'master'),
+            ('bachelor', 'msn'),
+            ('bsn', 'msn'),
+            ('diploma', 'msn'),
+            ('diploma', 'master'),
+        ]
+
+        for form_kw, narr_kw in mismatches:
+            if form_kw in form_lower and narr_kw in narr_lower:
+                return {
+                    "form_discipline": form_discipline,
+                    "narrative_discipline": narrative_discipline,
+                    "mismatch": True,
+                    "warning": f"CRITICAL: Program Specific Form lists '{form_discipline}' but narrative describes '{narrative_discipline}'. This discipline mismatch may disqualify the application.",
+                }
+
+        # No mismatch detected
+        logger.info("Discipline check — Form: %s, Narrative: %s — OK", form_discipline, narrative_discipline)
+        return None
+
+    except Exception as exc:
+        logger.warning("Discipline mismatch check failed (non-fatal): %s", exc)
+        return None
+
+
 def _prescore_document_audit(
     sb: Any,
     job_id: str,
@@ -1062,6 +1183,7 @@ def _prescore_document_audit(
     worksheet_storage_path: str | None,
 ) -> None:
     """Verify NOFO, application, and worksheet all reference the same Funding Opportunity Number.
+    Also checks Program Specific Form discipline vs narrative discipline for HRSA.
 
     Raises DocumentMismatchError if they clearly don't match.
     Logs warnings for soft mismatches (e.g., one document missing the FON).
@@ -1101,14 +1223,31 @@ def _prescore_document_audit(
     unique_fons = set(fons.values())
     if len(unique_fons) == 1:
         logger.info("Document audit PASSED — all documents reference %s", list(unique_fons)[0])
-        return
+    else:
+        # Mismatch detected — build error message
+        details = ", ".join(f"{doc}: {fon}" for doc, fon in fons.items())
+        raise DocumentMismatchError(
+            f"Funding Opportunity Number mismatch across documents. {details}. "
+            "Please ensure the NOFO, application, and reviewer worksheet all reference the same grant opportunity."
+        )
 
-    # Mismatch detected — build error message
-    details = ", ".join(f"{doc}: {fon}" for doc, fon in fons.items())
-    raise DocumentMismatchError(
-        f"Funding Opportunity Number mismatch across documents. {details}. "
-        "Please ensure the NOFO, application, and reviewer worksheet all reference the same grant opportunity."
-    )
+    # HRSA discipline check — verify Program Specific Form matches narrative
+    # CRITICAL: Catches cases like Form="Nursing Diploma" but narrative="BSN"
+    # which disqualifies the application
+    discipline_result = _extract_discipline_mismatch(app_bytes)
+    if discipline_result and discipline_result.get("mismatch"):
+        warning = discipline_result["warning"]
+        logger.warning("DISCIPLINE MISMATCH DETECTED: %s", warning)
+        # Store as a warning on the application — don't block scoring but flag prominently
+        try:
+            _update(sb, "applications", {"id": application_id}, {
+                "discipline_audit": json.dumps(discipline_result),
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            })
+        except Exception:
+            pass  # Column may not exist yet — non-fatal
+        # Also inject into the review result later via a flag
+        logger.warning("⚠️  REVIEWER ALERT: %s", warning)
 
 
 # ---------------------------------------------------------------------------

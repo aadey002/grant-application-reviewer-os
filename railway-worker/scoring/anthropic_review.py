@@ -1371,7 +1371,7 @@ def score_application_with_claude(application: Path, criteria: list[dict[str, An
                             "PRIOR AWARD", "ACCREDITATION", "DATA CONSISTENCY",
                             "BUDGET FORMULA", "VERB COMPLIANCE", "POSITIONING",
                             "SUSTAINABILITY", "DOJ COMPLIANCE", "CROSS-REFERENCE",
-                            "TIMELINE", "STAFFING", "ATTACHMENT GAP", "OTHER"
+                            "TIMELINE", "STAFFING", "ATTACHMENT GAP", "DISCIPLINE MISMATCH", "OTHER"
                         ], "description": "Category tag for the finding"},
                         "finding": {"type": "string", "description": "1-sentence headline of the finding"},
                         "detail": {"type": "string", "description": "1-2 sentence explanation of why this matters and what to verify"},
@@ -1436,6 +1436,12 @@ Look for and report on ALL of the following:
 10. TIMELINE: Are Q1 activities feasible given the award date? Any unrealistic timelines?
 11. STAFFING: Key positions unfilled? FTE allocations that don't add up?
 12. ATTACHMENT GAP: Required attachments missing or incomplete? (Letters of support unsigned? Accreditation docs expired?)
+13. DISCIPLINE MISMATCH: CRITICAL — Check the Program Specific Form for the health professions discipline selected. Does it match what the narrative describes? For example, if the Form says "Nursing Diploma" but the narrative describes a BSN program, the application is INELIGIBLE for review under that discipline. Flag any discrepancy immediately.
+
+MANDATORY PRE-REVIEW CHECKLIST (include as first items in reviewer_intelligence):
+- [ ] Program Specific Form discipline matches narrative discipline
+- [ ] Pre-Review Conference Call notes reviewed for program-specific call-outs
+- [ ] Funding Opportunity Number verified across all documents
 
 Do NOT fabricate findings. Only report what you observe in the application. If an item isn't relevant, skip it. Each finding must cite what you actually found in the application text.{budget_context}"""
         # Include beginning (cover/narrative) + end (budget pages) of application
