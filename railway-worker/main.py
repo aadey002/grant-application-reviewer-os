@@ -1399,6 +1399,7 @@ def _process_job(
             "application_number": review_result.get("application_number"),
             "overall_summary": review_result.get("overall_summary"),
             "full_result": json.dumps(review_result),
+            "completed_at": datetime.now(timezone.utc).isoformat(),
             "updated_at": datetime.now(timezone.utc).isoformat(),
         })
 

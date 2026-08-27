@@ -276,9 +276,23 @@ export const runWithStoredNofo = async (
   } else {
     // Pull worksheet_storage_path from the stored review if no new file uploaded
     try {
-      const { data: storedReview } = await supabase.from('grant_reviews').select('worksheet_storage_path').eq('id', storedReviewId).single();
+      const { data: storedReview } = await supabase.from('grant_reviews').select('worksheet_storage_path,nofo_filename').eq('id', storedReviewId).single();
       if (storedReview?.worksheet_storage_path) {
         worksheetPath = storedReview.worksheet_storage_path;
+      } else if (storedReview?.nofo_filename) {
+        // Fallback: find ANY review for this NOFO that has a worksheet
+        const { data: fallback } = await supabase.from('grant_reviews')
+          .select('worksheet_storage_path')
+          .eq('nofo_filename', storedReview.nofo_filename)
+          .not('worksheet_storage_path', 'is', null)
+          .neq('worksheet_storage_path', '')
+          .order('created_at', { ascending: false })
+          .limit(1);
+        if (fallback && fallback.length > 0 && fallback[0].worksheet_storage_path) {
+          worksheetPath = fallback[0].worksheet_storage_path;
+        }
+      }
+      if (worksheetPath) {
         await supabase.from('grant_reviews').update({
           worksheet_storage_path: worksheetPath,
           updated_at: new Date().toISOString(),
