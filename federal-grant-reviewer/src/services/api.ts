@@ -28,6 +28,7 @@ export interface SafeReview {
   budget?: { recommendation: string; annual_recommended_funding: (number | null)[]; reduction_rationale: string };
   overview?: Record<string, string>;
   overall_summary?: string;
+  full_result?: string | Record<string, unknown> | null;
   audit_status?: string;
   audit_summary?: { total_citations: number; verified: number; corrected: number; removed: number };
   cpp?: {
