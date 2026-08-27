@@ -1234,8 +1234,22 @@ def _process_job(
             else:
                 _, _, score_application_with_claude, _, extract_nofo_budget_rules_fn = _lazy_scoring()
                 # Extract NOFO budget rules for budget verification
+                # Check if already extracted for this review (avoid re-extraction per application)
                 _budget_rules = None
-                if nofo_bytes:
+                try:
+                    brief_rows = _select(sb, "nofo_briefs", {"review_id": review_id})
+                    for br in brief_rows:
+                        stored = br.get("budget_rules_json")
+                        if stored:
+                            _budget_rules = json.loads(stored) if isinstance(stored, str) else stored
+                            if _budget_rules.get("status") == "extracted":
+                                logger.info("Reusing stored NOFO budget rules for review %s", review_id)
+                                break
+                            _budget_rules = None
+                except Exception:
+                    pass  # table/column may not exist yet — non-fatal
+
+                if not _budget_rules and nofo_bytes:
                     nofo_tmp_for_budget = None
                     try:
                         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as ntmp:
@@ -1244,6 +1258,15 @@ def _process_job(
                         _budget_rules = extract_nofo_budget_rules_fn(nofo_tmp_for_budget)
                         if _budget_rules.get("status") == "extracted":
                             logger.info("NOFO budget rules extracted successfully")
+                            # Store for reuse across applications in this review
+                            try:
+                                if brief_rows:
+                                    _update(sb, "nofo_briefs", {"id": brief_rows[0]["id"]}, {
+                                        "budget_rules_json": json.dumps(_budget_rules),
+                                    })
+                                    logger.info("Stored budget rules on nofo_briefs row %s", brief_rows[0]["id"])
+                            except Exception as store_exc:
+                                logger.warning("Could not store budget rules (non-fatal): %s", store_exc)
                         else:
                             logger.warning("NOFO budget rules extraction returned status=%s", _budget_rules.get("status"))
                             _budget_rules = None
