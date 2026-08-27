@@ -18,11 +18,16 @@ def _insert_after(paragraph: Paragraph, text: str) -> None:
     run.font.name = "Arial"
 
 
-def _findings(items: list[dict[str, Any]], finding_type: str = "strength") -> str:
+def _findings(items: list, finding_type: str = "strength") -> str:
     if not items:
         return "None identified."
     lines = []
     for item in items:
+        # Handle both dict format {"comment": "...", "application_pages": [...]}
+        # and legacy string format "The applicant..."
+        if isinstance(item, str):
+            lines.append(f"• {item}")
+            continue
         comment = item.get("comment", "")
         app_pages = item.get("application_pages", item.get("pages", []))
         page_ref = f"(Application p. {', '.join(str(p) for p in app_pages)})" if app_pages else ""
@@ -81,7 +86,7 @@ def populate_reviewer_worksheet(template: Path, output: Path, review: dict[str, 
         budget = review.get("budget", {})
         if budget.get("recommendation") == "as_requested": document.tables[5].cell(0, 2).text = "X"
         if budget.get("recommendation") == "as_reduced": document.tables[5].cell(0, 4).text = "X"
-        years = budget.get("annual_recommended_funding", [])
+        years = budget.get("annual_requested_funding", budget.get("annual_recommended_funding", []))
         for index, amount in enumerate(years[:5], 1):
             if amount is not None: document.tables[6].cell(index, 1).text = f"${amount:,.2f}"
         numeric = [a for a in years[:5] if isinstance(a, (int, float))]

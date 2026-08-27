@@ -264,7 +264,7 @@ export const runWithStoredNofo = async (
     }
   } catch { /* best effort — budget rules will re-extract if missing */ }
 
-  // STEP 2: Upload optional worksheet
+  // STEP 2: Upload optional worksheet OR reuse stored review's worksheet path
   let worksheetPath = '';
   if (worksheet) {
     onProgress?.('uploading', 'Uploading worksheet: ' + worksheet.name);
@@ -273,6 +273,18 @@ export const runWithStoredNofo = async (
       worksheet_storage_path: worksheetPath,
       updated_at: new Date().toISOString(),
     }).eq('id', reviewId);
+  } else {
+    // Pull worksheet_storage_path from the stored review if no new file uploaded
+    try {
+      const { data: storedReview } = await supabase.from('grant_reviews').select('worksheet_storage_path').eq('id', storedReviewId).single();
+      if (storedReview?.worksheet_storage_path) {
+        worksheetPath = storedReview.worksheet_storage_path;
+        await supabase.from('grant_reviews').update({
+          worksheet_storage_path: worksheetPath,
+          updated_at: new Date().toISOString(),
+        }).eq('id', reviewId);
+      }
+    } catch { /* best effort */ }
   }
 
   // STEP 3: Upload each application + create DB records
