@@ -128,6 +128,33 @@ const SafeReviewDashboard: React.FC = () => {
   const [supportRubric, setSupportRubric] = useState<File | null>(null);
   const [worksheet, setWorksheet] = useState<File | null>(null);
 
+  // Stored NOFO selector
+  const [storedNofos, setStoredNofos] = useState<Array<{id: string; nofo_filename: string; nofo_storage_path: string; agency: string; extracted_rubric: any; created_at: string}>>([]);
+  const [selectedStoredNofo, setSelectedStoredNofo] = useState<string>('');
+
+  // Load stored NOFOs on mount
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from('grant_reviews')
+          .select('id,nofo_filename,nofo_storage_path,agency,extracted_rubric,created_at')
+          .not('nofo_filename', 'is', null)
+          .not('extracted_rubric', 'is', null)
+          .order('created_at', { ascending: false });
+        if (data && data.length > 0) {
+          // Deduplicate by nofo_filename — keep the latest
+          const seen = new Map<string, typeof data[0]>();
+          for (const row of data) {
+            const key = row.nofo_filename + '|' + row.agency;
+            if (!seen.has(key)) seen.set(key, row);
+          }
+          setStoredNofos(Array.from(seen.values()));
+        }
+      } catch { /* best effort */ }
+    })();
+  }, []);
+
   // Pipeline state
   const [rubric, setRubric] = useState<ExtractedRubric | null>(null);
   const [reviews, setReviews] = useState<SafeReview[]>([]);
@@ -373,12 +400,17 @@ const SafeReviewDashboard: React.FC = () => {
   // Step 1 — extract rubric
   // ---------------------------------------------------------------------------
   const process = async () => {
-    if (!nofo || !applications.length) return;
+    if ((!nofo && !selectedStoredNofo) || !applications.length) return;
     setBusy(true);
     setError('');
     try {
-      setRubric(await extractRubric(nofo, agency));
-      setStep('rubric');
+      // If a stored NOFO is selected, skip rubric extraction — it's already approved
+      if (selectedStoredNofo && rubric?.approved) {
+        setStep('rubric');
+      } else if (nofo) {
+        setRubric(await extractRubric(nofo, agency));
+        setStep('rubric');
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Processing failed';
       if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
@@ -395,7 +427,7 @@ const SafeReviewDashboard: React.FC = () => {
   // Step 2a — after rubric approval, go to brief step
   // ---------------------------------------------------------------------------
   const proceedToBrief = async () => {
-    if (!nofo || !rubric) return;
+    if ((!nofo && !selectedStoredNofo) || !rubric) return;
     // Clear any stale duplicate detection
     const all = loadStoredReviews().filter(r => r.status !== 'processing');
     saveStoredReviews(all);
@@ -1110,13 +1142,57 @@ const SafeReviewDashboard: React.FC = () => {
               </div>
             </div>
 
+            {/* NOFO selector — reuse a previously uploaded NOFO or upload new */}
+            {storedNofos.length > 0 && !nofo && (
+              <div className="mt-7">
+                <label className="text-sm font-bold">Select a Previously Used NOFO</label>
+                <select
+                  value={selectedStoredNofo}
+                  onChange={e => {
+                    const id = e.target.value;
+                    setSelectedStoredNofo(id);
+                    if (id) {
+                      const stored = storedNofos.find(n => n.id === id);
+                      if (stored) {
+                        setNofoStoragePath(stored.nofo_storage_path);
+                        setAgency(stored.agency);
+                        if (stored.extracted_rubric && stored.extracted_rubric.criteria) {
+                          setRubric({ ...stored.extracted_rubric, approved: true });
+                          setCurrentReviewId(stored.id);
+                        }
+                      }
+                    } else {
+                      setNofoStoragePath('');
+                      setRubric(null);
+                      setCurrentReviewId(null);
+                    }
+                  }}
+                  className="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm font-semibold focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="">— Upload a new NOFO instead —</option>
+                  {storedNofos.map(n => (
+                    <option key={n.id} value={n.id}>
+                      {n.nofo_filename} ({n.agency}) — {new Date(n.created_at).toLocaleDateString()}
+                    </option>
+                  ))}
+                </select>
+                {selectedStoredNofo && (
+                  <div className="mt-2 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">
+                    ✓ Using stored NOFO — rubric and budget rules already cached. Just upload your applications below.
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="mt-7 grid gap-4 md:grid-cols-2">
+              {!selectedStoredNofo && (
               <label className="cursor-pointer rounded-xl border-2 border-dashed border-slate-300 p-6 hover:border-blue-500">
-                <input className="hidden" type="file" accept=".pdf,.docx" onChange={e => setNofo(e.target.files?.[0] || null)} />
+                <input className="hidden" type="file" accept=".pdf,.docx" onChange={e => { setNofo(e.target.files?.[0] || null); setSelectedStoredNofo(''); }} />
                 <FileText className="mb-4 text-blue-700" />
                 <p className="font-bold">NOFO <span className="text-red-600">*</span></p>
                 <p className="mt-1 truncate text-sm text-slate-500">{nofo?.name || 'Choose one NOFO'}</p>
               </label>
+              )}
               <label className="cursor-pointer rounded-xl border-2 border-dashed border-slate-300 p-6 hover:border-blue-500">
                 <input className="hidden" multiple type="file" accept=".pdf,.zip" onChange={e => setApplications(e.target.files ? Array.from(e.target.files) : [])} />
                 <Upload className="mb-4 text-blue-700" />
@@ -1146,7 +1222,7 @@ const SafeReviewDashboard: React.FC = () => {
             <div className="mt-7 flex justify-center">
               <button
                 onClick={process}
-                disabled={!nofo || !applications.length || busy}
+                disabled={(!nofo && !selectedStoredNofo) || !applications.length || busy}
                 className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-3 font-bold text-white shadow-lg disabled:opacity-40"
               >
                 {busy ? <Loader2 className="animate-spin" /> : <FileSearch />}
