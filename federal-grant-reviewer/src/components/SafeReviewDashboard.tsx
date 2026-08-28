@@ -2525,22 +2525,44 @@ const SafeReviewDashboard: React.FC = () => {
                           );
 
                           if (hasSubs) {
-                            // Feature 5: Group by subcriterion prefix [Approach], [High-level work plan], etc.
+                            // Feature 5: Group by subcriterion prefix — fuzzy matching
+                            // Claude may output [Approach], [Resolving challenges], [High-level work plan] etc.
                             const subGroups: Record<string, any[]> = {};
                             for (const s of subs) subGroups[s.name] = [];
+
+                            // Fuzzy matcher: maps prefix keywords to canonical subcriterion names
+                            const fuzzyMatch = (prefix: string): string => {
+                              const pl = prefix.toLowerCase();
+                              // Check each sub for keyword overlap
+                              for (const s of subs) {
+                                const sl = s.name.toLowerCase();
+                                // Exact match
+                                if (sl === pl) return s.name;
+                                // Contains either direction
+                                if (sl.includes(pl) || pl.includes(sl)) return s.name;
+                              }
+                              // Keyword-based fuzzy matching for common Claude variants
+                              for (const s of subs) {
+                                const sl = s.name.toLowerCase();
+                                if (pl.includes('approach') && sl.includes('approach')) return s.name;
+                                if ((pl.includes('work plan') || pl.includes('high-level') || pl.includes('high level')) && (sl.includes('work plan') || sl.includes('high-level'))) return s.name;
+                                if ((pl.includes('resolv') || pl.includes('challeng')) && (sl.includes('resolv') || sl.includes('challeng'))) return s.name;
+                                if ((pl.includes('evaluat')) && (sl.includes('evaluat'))) return s.name;
+                                if ((pl.includes('perform') || pl.includes('measure')) && (sl.includes('perform') || sl.includes('measure'))) return s.name;
+                              }
+                              // Partial word match — any word >3 chars
+                              for (const s of subs) {
+                                const sl = s.name.toLowerCase();
+                                if (pl.split(/\s+/).some(w => w.length > 3 && sl.includes(w))) return s.name;
+                              }
+                              return subs[0].name; // fallback to first
+                            };
+
                             for (const ra of reqs) {
                               const exp = (ra.explanation || '').trim();
                               const prefixMatch = exp.match(/^\[([^\]]+)\]/);
                               const prefix = prefixMatch ? prefixMatch[1].trim() : '';
-                              // Match prefix to subcriterion name — try exact, contains, and partial
-                              let matched = null;
-                              if (prefix) {
-                                const pl = prefix.toLowerCase();
-                                matched = subs.find((s: any) => s.name.toLowerCase() === pl);
-                                if (!matched) matched = subs.find((s: any) => s.name.toLowerCase().includes(pl) || pl.includes(s.name.toLowerCase()));
-                                if (!matched) matched = subs.find((s: any) => pl.split(' ').some((w: string) => w.length > 3 && s.name.toLowerCase().includes(w)));
-                              }
-                              const key = matched ? matched.name : subs[0].name;
+                              const key = prefix ? fuzzyMatch(prefix) : subs[0].name;
                               if (!subGroups[key]) subGroups[key] = [];
                               subGroups[key].push(ra);
                             }
