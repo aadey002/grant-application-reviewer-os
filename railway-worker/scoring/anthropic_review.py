@@ -13,12 +13,12 @@ from .safe_review import extract_pdf_pages
 # Per-criterion model routing — Sonnet for complex criteria, Haiku for extraction
 CRITERION_MODELS: dict[str, str] = {
     "Need": "claude-haiku-4-5-20251001",
-    "Response": "claude-sonnet-4-6-20250620",          # complex subcriteria grouping
+    "Response": "claude-sonnet-4-6",          # complex subcriteria grouping
     "Performance management": "claude-haiku-4-5-20251001",
     "Performance Management": "claude-haiku-4-5-20251001",
     "Impact": "claude-haiku-4-5-20251001",
     "Resources and capabilities": "claude-haiku-4-5-20251001",
-    "Support requested": "claude-sonnet-4-6-20250620", # budget compliance math
+    "Support requested": "claude-sonnet-4-6", # budget compliance math
     "default": os.environ.get("SCORING_MODEL", "claude-haiku-4-5-20251001"),
 }
 
@@ -1463,7 +1463,7 @@ def score_application_with_claude(application: Path, criteria: list[dict[str, An
     # Haiku — structured extraction, fast + cheap (criterion scoring)
     scoring_model = os.getenv("SCORING_MODEL", "claude-haiku-4-5-20251001")
     # Sonnet — reasoning + reviewer intelligence (overview, synthesis)
-    overview_model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6-20250620")
+    overview_model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
     client = anthropic.Anthropic(api_key=api_key, timeout=300.0)
     nofo_text = guidance or ""
 
