@@ -159,6 +159,10 @@ function StatementTable({ statements, headerColor, applicationId, criterionName 
               <td className="px-3 py-3 align-top text-sm text-slate-500 whitespace-nowrap">{s.worksheet_question}</td>
               <td className="px-3 py-3 align-top"><ActionBadge action={s.action} /></td>
               <td className="px-3 py-3 align-top text-sm text-slate-600 max-w-xs">
+                {/* Feature 6: INTEL tag when rationale references intelligence data */}
+                {/budget|formula|verified|intelligence|IDC|salary cap|FTE|scholarship|prior award|discipline/i.test(s.rationale || '') && (
+                  <span className="inline-block rounded bg-purple-700 text-white px-1.5 py-0.5 text-[8px] font-bold mr-1 align-middle">INTEL</span>
+                )}
                 {s.rationale}
               </td>
               <td className="px-3 py-3 align-top">
@@ -193,14 +197,23 @@ function CriterionSection({ crit, applicationId }: { crit: ConsensusCriterion; a
         </span>
       </div>
 
-      {/* Worksheet questions */}
+      {/* Feature 4: NOFO Evaluation Questions with coverage badges */}
       <div className="mb-4 rounded-lg bg-slate-50 p-3 text-sm">
-        <p className="font-semibold text-slate-700 mb-1">Reviewer Worksheet Questions:</p>
-        {crit.worksheet_questions.map(q => (
-          <p key={q.id} className="text-slate-600 ml-2">
-            <span className="font-semibold">{q.id}:</span> {q.text}
-          </p>
-        ))}
+        <p className="font-semibold text-slate-700 mb-1 text-xs uppercase">NOFO Evaluation Questions</p>
+        {crit.worksheet_questions.map(q => {
+          const allStmts = [...crit.strengths, ...crit.mets, ...crit.weaknesses];
+          const hasWeakness = crit.weaknesses.some(w => w.worksheet_question === q.id);
+          const hasCoverage = allStmts.some(s => s.worksheet_question === q.id);
+          const badgeCls = hasWeakness ? 'bg-amber-100 text-amber-800' : hasCoverage ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800';
+          const badgeText = hasWeakness ? 'WEAKNESS' : hasCoverage ? 'COVERED' : 'GAP';
+          return (
+            <div key={q.id} className="flex items-center gap-2 py-1 border-b border-slate-100 last:border-0">
+              <span className="font-mono font-bold text-slate-500 text-xs w-6">{q.id}</span>
+              <span className="text-slate-600 flex-1">{q.text}</span>
+              <span className={'shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold ' + badgeCls}>{badgeText}</span>
+            </div>
+          );
+        })}
       </div>
 
       {/* Weaknesses first per HRSA protocol */}
@@ -232,6 +245,21 @@ function CriterionSection({ crit, applicationId }: { crit: ConsensusCriterion; a
           <StatementTable statements={crit.mets} headerColor="slate" applicationId={applicationId} criterionName={crit.criterion_name} />
         </div>
       )}
+
+      {/* Feature 5: Coverage Gap Callouts */}
+      {(() => {
+        const allStmts = [...crit.strengths, ...crit.mets, ...crit.weaknesses];
+        const gaps = crit.worksheet_questions.filter(q => !allStmts.some(s => s.worksheet_question === q.id));
+        if (gaps.length === 0) return null;
+        return (
+          <div className="rounded-lg bg-red-50 border border-red-200 p-3 mt-2">
+            <p className="text-xs font-bold text-red-800 mb-1">⚠ Coverage Gap — {gaps.length} unanswered NOFO question{gaps.length > 1 ? 's' : ''}</p>
+            {gaps.map(g => (
+              <p key={g.id} className="text-xs text-red-700 ml-2"><span className="font-mono font-bold">{g.id}:</span> {g.text}</p>
+            ))}
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -296,6 +324,7 @@ export default function CommitteeReview() {
 
   const [applicantName, setApplicantName] = useState('');
   const [agency, setAgency] = useState('');
+  const [fullResult, setFullResult] = useState<any>(null);
   const [file, setFile] = useState<File | null>(null);
   const [reviewerName, setReviewerName] = useState('');
   const [pageLimit, setPageLimit] = useState(60);
@@ -345,10 +374,17 @@ export default function CommitteeReview() {
     (async () => {
       const { data: app } = await supabase
         .from('applications')
-        .select('filename')
+        .select('filename,full_result,applicant_name')
         .eq('id', applicationId)
         .single();
-      if (app?.filename) setApplicantName(app.filename.replace(/\.pdf$/i, ''));
+      if (app?.applicant_name) setApplicantName(app.applicant_name);
+      else if (app?.filename) setApplicantName(app.filename.replace(/\.pdf$/i, ''));
+      if (app?.full_result) {
+        let fr = app.full_result;
+        if (typeof fr === 'string') { try { fr = JSON.parse(fr); } catch {} }
+        if (typeof fr === 'string') { try { fr = JSON.parse(fr); } catch {} }
+        setFullResult(fr);
+      }
 
       const { data: review } = await supabase
         .from('grant_reviews')
@@ -431,29 +467,52 @@ export default function CommitteeReview() {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      {/* Header */}
-      <header className="bg-white border-b px-8 py-5 flex items-center justify-between no-print">
-        <div>
-          <h1 className="text-2xl font-bold">Committee Consensus Review</h1>
-          <p className="text-slate-500 mt-0.5">
-            {applicantName || 'Loading...'} &middot; {agency}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {result && (
-            <button
-              onClick={() => window.print()}
-              className="flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-            >
-              <Printer size={16} /> Print
-            </button>
-          )}
-          <a
-            href={'#/reviews/' + reviewId}
-            className="rounded-lg border px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+      {/* Dark Header Bar */}
+      <header className="bg-slate-800 text-white px-8 py-5 no-print">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold">Committee Consensus Review</h1>
+              <p className="text-slate-300 text-sm mt-0.5">
+                {applicantName || 'Loading...'} {fullResult?.project_name ? '— ' + fullResult.project_name : ''} {fullResult?.discipline ? '— ' + fullResult.discipline : ''} &middot; {agency}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              {result && <div className="rounded-lg bg-blue-100 text-blue-900 px-4 py-2 font-bold text-lg">{result.summary.suggested_score_range}</div>}
+              {result && (
+                <button onClick={() => window.print()} className="flex items-center gap-2 rounded-lg bg-white/10 border border-white/20 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20">
+                  <Printer size={16} /> Print
+                </button>
+              )}
+              <a href={'#/reviews/' + reviewId} className="rounded-lg bg-white/10 border border-white/20 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20"
           >
             Back to Review
           </a>
+            </div>
+          </div>
+          <div className="flex gap-4 mt-3 text-xs text-slate-400 border-t border-slate-700 pt-3 flex-wrap">
+            <span><strong>NOFO:</strong> {fullResult?.application_number || agency}</span>
+            <span><strong>Agency:</strong> {agency}</span>
+            <span><strong>My Initials:</strong> AOR</span>
+            <span><strong>Date:</strong> {new Date().toLocaleDateString()}</span>
+            {fullResult?.period_of_performance?.start_date && (
+              <span><strong>Period:</strong> {fullResult.period_of_performance.start_date} – {fullResult.period_of_performance.end_date} ({fullResult.period_of_performance.years} yrs)</span>
+            )}
+          </div>
+          {/* Per-year funding row */}
+          {(() => {
+            const funding = fullResult?.budget?.annual_requested_funding || fullResult?.budget?.annual_recommended_funding;
+            const total = fullResult?.budget?.total_requested;
+            if (!funding || funding.length === 0) return null;
+            return (
+              <div className="flex gap-3 mt-2 text-xs flex-wrap">
+                {funding.map((amt: number | null, i: number) => amt != null && (
+                  <span key={i} className="rounded bg-blue-900/50 px-2 py-1 font-mono font-semibold text-blue-200">Yr {i+1}: ${amt.toLocaleString()}</span>
+                ))}
+                {total != null && <span className="rounded bg-blue-800 px-2 py-1 font-mono font-bold text-white">Total: ${total.toLocaleString()}</span>}
+              </div>
+            );
+          })()}
         </div>
       </header>
 
@@ -590,6 +649,57 @@ export default function CommitteeReview() {
         {/* Results */}
         {result && (
           <div>
+            {/* Feature 2: Reviewer Intelligence Panel */}
+            {fullResult?.reviewer_intelligence && fullResult.reviewer_intelligence.length > 0 && (
+              <div className="rounded-xl border-2 border-purple-200 bg-purple-50/30 p-4 mb-6">
+                <h4 className="text-sm font-bold text-purple-800 mb-3 flex items-center gap-2">
+                  <span>🔍</span> Reviewer Intelligence — Used for Statement Validation
+                </h4>
+                {fullResult.reviewer_intelligence.map((item: any, i: number) => {
+                  const catColors: Record<string, string> = {
+                    'PRIOR AWARD': 'bg-emerald-100 text-emerald-800', 'ACCREDITATION': 'bg-amber-100 text-amber-800',
+                    'DATA CONSISTENCY': 'bg-blue-100 text-blue-800', 'BUDGET FORMULA': 'bg-emerald-100 text-emerald-800',
+                    'VERB COMPLIANCE': 'bg-indigo-100 text-indigo-800', 'POSITIONING': 'bg-purple-100 text-purple-800',
+                    'SUSTAINABILITY': 'bg-amber-100 text-amber-800', 'DOJ COMPLIANCE': 'bg-emerald-100 text-emerald-800',
+                    'DISCIPLINE MISMATCH': 'bg-red-100 text-red-800', 'CROSS-REFERENCE': 'bg-blue-100 text-blue-800',
+                  };
+                  return (
+                    <div key={i} className="flex items-start gap-2 py-2 border-b border-purple-100 last:border-0 text-sm">
+                      <span className={'shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold ' + (catColors[item.category] || 'bg-slate-100 text-slate-600')}>{item.category}</span>
+                      <div><span className="font-semibold text-slate-800">{item.finding}</span> <span className="text-slate-500">{item.detail}</span></div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Feature 3: Budget Verification Compact */}
+            {(() => {
+              let bv = fullResult?.budget_verification;
+              if (typeof bv === 'string') { try { bv = JSON.parse(bv); } catch { bv = null; } }
+              if (!bv) return null;
+              const fmt = (n: any) => n != null ? '$' + Number(n).toLocaleString() : '—';
+              const PassB = () => <span className="rounded bg-emerald-100 text-emerald-800 px-1 py-0.5 text-[9px] font-bold">PASS</span>;
+              const FailB = () => <span className="rounded bg-red-100 text-red-800 px-1 py-0.5 text-[9px] font-bold">FAIL</span>;
+              const Check = ({ v, lim }: { v: any; lim: number }) => v == null ? <span className="text-xs text-slate-400">—</span> : v <= lim ? <PassB /> : <FailB />;
+              const annual = fullResult?.budget?.annual_requested_funding || [];
+              return (
+                <div className="rounded-xl border border-emerald-300 bg-emerald-50/50 p-4 mb-6">
+                  <h4 className="text-xs font-bold text-emerald-900 mb-3">Budget Verification — <span className="text-emerald-600">{(bv.unallowable_amount || 0) === 0 ? 'ALL PASS ✓' : 'REVIEW NEEDED'}</span></h4>
+                  <div className="grid grid-cols-3 md:grid-cols-6 gap-2 text-xs">
+                    <div className="bg-white rounded-lg border border-emerald-200 p-2"><div className="text-[9px] font-bold text-slate-500 uppercase">PD FTE</div><div className="font-mono font-bold">{bv.pd_fte_pct != null ? bv.pd_fte_pct + '%' : '—'} <Check v={bv.pd_fte_pct} lim={25} /></div><div className="text-[9px] text-slate-400">≤ 25%</div></div>
+                    <div className="bg-white rounded-lg border border-emerald-200 p-2"><div className="text-[9px] font-bold text-slate-500 uppercase">PD Salary</div><div className="font-mono font-bold">{fmt(bv.pd_salary_rate_used ?? bv.pd_base_salary)} <Check v={bv.pd_salary_rate_used ?? bv.pd_base_salary} lim={228000} /></div><div className="text-[9px] text-slate-400">≤ $228,000</div></div>
+                    <div className="bg-white rounded-lg border border-emerald-200 p-2"><div className="text-[9px] font-bold text-slate-500 uppercase">IDC</div><div className="font-mono font-bold">{bv.idc_rate_pct != null ? bv.idc_rate_pct + '%' : '—'} <Check v={bv.idc_rate_pct} lim={8} /></div><div className="text-[9px] text-slate-400">on {fmt(bv.pd_total)}</div></div>
+                    {bv.per_student_amount != null && bv.per_student_amount > 0 && (
+                      <div className="bg-white rounded-lg border border-emerald-200 p-2"><div className="text-[9px] font-bold text-slate-500 uppercase">Per-Student</div><div className="font-mono font-bold">{fmt(bv.per_student_amount)} <Check v={bv.per_student_amount} lim={40000} /></div><div className="text-[9px] text-slate-400">≤ $40,000</div></div>
+                    )}
+                    <div className="bg-white rounded-lg border border-emerald-200 p-2"><div className="text-[9px] font-bold text-slate-500 uppercase">Annual</div><div className="font-mono font-bold">{annual[0] != null ? fmt(annual[0]) : '—'} <Check v={annual[0]} lim={bv.annual_ceiling || 650000} /></div><div className="text-[9px] text-slate-400">≤ {fmt(bv.annual_ceiling || 650000)}</div></div>
+                    <div className="bg-white rounded-lg border border-emerald-200 p-2"><div className="text-[9px] font-bold text-slate-500 uppercase">Unallowable</div><div className="font-mono font-bold">{fmt(bv.unallowable_amount ?? 0)} {(bv.unallowable_amount || 0) === 0 ? <PassB /> : <FailB />}</div><div className="text-[9px] text-slate-400">{(bv.unallowable_amount || 0) === 0 ? 'None' : 'Found'}</div></div>
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Summary cards */}
             <div className="grid grid-cols-6 gap-3 mb-6">
               <div className="rounded-xl bg-white p-4 text-center border">
@@ -635,6 +745,12 @@ export default function CommitteeReview() {
                 <p className="text-sm font-bold">
                   {result.budget_recommendation.recommendation.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
                 </p>
+                {/* Feature 7: Per-year funding in budget chip */}
+                {(() => {
+                  const funding = fullResult?.budget?.annual_requested_funding;
+                  if (!funding || funding.length === 0) return null;
+                  return <p className="text-xs text-slate-500 mt-0.5 font-mono">${funding[0]?.toLocaleString()}/yr × {funding.length} = ${(fullResult?.budget?.total_requested || funding.reduce((a: number, b: number) => a + (b || 0), 0)).toLocaleString()}</p>;
+                })()}
                 {result.budget_recommendation.rationale && (
                   <p className="text-xs text-slate-500 mt-0.5">{result.budget_recommendation.rationale}</p>
                 )}
@@ -668,6 +784,13 @@ export default function CommitteeReview() {
 
             {/* Criteria tabs */}
             <CriteriaTabs criteria={result.criteria} applicationId={applicationId} />
+
+            {/* Feature 8: Voting Result Section */}
+            <div className="mt-6 rounded-xl border-2 border-emerald-300 bg-emerald-50 p-4 text-center mb-6">
+              <p className="text-sm font-bold text-emerald-900">Panel Vote</p>
+              <p className="text-2xl font-bold text-emerald-700 my-2">— / — Approve</p>
+              <p className="text-xs text-emerald-600">Vote recorded after panel discussion</p>
+            </div>
 
             {/* Footer */}
             <div className="mt-8 pt-6 border-t flex items-center justify-between">
