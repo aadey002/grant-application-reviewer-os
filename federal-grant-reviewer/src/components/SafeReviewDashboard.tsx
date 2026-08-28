@@ -1972,11 +1972,54 @@ const SafeReviewDashboard: React.FC = () => {
 
             {reviews.length > 0 && current && (
               <div className="mt-8">
-                <div className="mb-6 flex items-end justify-between">
-                  <div>
-                    <h2 className="text-3xl font-bold">Application reviews</h2>
-                    <p className="text-slate-600">{agency} · {reviews.length} application(s) scored independently by Claude</p>
+                <div className="mb-6 rounded-xl bg-slate-800 text-white p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-2xl font-bold">{current.applicant_name || 'Application Review'}</h2>
+                      <p className="text-slate-300 text-sm mt-0.5">
+                        {(() => {
+                          const fr = typeof current.full_result === 'string' ? (() => { try { return JSON.parse(current.full_result as string); } catch { return null; } })() : current.full_result;
+                          const pn = (fr as any)?.project_name;
+                          const disc = (fr as any)?.discipline;
+                          return [pn, disc, agency].filter(Boolean).join(' — ');
+                        })()}
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-blue-100 text-blue-900 px-4 py-2 font-bold text-xl">
+                      {current.final_score ?? '—'} / {current.maximum_score ?? 100}
+                    </div>
                   </div>
+                  <div className="flex gap-4 mt-3 text-xs text-slate-300 border-t border-slate-700 pt-3 flex-wrap">
+                    <span><strong>NOFO:</strong> {(() => { const fr = typeof current.full_result === 'string' ? (() => { try { return JSON.parse(current.full_result as string); } catch { return null; } })() : current.full_result; return (fr as any)?.application_number || ''; })()}</span>
+                    <span><strong>Agency:</strong> {agency}</span>
+                    {(() => {
+                      const fr = typeof current.full_result === 'string' ? (() => { try { return JSON.parse(current.full_result as string); } catch { return null; } })() : current.full_result;
+                      const period = (fr as any)?.period_of_performance;
+                      if (!period?.start_date) return null;
+                      return <span><strong>Period:</strong> {period.start_date} – {period.end_date} ({period.years} years)</span>;
+                    })()}
+                  </div>
+                  {/* Per-year funding row */}
+                  {(() => {
+                    const fr = typeof current.full_result === 'string' ? (() => { try { return JSON.parse(current.full_result as string); } catch { return null; } })() : current.full_result;
+                    const funding = (fr as any)?.budget?.annual_requested_funding || (fr as any)?.budget?.annual_recommended_funding;
+                    const total = (fr as any)?.budget?.total_requested;
+                    if (!funding || funding.length === 0) return null;
+                    return (
+                      <div className="flex gap-3 mt-2 text-xs flex-wrap">
+                        {funding.map((amt: number | null, i: number) => amt != null && (
+                          <span key={i} className="rounded bg-blue-900/50 px-2 py-1 font-mono font-semibold text-blue-200">
+                            Yr {i + 1}: ${amt.toLocaleString()}
+                          </span>
+                        ))}
+                        {total != null && (
+                          <span className="rounded bg-blue-800 px-2 py-1 font-mono font-bold text-white">
+                            Total: ${total.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* NOFO Brief + Overview section */}
@@ -2272,7 +2315,14 @@ const SafeReviewDashboard: React.FC = () => {
                             {current.criteria.map((c: any, ci: number) => (
                               <React.Fragment key={ci}>
                                 <tr className="border-t hover:bg-slate-50">
-                                  <td className="p-2 border font-semibold"><button onClick={() => { setFindingsFilter('all'); setTimeout(() => document.getElementById('criterion-' + ci)?.scrollIntoView({behavior:'smooth'}), 50); }} className="text-blue-700 hover:underline cursor-pointer text-left">{c.name}</button></td>
+                                  <td className="p-2 border font-semibold">
+                                    <button onClick={() => { setFindingsFilter('all'); setTimeout(() => document.getElementById('criterion-' + ci)?.scrollIntoView({behavior:'smooth'}), 50); }} className="text-blue-700 hover:underline cursor-pointer text-left">{c.name}</button>
+                                    {c.name.toLowerCase().includes('support') && (() => {
+                                      const fr = typeof current.full_result === 'string' ? (() => { try { return JSON.parse(current.full_result as string); } catch { return null; } })() : current.full_result;
+                                      const frCrit = ((fr as any)?.criteria || []).find((fc: any) => typeof fc === 'object' && fc?.name?.toLowerCase().includes('support'));
+                                      return frCrit?.budget_verification ? <span className="ml-1 rounded bg-emerald-100 text-emerald-800 px-1.5 py-0.5 text-[10px] font-bold">BUDGET VERIFIED ✓</span> : null;
+                                    })()}
+                                  </td>
                                   <td className="p-2 border text-center font-bold">{c.score ?? '—'}/{c.maximum_points}</td>
                                   <td className="p-2 border text-center">
                                     <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
@@ -2475,13 +2525,21 @@ const SafeReviewDashboard: React.FC = () => {
                           );
 
                           if (hasSubs) {
-                            // Feature 5: Group by subcriterion prefix
+                            // Feature 5: Group by subcriterion prefix [Approach], [High-level work plan], etc.
                             const subGroups: Record<string, any[]> = {};
                             for (const s of subs) subGroups[s.name] = [];
                             for (const ra of reqs) {
-                              const prefixMatch = (ra.explanation || '').match(/^\[([^\]]+)\]/);
-                              const prefix = prefixMatch ? prefixMatch[1] : '';
-                              const matched = subs.find((s: any) => s.name.toLowerCase().includes(prefix.toLowerCase()) || prefix.toLowerCase().includes(s.name.toLowerCase()));
+                              const exp = (ra.explanation || '').trim();
+                              const prefixMatch = exp.match(/^\[([^\]]+)\]/);
+                              const prefix = prefixMatch ? prefixMatch[1].trim() : '';
+                              // Match prefix to subcriterion name — try exact, contains, and partial
+                              let matched = null;
+                              if (prefix) {
+                                const pl = prefix.toLowerCase();
+                                matched = subs.find((s: any) => s.name.toLowerCase() === pl);
+                                if (!matched) matched = subs.find((s: any) => s.name.toLowerCase().includes(pl) || pl.includes(s.name.toLowerCase()));
+                                if (!matched) matched = subs.find((s: any) => pl.split(' ').some((w: string) => w.length > 3 && s.name.toLowerCase().includes(w)));
+                              }
                               const key = matched ? matched.name : subs[0].name;
                               if (!subGroups[key]) subGroups[key] = [];
                               subGroups[key].push(ra);
