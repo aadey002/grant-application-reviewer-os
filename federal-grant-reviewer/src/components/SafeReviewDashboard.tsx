@@ -2736,12 +2736,46 @@ const SafeReviewDashboard: React.FC = () => {
                           );
                         })()}
 
-                        {/* Consolidated ARM Statements — at top for easy copy */}
+                        {/* Consolidated ARM Statements — grouped by subcriteria when prefixes exist */}
                         {(() => {
                           const armStrengths = (c as any).strengths || [];
                           const armMets = (c as any).mets || [];
                           const armWeaknesses = (c as any).weaknesses || [];
                           if (armStrengths.length === 0 && armMets.length === 0 && armWeaknesses.length === 0) return null;
+
+                          // Check if ARM statements have [prefix] brackets for subcriteria grouping
+                          const allArm = [...armStrengths.map((s: any) => ({...s, _type: 's'})), ...armMets.map((m: any) => ({...m, _type: 'm'})), ...armWeaknesses.map((w: any) => ({...w, _type: 'w'}))];
+                          const armGroups: Record<string, any[]> = {};
+                          const armGroupOrder: string[] = [];
+                          for (const item of allArm) {
+                            const pm = (item.comment || '').match(/^\[([^\]]+)\]\s*/);
+                            const prefix = pm ? pm[1].trim() : '__flat__';
+                            if (!armGroups[prefix]) { armGroups[prefix] = []; armGroupOrder.push(prefix); }
+                            armGroups[prefix].push(item);
+                          }
+                          const hasSubGroups = armGroupOrder.filter(k => k !== '__flat__').length >= 2;
+
+                          // Render a single S/M/W block
+                          const renderArmBlock = (items: any[], label: string, colorCls: string, borderCls: string, citeCls: string) => {
+                            const filtered = items.filter((i: any) => i._type === (label === 'Strengths' ? 's' : label === 'Mets' ? 'm' : 'w'));
+                            if (filtered.length === 0) return null;
+                            return (
+                              <div className="mb-3">
+                                <p className={'text-xs font-bold uppercase mb-1 ' + colorCls}>{label}</p>
+                                {filtered.map((f: any, fi: number) => {
+                                  const comment = (f.comment || '').replace(/^\[[^\]]+\]\s*/, '');
+                                  return (
+                                    <div key={label + '-' + fi} className={'mb-2 rounded bg-white border p-2.5 ' + borderCls}>
+                                      <p className="text-sm leading-relaxed text-slate-800">{comment}</p>
+                                      <p className={'text-xs mt-1 font-semibold ' + citeCls}>AOR App p. {(f.application_pages || []).join(', ')}</p>
+                                      {f._type === 'w' && f.nofo_requirement && <p className="text-xs text-red-600 mt-1"><span className="font-semibold">NOFO requirement:</span> {f.nofo_requirement}</p>}
+                                      {f._type === 'w' && f.impact && <p className="text-xs text-red-600 mt-0.5 italic"><span className="font-semibold not-italic">Impact:</span> {f.impact}</p>}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            );
+                          };
 
                           // Scan all comments for abbreviations and build a glossary
                           const abbrMap: Record<string, string> = {
@@ -2802,40 +2836,26 @@ const SafeReviewDashboard: React.FC = () => {
                                   <p className="text-xs text-slate-500 leading-relaxed">{usedAbbrs.map(([abbr, full]) => abbr + ' = ' + full).join(' | ')}</p>
                                 </div>
                               )}
-                              {armStrengths.length > 0 && (
-                                <div className="mb-3">
-                                  <p className="text-xs font-bold text-emerald-700 uppercase mb-1">Strengths</p>
-                                  {armStrengths.map((s: any, si: number) => (
-                                    <div key={'arm-top-s-' + si} className="mb-2 rounded bg-white border border-emerald-200 p-2.5">
-                                      <p className="text-sm leading-relaxed text-slate-800">{s.comment}</p>
-                                      <p className="text-xs text-blue-600 mt-1 font-semibold">AOR App p. {(s.application_pages || []).join(', ')}</p>
+                              {hasSubGroups ? (
+                                /* Per-subcriteria ARM blocks */
+                                armGroupOrder.filter(k => k !== '__flat__').map(groupName => {
+                                  const items = armGroups[groupName];
+                                  return (
+                                    <div key={groupName} className="mb-4 pb-3 border-b border-indigo-100 last:border-0">
+                                      <p className="text-xs font-bold text-indigo-700 uppercase mb-2 tracking-wide">{groupName}</p>
+                                      {renderArmBlock(items, 'Strengths', 'text-emerald-700', 'border-emerald-200', 'text-blue-600')}
+                                      {renderArmBlock(items, 'Mets', 'text-blue-700', 'border-blue-200', 'text-blue-600')}
+                                      {renderArmBlock(items, 'Weaknesses', 'text-red-700', 'border-red-200', 'text-blue-600')}
                                     </div>
-                                  ))}
-                                </div>
-                              )}
-                              {armMets.length > 0 && (
-                                <div className="mb-3">
-                                  <p className="text-xs font-bold text-blue-700 uppercase mb-1">Mets</p>
-                                  {armMets.map((m: any, mi: number) => (
-                                    <div key={'arm-top-m-' + mi} className="mb-2 rounded bg-white border border-blue-200 p-2.5">
-                                      <p className="text-sm leading-relaxed text-slate-800">{m.comment}</p>
-                                      <p className="text-xs text-blue-600 mt-1 font-semibold">AOR App p. {(m.application_pages || []).join(', ')}</p>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                              {armWeaknesses.length > 0 && (
-                                <div>
-                                  <p className="text-xs font-bold text-red-700 uppercase mb-1">Weaknesses</p>
-                                  {armWeaknesses.map((w: any, wi: number) => (
-                                    <div key={'arm-top-w-' + wi} className="mb-2 rounded bg-white border border-red-200 p-2.5">
-                                      <p className="text-sm leading-relaxed text-slate-800">{w.comment}</p>
-                                      {w.nofo_requirement && <p className="text-xs text-red-600 mt-1"><span className="font-semibold">NOFO requirement:</span> {w.nofo_requirement}</p>}
-                                      {w.impact && <p className="text-xs text-red-600 mt-0.5 italic"><span className="font-semibold not-italic">Impact:</span> {w.impact}</p>}
-                                      <p className="text-xs text-blue-600 mt-1 font-semibold">AOR App p. {(w.application_pages || []).join(', ')}</p>
-                                    </div>
-                                  ))}
-                                </div>
+                                  );
+                                })
+                              ) : (
+                                /* Flat ARM statements — no subcriteria prefixes */
+                                <>
+                                  {renderArmBlock(allArm, 'Strengths', 'text-emerald-700', 'border-emerald-200', 'text-blue-600')}
+                                  {renderArmBlock(allArm, 'Mets', 'text-blue-700', 'border-blue-200', 'text-blue-600')}
+                                  {renderArmBlock(allArm, 'Weaknesses', 'text-red-700', 'border-red-200', 'text-blue-600')}
+                                </>
                               )}
                             </div>
                           );

@@ -216,35 +216,77 @@ function CriterionSection({ crit, applicationId }: { crit: ConsensusCriterion; a
         })}
       </div>
 
-      {/* Weaknesses first per HRSA protocol */}
-      {crit.weaknesses.length > 0 && (
-        <div className="mb-4">
-          <h4 className="font-bold text-red-800 mb-2 text-sm uppercase tracking-wide">
-            Weaknesses ({crit.weaknesses.length})
-          </h4>
-          <StatementTable statements={crit.weaknesses} headerColor="red" applicationId={applicationId} criterionName={crit.criterion_name} />
-        </div>
-      )}
+      {/* Statements — grouped by subcriterion when applicable */}
+      {(() => {
+        const allStmts = [...crit.strengths, ...crit.mets, ...crit.weaknesses];
+        const hasSubs = allStmts.some(s => s.subcriterion && s.subcriterion.trim());
 
-      {/* Strengths */}
-      {crit.strengths.length > 0 && (
-        <div className="mb-4">
-          <h4 className="font-bold text-emerald-800 mb-2 text-sm uppercase tracking-wide">
-            Strengths ({crit.strengths.length})
-          </h4>
-          <StatementTable statements={crit.strengths} headerColor="emerald" applicationId={applicationId} criterionName={crit.criterion_name} />
-        </div>
-      )}
+        if (hasSubs) {
+          // Collect unique subcriteria in order
+          const subOrder: string[] = [];
+          const subMap: Record<string, { strengths: ConsensusStatement[]; mets: ConsensusStatement[]; weaknesses: ConsensusStatement[] }> = {};
+          for (const s of allStmts) {
+            const key = s.subcriterion?.trim() || '(General)';
+            if (!subMap[key]) { subMap[key] = { strengths: [], mets: [], weaknesses: [] }; subOrder.push(key); }
+          }
+          for (const s of crit.strengths) { const k = s.subcriterion?.trim() || '(General)'; subMap[k]?.strengths.push(s); }
+          for (const s of crit.mets) { const k = s.subcriterion?.trim() || '(General)'; subMap[k]?.mets.push(s); }
+          for (const s of crit.weaknesses) { const k = s.subcriterion?.trim() || '(General)'; subMap[k]?.weaknesses.push(s); }
 
-      {/* Mets */}
-      {crit.mets.length > 0 && (
-        <div className="mb-4">
-          <h4 className="font-bold text-slate-700 mb-2 text-sm uppercase tracking-wide">
-            Met ({crit.mets.length})
-          </h4>
-          <StatementTable statements={crit.mets} headerColor="slate" applicationId={applicationId} criterionName={crit.criterion_name} />
-        </div>
-      )}
+          return subOrder.map(subName => {
+            const g = subMap[subName];
+            return (
+              <div key={subName} className="mb-6">
+                <div className="flex items-center gap-2 mb-3 pb-1 border-b-2 border-indigo-400">
+                  <h4 className="text-sm font-bold text-indigo-800 uppercase tracking-wide">{subName}</h4>
+                </div>
+                {g.strengths.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs font-bold text-emerald-700 uppercase mb-1">Strengths ({g.strengths.length})</p>
+                    <StatementTable statements={g.strengths} headerColor="emerald" applicationId={applicationId} criterionName={crit.criterion_name} />
+                  </div>
+                )}
+                {g.mets.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs font-bold text-slate-600 uppercase mb-1">Mets ({g.mets.length})</p>
+                    <StatementTable statements={g.mets} headerColor="slate" applicationId={applicationId} criterionName={crit.criterion_name} />
+                  </div>
+                )}
+                {g.weaknesses.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs font-bold text-red-700 uppercase mb-1">Weaknesses ({g.weaknesses.length})</p>
+                    <StatementTable statements={g.weaknesses} headerColor="red" applicationId={applicationId} criterionName={crit.criterion_name} />
+                  </div>
+                )}
+              </div>
+            );
+          });
+        }
+
+        // No subcriteria — flat S/M/W order
+        return (
+          <>
+            {crit.weaknesses.length > 0 && (
+              <div className="mb-4">
+                <h4 className="font-bold text-red-800 mb-2 text-sm uppercase tracking-wide">Weaknesses ({crit.weaknesses.length})</h4>
+                <StatementTable statements={crit.weaknesses} headerColor="red" applicationId={applicationId} criterionName={crit.criterion_name} />
+              </div>
+            )}
+            {crit.strengths.length > 0 && (
+              <div className="mb-4">
+                <h4 className="font-bold text-emerald-800 mb-2 text-sm uppercase tracking-wide">Strengths ({crit.strengths.length})</h4>
+                <StatementTable statements={crit.strengths} headerColor="emerald" applicationId={applicationId} criterionName={crit.criterion_name} />
+              </div>
+            )}
+            {crit.mets.length > 0 && (
+              <div className="mb-4">
+                <h4 className="font-bold text-slate-700 mb-2 text-sm uppercase tracking-wide">Met ({crit.mets.length})</h4>
+                <StatementTable statements={crit.mets} headerColor="slate" applicationId={applicationId} criterionName={crit.criterion_name} />
+              </div>
+            )}
+          </>
+        );
+      })()}
 
       {/* Feature 5: Coverage Gap Callouts */}
       {(() => {
