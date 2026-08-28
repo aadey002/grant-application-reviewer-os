@@ -2524,63 +2524,68 @@ const SafeReviewDashboard: React.FC = () => {
                             </div>
                           );
 
-                          if (hasSubs) {
-                            // Feature 5: Group by subcriterion prefix — fuzzy matching
-                            // Claude may output [Approach], [Resolving challenges], [High-level work plan] etc.
-                            const subGroups: Record<string, any[]> = {};
-                            for (const s of subs) subGroups[s.name] = [];
-
-                            // Fuzzy matcher: maps prefix keywords to canonical subcriterion names
-                            const fuzzyMatch = (prefix: string): string => {
+                          // Data-driven grouping: extract prefixes from assessment explanations
+                          // Works whether subcriteria array exists or not
+                          const prefixGroups: Record<string, any[]> = {};
+                          const prefixOrder: string[] = [];
+                          for (const ra of reqs) {
+                            const exp = (ra.explanation || '').trim();
+                            const pm = exp.match(/^\[([^\]]+)\]/);
+                            const prefix = pm ? pm[1].trim() : '';
+                            // Normalize to canonical name if subcriteria exist
+                            let groupKey = prefix || '__ungrouped__';
+                            if (prefix && hasSubs) {
                               const pl = prefix.toLowerCase();
-                              // Check each sub for keyword overlap
-                              for (const s of subs) {
+                              const matched = subs.find((s: any) => {
                                 const sl = s.name.toLowerCase();
-                                // Exact match
-                                if (sl === pl) return s.name;
-                                // Contains either direction
-                                if (sl.includes(pl) || pl.includes(sl)) return s.name;
-                              }
-                              // Keyword-based fuzzy matching for common Claude variants
-                              for (const s of subs) {
-                                const sl = s.name.toLowerCase();
-                                if (pl.includes('approach') && sl.includes('approach')) return s.name;
-                                if ((pl.includes('work plan') || pl.includes('high-level') || pl.includes('high level')) && (sl.includes('work plan') || sl.includes('high-level'))) return s.name;
-                                if ((pl.includes('resolv') || pl.includes('challeng')) && (sl.includes('resolv') || sl.includes('challeng'))) return s.name;
-                                if ((pl.includes('evaluat')) && (sl.includes('evaluat'))) return s.name;
-                                if ((pl.includes('perform') || pl.includes('measure')) && (sl.includes('perform') || sl.includes('measure'))) return s.name;
-                              }
-                              // Partial word match — any word >3 chars
-                              for (const s of subs) {
-                                const sl = s.name.toLowerCase();
-                                if (pl.split(/\s+/).some(w => w.length > 3 && sl.includes(w))) return s.name;
-                              }
-                              return subs[0].name; // fallback to first
-                            };
+                                return sl === pl || sl.includes(pl) || pl.includes(sl)
+                                  || (pl.includes('approach') && sl.includes('approach'))
+                                  || ((pl.includes('work plan') || pl.includes('high-level') || pl.includes('high level')) && (sl.includes('work plan') || sl.includes('high-level')))
+                                  || ((pl.includes('resolv') || pl.includes('challeng')) && (sl.includes('resolv') || sl.includes('challeng')))
+                                  || ((pl.includes('evaluat')) && (sl.includes('evaluat')))
+                                  || ((pl.includes('perform') || pl.includes('measure')) && (sl.includes('perform') || sl.includes('measure')))
+                                  || pl.split(/\s+/).some((w: string) => w.length > 3 && sl.includes(w));
+                              });
+                              if (matched) groupKey = matched.name;
+                            }
+                            if (!prefixGroups[groupKey]) { prefixGroups[groupKey] = []; prefixOrder.push(groupKey); }
+                            prefixGroups[groupKey].push(ra);
+                          }
 
-                            for (const ra of reqs) {
-                              const exp = (ra.explanation || '').trim();
-                              const prefixMatch = exp.match(/^\[([^\]]+)\]/);
-                              const prefix = prefixMatch ? prefixMatch[1].trim() : '';
-                              const key = prefix ? fuzzyMatch(prefix) : subs[0].name;
-                              if (!subGroups[key]) subGroups[key] = [];
-                              subGroups[key].push(ra);
+                          // If 2+ unique groups found, render grouped sections
+                          const uniqueGroups = prefixOrder.filter(k => k !== '__ungrouped__');
+                          if (uniqueGroups.length >= 2 || (uniqueGroups.length >= 1 && hasSubs)) {
+                            // Merge ungrouped into first group
+                            if (prefixGroups['__ungrouped__'] && prefixGroups['__ungrouped__'].length > 0) {
+                              const firstKey = uniqueGroups[0] || prefixOrder[0];
+                              prefixGroups[firstKey] = [...(prefixGroups[firstKey] || []), ...prefixGroups['__ungrouped__']];
+                            }
+                            // Build ordered group list: prefer subcriteria order, then prefix discovery order
+                            const groupOrder = hasSubs
+                              ? subs.map((s: any) => s.name).filter((n: string) => prefixGroups[n] && prefixGroups[n].length > 0)
+                              : uniqueGroups;
+                            // Add any groups found in data but not in subcriteria
+                            for (const k of uniqueGroups) {
+                              if (!groupOrder.includes(k) && prefixGroups[k]?.length > 0) groupOrder.push(k);
                             }
                             let qOff = 0;
                             return (
                               <div className="mt-4">
                                 <p className="text-xs font-bold uppercase text-slate-500 mb-2">NOFO Evaluation Questions</p>
-                                {subs.map((sub: any) => {
-                                  const items = subGroups[sub.name] || [];
+                                {groupOrder.map((groupName: string) => {
+                                  const items = prefixGroups[groupName] || [];
+                                  if (items.length === 0) return null;
                                   const startQ = qOff;
                                   qOff += items.length;
+                                  // Find score from subcriteria if available
+                                  const subDef = subs.find((s: any) => s.name === groupName);
                                   return (
-                                    <div key={sub.name} className="mb-4">
+                                    <div key={groupName} className="mb-4">
                                       <div className="flex items-center gap-2 mb-2 mt-3 pb-1 border-b-2 border-blue-500">
-                                        <h4 className="text-sm font-bold text-slate-800">{sub.name}</h4>
-                                        <span className="text-xs font-bold text-blue-700">{sub.score ?? '—'}/{sub.maximum_points}</span>
+                                        <h4 className="text-sm font-bold text-slate-800">{groupName}</h4>
+                                        {subDef && <span className="text-xs font-bold text-blue-700">{subDef.score ?? '—'}/{subDef.maximum_points}</span>}
                                       </div>
-                                      {items.length > 0 ? renderReqTable(items, startQ) : <p className="text-xs text-slate-400 italic ml-2">No requirement assessments for this sub-criterion.</p>}
+                                      {renderReqTable(items, startQ)}
                                     </div>
                                   );
                                 })}
@@ -2588,7 +2593,7 @@ const SafeReviewDashboard: React.FC = () => {
                             );
                           }
 
-                          // No subcriteria — single table
+                          // Single group or no prefixes — flat table
                           return (
                             <div className="mt-4">
                               <p className="text-xs font-bold uppercase text-slate-500 mb-2">NOFO Evaluation Questions</p>
