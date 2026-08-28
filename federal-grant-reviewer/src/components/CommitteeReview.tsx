@@ -98,14 +98,7 @@ function StatementTable({ statements, headerColor, applicationId, criterionName 
           </tr>
         </thead>
         <tbody>
-          {groups.map(group => (<React.Fragment key={group.label}>
-            {group.label && (
-              <tr>
-                <td colSpan={7} className="px-3 py-2 bg-indigo-50 border-t border-b border-indigo-200">
-                  <span className="text-xs font-bold text-indigo-800 uppercase tracking-wide">{group.label}</span>
-                </td>
-              </tr>
-            )}
+          {groups.map(group => (<React.Fragment key={group.label || '_'}>
             {group.items.map(s => (
             <tr key={s.number} className={'border-b last:border-0 ' + (s.action === 'REMOVE' ? 'bg-red-50/50' : s.action === 'MERGE' ? 'bg-amber-50/30' : '')}>
               <td className="px-3 py-3 align-top font-mono text-sm font-bold whitespace-nowrap">
