@@ -1509,13 +1509,19 @@ Do NOT fabricate findings. Only report what you observe in the application. If a
     total = sum(c.get("calculated_score", c.get("score", 0)) for c in scored_criteria)
     max_total = sum(int(c["points"]) for c in criteria)
 
+    logger.info("Overview keys: %s", list(overview_data.keys()))
+
     review = {
         "applicant_name": overview_data.get("applicant_name", ""),
         "application_number": overview_data.get("application_number", ""),
+        "project_name": overview_data.get("project_name", ""),
+        "discipline": overview_data.get("discipline", ""),
+        "period_of_performance": overview_data.get("period_of_performance"),
         "overview": overview_data.get("overview", {}),
         "criteria": scored_criteria,
         "budget": overview_data.get("budget", {}),
         "overall_summary": overview_data.get("overall_summary", ""),
+        "reviewer_intelligence": overview_data.get("reviewer_intelligence", []),
         "final_score": total,
         "maximum_score": max_total,
         "formula_version": "equitable-v1.2",
