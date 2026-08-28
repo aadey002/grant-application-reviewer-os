@@ -966,6 +966,14 @@ const SafeReviewDashboard: React.FC = () => {
   const completedJobs = appProgress.filter(p => p.status === 'completed').length;
   const failedJobs = appProgress.filter(p => p.status === 'failed').length;
   const processingPct = totalJobs > 0 ? Math.round(((completedJobs + failedJobs) / totalJobs) * 100) : 0;
+  const allFailed = totalJobs > 0 && failedJobs === totalJobs;
+  const someFailed = failedJobs > 0 && completedJobs > 0;
+  const allDone = totalJobs > 0 && (completedJobs + failedJobs) === totalJobs;
+
+  // Consolidate identical error messages across failed jobs
+  const failedErrors = appProgress.filter(p => p.status === 'failed').map(p => p.errorMessage ?? 'Processing failed');
+  const uniqueErrors = [...new Set(failedErrors)];
+  const consolidatedError = uniqueErrors.length === 1 ? uniqueErrors[0] : null;
 
   // ---------------------------------------------------------------------------
   // Render
@@ -1737,7 +1745,10 @@ const SafeReviewDashboard: React.FC = () => {
               <div>
                 <h2 className="text-2xl font-bold">
                   {busy && completedJobs === 0 && failedJobs === 0 ? 'Submitting review...' :
-                   reviews.length > 0 && completedJobs === totalJobs && totalJobs > 0
+                   allFailed ? 'Review failed' :
+                   someFailed && allDone
+                     ? completedJobs + ' of ' + totalJobs + ' scored \u2014 ' + failedJobs + ' failed'
+                     : reviews.length > 0 && completedJobs === totalJobs && totalJobs > 0
                      ? 'Review complete \u2014 ' + reviews.length + ' application' + (reviews.length === 1 ? '' : 's') + ' scored'
                      : completedJobs === totalJobs && totalJobs > 0 ? 'Review complete'
                      : totalJobs > 0 ? 'Processing ' + (completedJobs + failedJobs) + ' of ' + totalJobs + ' applications'
@@ -1751,25 +1762,79 @@ const SafeReviewDashboard: React.FC = () => {
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-3xl font-bold text-blue-700">{processingPct}%</p>
+                <p className={'text-3xl font-bold ' + (allFailed ? 'text-red-600' : someFailed && allDone ? 'text-amber-600' : 'text-blue-700')}>{processingPct}%</p>
                 <p className="text-xs text-slate-500">
                   {totalJobs === 0 ? 'Uploading files...' : `${completedJobs + failedJobs} of ${totalJobs} done`}
                 </p>
               </div>
             </div>
 
-            {/* Overall progress bar */}
-            <div className="mt-5 h-3 rounded-full bg-slate-100">
-              <div
-                className={`h-3 rounded-full transition-all duration-700 ${
-                  totalJobs === 0 ? 'bg-blue-400 animate-pulse w-1/3' : 'bg-blue-600'
-                }`}
-                style={totalJobs > 0 ? { width: processingPct + '%' } : undefined}
-              />
-            </div>
+            {/* All-failed error banner — replaces progress bar */}
+            {allFailed && (
+              <div className="mt-5 rounded-xl border-2 border-red-300 bg-red-50 p-5">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle size={22} className="text-red-600 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-bold text-red-800">
+                      {totalJobs === 1 ? 'Review failed' : 'All ' + totalJobs + ' applications failed'}
+                    </p>
+                    {consolidatedError ? (
+                      <p className="mt-2 text-sm text-red-700 font-mono bg-red-100 rounded-lg p-3 break-words whitespace-pre-wrap">{consolidatedError}</p>
+                    ) : (
+                      <ul className="mt-2 space-y-1">
+                        {appProgress.filter(p => p.status === 'failed').map(p => (
+                          <li key={p.jobId} className="text-sm text-red-700">
+                            <span className="font-semibold">{p.applicationName}:</span>{' '}
+                            <span className="font-mono text-xs">{p.errorMessage ?? 'Processing failed'}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <button
+                      onClick={reset}
+                      className="mt-4 flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-red-700"
+                    >
+                      <RefreshCw size={14} /> Start New Review
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
-            {/* Estimated time */}
-            {totalJobs > 0 && completedJobs < totalJobs && (
+            {/* Partial failure banner */}
+            {someFailed && allDone && (
+              <div className="mt-5 rounded-xl border-2 border-amber-300 bg-amber-50 p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle size={20} className="text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-amber-800">
+                      {completedJobs} of {totalJobs} scored successfully — {failedJobs} failed
+                    </p>
+                    {appProgress.filter(p => p.status === 'failed').map(p => (
+                      <p key={p.jobId} className="mt-1 text-sm text-amber-700">
+                        <span className="font-semibold">{p.applicationName}:</span>{' '}
+                        <span className="font-mono text-xs">{p.errorMessage ?? 'Processing failed'}</span>
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Overall progress bar — only show when actively processing */}
+            {!allFailed && !(someFailed && allDone) && (
+              <div className="mt-5 h-3 rounded-full bg-slate-100">
+                <div
+                  className={`h-3 rounded-full transition-all duration-700 ${
+                    totalJobs === 0 ? 'bg-blue-400 animate-pulse w-1/3' : 'bg-blue-600'
+                  }`}
+                  style={totalJobs > 0 ? { width: processingPct + '%' } : undefined}
+                />
+              </div>
+            )}
+
+            {/* Estimated time — only show when still processing (not all done/failed) */}
+            {totalJobs > 0 && !allDone && completedJobs < totalJobs && (
               <p className="mt-2 text-xs text-slate-400">
                 Elapsed: {Math.floor(elapsedSeconds / 60)}:{String(elapsedSeconds % 60).padStart(2, '0')}
                 {' · '}Estimated: ~{(totalJobs - completedJobs - failedJobs) * 3} min remaining
@@ -1960,9 +2025,9 @@ const SafeReviewDashboard: React.FC = () => {
             {/* ------------------------------------------------------------ */}
             {/* Completed results appear inline below the progress cards      */}
             {/* ------------------------------------------------------------ */}
-            {reviews.length > 0 && !polling && completedJobs === totalJobs && totalJobs > 0 && (
-              <div className="mt-6 rounded-xl border-2 border-emerald-300 bg-emerald-50 p-4 flex items-center gap-3">
-                <CheckCircle2 size={24} className="text-emerald-600 shrink-0" />
+            {reviews.length > 0 && !polling && (completedJobs === totalJobs || (someFailed && allDone)) && totalJobs > 0 && (
+              <div className={'mt-6 rounded-xl border-2 p-4 flex items-center gap-3 ' + (someFailed ? 'border-amber-300 bg-amber-50' : 'border-emerald-300 bg-emerald-50')}>
+                <CheckCircle2 size={24} className={someFailed ? 'text-amber-600 shrink-0' : 'text-emerald-600 shrink-0'} />
                 <div>
                   <p className="font-bold text-emerald-800">All applications scored successfully</p>
                   <p className="text-sm text-emerald-700">Select an application below to view detailed results.</p>
