@@ -310,20 +310,46 @@ function CriterionSection({ crit, applicationId }: { crit: ConsensusCriterion; a
 // Criteria tabs — click a criterion to show only that one
 // ---------------------------------------------------------------------------
 function CriteriaTabs({ criteria, applicationId }: { criteria: ConsensusCriterion[]; applicationId: string }) {
+  // Build virtual tabs — split criteria with subcriteria into separate tabs
+  type VTab = { label: string; count: number; critIdx: number; subFilter?: string };
+  const vtabs: VTab[] = [];
+  criteria.forEach((crit, i) => {
+    const allStmts = [...crit.strengths, ...crit.mets, ...crit.weaknesses];
+    const subs = new Set<string>();
+    allStmts.forEach(s => { if (s.subcriterion?.trim()) subs.add(s.subcriterion.trim()); });
+    if (subs.size >= 2) {
+      // Split into sub-tabs
+      Array.from(subs).forEach(sub => {
+        const count = allStmts.filter(s => s.subcriterion?.trim() === sub).length;
+        vtabs.push({ label: sub, count, critIdx: i, subFilter: sub });
+      });
+    } else {
+      vtabs.push({ label: crit.criterion_name, count: allStmts.length, critIdx: i });
+    }
+  });
+
   const [activeIdx, setActiveIdx] = useState(0);
-  const active = criteria[activeIdx];
+  const activeTab = vtabs[activeIdx];
+  if (!activeTab) return null;
+  const active = criteria[activeTab.critIdx];
   if (!active) return null;
+
+  // If subFilter, create a filtered view of the criterion
+  const filteredCrit: ConsensusCriterion = activeTab.subFilter ? {
+    ...active,
+    criterion_name: activeTab.subFilter,
+    strengths: active.strengths.filter(s => s.subcriterion?.trim() === activeTab.subFilter),
+    mets: active.mets.filter(s => s.subcriterion?.trim() === activeTab.subFilter),
+    weaknesses: active.weaknesses.filter(s => s.subcriterion?.trim() === activeTab.subFilter),
+  } : active;
 
   return (
     <div>
       {/* Tab bar */}
       <div className="flex gap-1 mb-4 overflow-x-auto no-print">
-        {criteria.map((crit, i) => {
-          const totalFindings = crit.weaknesses.length + crit.strengths.length + crit.mets.length;
-          const removals = [...crit.weaknesses, ...crit.strengths, ...crit.mets].filter(s => s.action === 'REMOVE').length;
-          return (
+        {vtabs.map((tab, i) => (
             <button
-              key={crit.criterion_name}
+              key={tab.label + '-' + i}
               onClick={() => setActiveIdx(i)}
               className={
                 'shrink-0 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ' +
@@ -332,21 +358,18 @@ function CriteriaTabs({ criteria, applicationId }: { criteria: ConsensusCriterio
                   : 'bg-white border text-slate-600 hover:bg-slate-50')
               }
             >
-              {crit.criterion_name}
-              <span className="ml-1 text-xs opacity-70">
-                ({totalFindings}{removals > 0 ? ', -' + removals : ''})
-              </span>
+              {tab.label}
+              <span className="ml-1 text-xs opacity-70">({tab.count})</span>
             </button>
-          );
-        })}
+          ))}
       </div>
 
-      {/* Active criterion */}
-      <CriterionSection crit={active} applicationId={applicationId} />
+      {/* Active criterion (filtered if sub-tab) */}
+      <CriterionSection crit={filteredCrit} applicationId={applicationId} />
 
       {/* Print: show all criteria */}
       <div className="hidden print:block">
-        {criteria.filter((_, i) => i !== activeIdx).map(crit => (
+        {criteria.filter((_, i) => i !== activeTab.critIdx).map(crit => (
           <CriterionSection key={crit.criterion_name} crit={crit} applicationId={applicationId} />
         ))}
       </div>
@@ -535,6 +558,12 @@ export default function CommitteeReview() {
           <div className="flex gap-4 mt-3 text-xs text-slate-400 border-t border-slate-700 pt-3 flex-wrap">
             <span><strong>NOFO:</strong> {fullResult?.application_number || agency}</span>
             <span><strong>Agency:</strong> {agency}</span>
+            <span><strong>Panel:</strong> {result ? '—' : '—'}</span>
+            <span><strong>Reviewers:</strong> {result ? (() => {
+              const reviewers = new Set<string>();
+              result.criteria.forEach(cr => [...cr.strengths, ...cr.mets, ...cr.weaknesses].forEach(s => { if (s.reviewer_citation) reviewers.add(s.reviewer_citation); }));
+              return Array.from(reviewers).join(', ') || '—';
+            })() : '—'}</span>
             <span><strong>My Initials:</strong> AOR</span>
             <span><strong>Date:</strong> {new Date().toLocaleDateString()}</span>
             {fullResult?.period_of_performance?.start_date && (
@@ -551,7 +580,7 @@ export default function CommitteeReview() {
                 {funding.map((amt: number | null, i: number) => amt != null && (
                   <span key={i} className="rounded bg-blue-900/50 px-2 py-1 font-mono font-semibold text-blue-200">Yr {i+1}: ${amt.toLocaleString()}</span>
                 ))}
-                {total != null && <span className="rounded bg-blue-800 px-2 py-1 font-mono font-bold text-white">Total: ${total.toLocaleString()}</span>}
+                <span className="rounded bg-blue-800 px-2 py-1 font-mono font-bold text-white">Total: ${(total ?? funding.filter((a: any) => a != null).reduce((s: number, a: number) => s + a, 0)).toLocaleString()}</span>
               </div>
             );
           })()}
