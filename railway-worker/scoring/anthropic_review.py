@@ -1367,12 +1367,15 @@ def score_application_with_claude(application: Path, criteria: list[dict[str, An
     if page_limit > 0 and len(pages) > page_limit:
         logger.warning("Application has %d pages, NOFO limit is %d — content past page %d excluded",
                         len(pages), page_limit, page_limit)
-    model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6-20250514")
+    # Haiku — structured extraction, fast + cheap (criterion scoring)
+    scoring_model = os.getenv("SCORING_MODEL", "claude-haiku-4-5-20251001")
+    # Sonnet — reasoning + reviewer intelligence (overview, synthesis)
+    overview_model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6-20250514")
     client = anthropic.Anthropic(api_key=api_key, timeout=300.0)
     nofo_text = guidance or ""
 
-    # --- All 7 calls in parallel: 6 criteria + 1 overview ---
-    logger.info("Scoring %d criteria + overview in parallel with %s", len(criteria), model)
+    # --- All 7 calls in parallel: 6 criteria (Haiku) + 1 overview (Sonnet) ---
+    logger.info("Scoring %d criteria with %s + overview with %s", len(criteria), scoring_model, overview_model)
     scored_criteria = [None] * len(criteria)
     overview_data = {}
     errors = []
@@ -1506,7 +1509,8 @@ Do NOT fabricate findings. Only report what you observe in the application. If a
                   "To check compliance, compare EACH YEAR's requested amount against the ceiling — not the multi-year total. "
                   "Example: if the ceiling is $2,000,000/year and the applicant requests $525,262/year for 4 years ($2,101,048 total), this is UNDER the ceiling and should be recommended 'as_requested'. "
                   "Only recommend 'as_reduced' if a SINGLE YEAR's request exceeds the per-year ceiling listed in the NOFO or Appendix B for the applicant's service area.")
-        resp = client.messages.create(model=model, max_tokens=4000, system=overview_system,
+        # Sonnet for overview — needs reasoning for reviewer intelligence
+        resp = client.messages.create(model=overview_model, max_tokens=4000, system=overview_system,
             messages=[{"role": "user", "content": prompt}], tools=[overview_tool], tool_choice={"type": "tool", "name": "submit_overview"})
         tu = next((b for b in resp.content if b.type == "tool_use"), None)
         result = tu.input if tu else {}
@@ -1518,7 +1522,7 @@ Do NOT fabricate findings. Only report what you observe in the application. If a
     from concurrent.futures import ThreadPoolExecutor, as_completed
     with ThreadPoolExecutor(max_workers=3) as pool:
         criterion_futures = {
-            pool.submit(_score_single_criterion, client, model, application_text, crit, agency, nofo_text, len(pages), budget_rules): i
+            pool.submit(_score_single_criterion, client, scoring_model, application_text, crit, agency, nofo_text, len(pages), budget_rules): i
             for i, crit in enumerate(criteria)
         }
         overview_future = pool.submit(_get_overview)
@@ -1579,10 +1583,11 @@ Do NOT fabricate findings. Only report what you observe in the application. If a
 
     # --- Post-scoring audits ---
     logger.info("Running NOFO citation audit...")
-    review = _audit_nofo_citations(client, model, review, nofo_text)
+    # Haiku for audits — structured verification, not reasoning
+    review = _audit_nofo_citations(client, scoring_model, review, nofo_text)
 
     logger.info("Running weakness factual accuracy audit...")
-    review = _audit_weakness_facts(client, model, review, pages)
+    review = _audit_weakness_facts(client, scoring_model, review, pages)
 
     logger.info("Review complete: %d/%d (formula: equitable-v1.2, audit: %s)", total, max_total, review.get("audit_status", "skipped"))
     return review
