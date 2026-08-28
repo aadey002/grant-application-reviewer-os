@@ -548,6 +548,49 @@ def _score_single_criterion(client, model: str, application_text: str, criterion
             "requirement_assessments": {"type": "array", "items": requirement_assessment},
             "question_responses": {"type": "array", "items": question_answer}}}}
 
+    # Add budget_verification schema for budget/support criteria
+    name_lower = name.lower()
+    if any(kw in name_lower for kw in ("budget", "support requested", "cost", "funding")):
+        budget_verification_schema = {
+            "type": "object", "additionalProperties": False,
+            "required": ["pd_base_salary", "pd_fte_pct", "pd_salary_on_grant", "pd_fringe_on_grant", "pd_total",
+                         "mtdc_base", "idc_rate_pct", "idc_amount", "idc_overcharge",
+                         "discipline", "scholarship_recipients_per_year", "per_student_amount", "scholarship_total_per_year",
+                         "unallowable_verdict", "unallowable_amount", "composition"],
+            "properties": {
+                "pd_base_salary": {"type": ["number", "null"], "description": "PD annual base salary from budget forms"},
+                "pd_salary_rate_used": {"type": ["number", "null"], "description": "Salary rate used in budget (may differ from base if capped at Executive Level II)"},
+                "pd_fte_pct": {"type": ["number", "null"], "description": "PD FTE percentage on grant, e.g. 25 for 25%"},
+                "pd_salary_on_grant": {"type": ["number", "null"], "description": "Calculated: base salary × FTE%"},
+                "pd_fringe_rate": {"type": ["number", "null"], "description": "Fringe benefit rate applied"},
+                "pd_fringe_on_grant": {"type": ["number", "null"], "description": "Fringe amount charged to grant"},
+                "pd_total": {"type": ["number", "null"], "description": "PD salary on grant + fringe on grant"},
+                "other_personnel": {"type": "string", "description": "'None' if only PD, or description of other personnel found"},
+                "mtdc_base": {"type": ["number", "null"], "description": "Modified Total Direct Cost base used for IDC calculation"},
+                "idc_rate_pct": {"type": ["number", "null"], "description": "IDC rate applied, e.g. 8 for 8%"},
+                "idc_amount": {"type": ["number", "null"], "description": "IDC amount requested per year"},
+                "idc_overcharge": {"type": ["number", "null"], "description": "0 if IDC is correct, positive number if overcharged"},
+                "discipline": {"type": "string", "description": "Health professions discipline for scholarship cap determination"},
+                "scholarship_recipients_per_year": {"type": ["integer", "null"], "description": "Number of scholarship recipients per year"},
+                "per_student_amount": {"type": ["number", "null"], "description": "Per-student scholarship amount"},
+                "scholarship_total_per_year": {"type": ["number", "null"], "description": "Total scholarship costs per year (recipients × per_student)"},
+                "annual_ceiling": {"type": ["number", "null"], "description": "NOFO maximum award per year (e.g. 650000)"},
+                "unallowable_verdict": {"type": "string", "description": "'PASS — no unallowable costs' or description of violations found"},
+                "unallowable_amount": {"type": "number", "description": "Dollar amount of unallowable costs found (0 if none)"},
+                "composition": {"type": "array", "description": "Budget composition breakdown per year", "items": {
+                    "type": "object", "additionalProperties": False,
+                    "required": ["category", "amount", "pct"],
+                    "properties": {
+                        "category": {"type": "string"},
+                        "amount": {"type": "number"},
+                        "pct": {"type": "string", "description": "Percentage as string, e.g. '92.8%'"},
+                    }
+                }},
+            }
+        }
+        tool["input_schema"]["properties"]["budget_verification"] = budget_verification_schema
+        tool["input_schema"]["required"].append("budget_verification")
+
     # Build subcriteria prompt if defined
     subcriteria_defs = criterion.get("subcriteria", [])
     if subcriteria_defs:
@@ -1528,6 +1571,12 @@ Do NOT fabricate findings. Only report what you observe in the application. If a
         "review_status": "ai_draft_human_validation_required",
         "certification": "Claude-generated draft. A human reviewer must verify every finding, citation, score, and budget recommendation.",
     }
+    # Promote budget_verification from Support requested criterion to top level
+    for crit in scored_criteria:
+        if isinstance(crit, dict) and crit.get("name", "").lower().startswith("support") and crit.get("budget_verification"):
+            review["budget_verification"] = crit["budget_verification"]
+            break
+
     # --- Post-scoring audits ---
     logger.info("Running NOFO citation audit...")
     review = _audit_nofo_citations(client, model, review, nofo_text)
