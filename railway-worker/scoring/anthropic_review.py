@@ -10,6 +10,18 @@ from typing import Any
 
 from .safe_review import extract_pdf_pages
 
+# Per-criterion model routing — Sonnet for complex criteria, Haiku for extraction
+CRITERION_MODELS: dict[str, str] = {
+    "Need": "claude-haiku-4-5-20251001",
+    "Response": "claude-sonnet-4-6-20250514",          # complex subcriteria grouping
+    "Performance management": "claude-haiku-4-5-20251001",
+    "Performance Management": "claude-haiku-4-5-20251001",
+    "Impact": "claude-haiku-4-5-20251001",
+    "Resources and capabilities": "claude-haiku-4-5-20251001",
+    "Support requested": "claude-sonnet-4-6-20250514", # budget compliance math
+    "default": os.environ.get("SCORING_MODEL", "claude-haiku-4-5-20251001"),
+}
+
 HRSA_SYSTEM_PROMPT = """You are an independent federal grant merit reviewer applying the Equitable Federal Grant Scoring Formula v1. Score only against the approved review criteria supplied by the user. Use only application evidence; never invent facts, page numbers, findings, or budget amounts. Apply HRSA comment conventions: third person, present tense, criterion-specific findings, and constructive language. Do not use outside knowledge. Every substantive finding must cite application page numbers. This is a draft for human reviewer validation, not an award decision.
 
 EQUITABLE SCORING FORMULA v1 — SCORING BANDS:
@@ -864,7 +876,10 @@ VERIFICATION: The number of requirements you identify must match what a reviewer
     # Split prompt: cacheable blocks (app text, NOFO) + criterion-specific instruction
     criterion_instruction = prompt.split("APPLICATION:")[0] + prompt.split(application_text)[-1] if application_text in prompt else prompt
     active_system_prompt = get_system_prompt(agency)
-    response = client.messages.create(model=model, max_tokens=needed_tokens,
+    # Per-criterion model routing
+    criterion_model = CRITERION_MODELS.get(name, CRITERION_MODELS.get("default", model))
+    logger.info("  Scoring '%s' with %s", name, criterion_model)
+    response = client.messages.create(model=criterion_model, max_tokens=needed_tokens,
         system=[{"type": "text", "text": get_system_prompt(agency), "cache_control": {"type": "ephemeral"}}],
         messages=[{"role": "user", "content": [
             {"type": "text", "text": f"NOFO TEXT:\n{nofo_text[:50000]}\n\nAPPLICATION:\n{application_text}", "cache_control": {"type": "ephemeral"}},
