@@ -230,6 +230,83 @@ def get_system_prompt(agency: str) -> str:
     return HRSA_SYSTEM_PROMPT
 
 
+# ---------------------------------------------------------------------------
+# NOFO-specific orientation rules — injected into scoring prompts when the
+# NOFO number is detected in the guidance text.  These capture reviewer
+# orientation guidance that is NOT reliably extractable from the NOFO PDF.
+# ---------------------------------------------------------------------------
+NOFO_SPECIFIC_RULES: dict[str, str] = {
+    "HRSA-26-046": """
+NOFO-SPECIFIC RULES — HRSA-26-046 Quality Improvement Grant Program
+(Source: Pre-Review Conference Call, August 28 2026)
+
+PROGRAM CONTEXT:
+- Goal: Improve delivery of cost-effective, coordinated, high-quality healthcare in RURAL PRIMARY CARE settings.
+- Funding ceiling: $228,000 per year, 4-year performance period.
+- Target: Rural healthcare providers strengthening quality improvement and value-based care capacity.
+- Eligibility: Domestic public or nonprofit entity in a HRSA-designated rural area, must be a provider of healthcare services. All applications received have been deemed eligible by program staff.
+
+THREE REQUIRED IMPLEMENTATION AREAS (all applicants must address all 3):
+1. Quality improvement strategies with staff training for sustained QI culture
+2. Value-based care strategies
+3. Billing/coding strategies to drive increased revenue from new/expanded services
+
+CLINICAL HEALTH SERVICE FOCUS AREAS (applicant picks one):
+- Care coordination, practice management, integrating behavioral health into primary care, pulmonary/cardiac rehab, or other (must align with improving health outcomes with sustained services post-funding).
+
+SCORING RULES FROM ORIENTATION:
+R1 WHOLE NUMBERS ONLY: No fractional scores.
+R2 NO ZEROS: Do not give a score of zero. If the criterion is addressed at all, assign a minimum score above zero.
+R3 ABSTRACT COUNTS: Information found in the project abstract MUST be factored into scoring even if not repeated in the narrative sections.
+R4 ANYWHERE IN APPLICATION: Information found ANYWHERE in the application must be factored into scoring, even if not in the recommended narrative section. Do NOT penalize for placement.
+R5 NO COMPARISONS: Do not compare applications against each other, especially same-state applications.
+R6 NO OUTSIDE INFORMATION: Score on application merit only against NOFO criteria.
+R7 PAGE NUMBERS REQUIRED: All comments must reference the application page where evidence is found.
+R8 APPLICATION NOT APPLICANT: Refer to "the application" not "the applicant" in comments.
+R9 CONTENT NOT FORMATTING: Review content, not formatting. Some applicants included eligibility screenshots — program has verified eligibility.
+R10 FUNDING PREFERENCES: Program staff have already assessed funding preferences (1, 2, or 3 met). No reviewer action needed — do not score or comment on funding preferences.
+
+BUDGET RULES (Criterion 6 — Support Requested):
+B1 SALARY CAP: Project Director salary must not exceed $228,000. Flag salaries above this as a Note-to-HER.
+B2 BUDGET DISCREPANCY: When SF-424 Section 18, SF-424A budget form, and budget justification totals do not match, use the total CLOSEST TO THE FUNDING CEILING ($228,000/year). Document the discrepancy in the critique.
+B3 NO COST SHARING: This is NOT a cost-sharing program. Do not consider cost sharing during review.
+B4 SPECIFIC REDUCTIONS: If recommending a budget reduction, provide specific dollar amounts with associated line items and clear rationale. Reductions must be consistent across all budget years.
+B5 REDUCTION IMPACT: Consider how recommended reductions would impact the applicant's ability to achieve project goals and objectives.
+B6 NOTE-TO-HER ITEMS (flag but do NOT score): Calculation discrepancies, missing indirect cost rate agreements, salary above $228,000 cap, questionable allowability of costs. These are for HER to resolve post-review.
+B7 ANNUAL REASONABLENESS: Assess if the budget is reasonable for EACH YEAR of the 4-year performance period as it relates to proposed activities.
+
+COMMENT WRITING:
+- Strengths: Response clearly meets or substantially exceeds NOFO requirements.
+- Met: Addresses basic/minimal requirements. Describe WHICH bullets/criterion were met — do not just say "met."
+- Weakness: Avoid prescriptive language ("should have", "could have been strengthened by"). Describe what is missing or insufficient.
+- Write complete, comprehensive, continuous statements.
+- Spell out acronyms on first use.
+- Separate comments by criteria — do not bunch everything together.
+""",
+}
+
+
+def _detect_nofo_number(nofo_text: str) -> str | None:
+    """Detect a known NOFO number from the guidance text."""
+    import re
+    for nofo_id in NOFO_SPECIFIC_RULES:
+        if nofo_id in nofo_text or nofo_id.replace("-", " ") in nofo_text:
+            return nofo_id
+        # Also try pattern like "26-046" without HRSA prefix
+        short = nofo_id.split("-", 1)[-1] if "-" in nofo_id else nofo_id
+        if short in nofo_text:
+            return nofo_id
+    return None
+
+
+def _get_nofo_rules(nofo_text: str) -> str:
+    """Return NOFO-specific orientation rules if the NOFO is recognized, else empty string."""
+    nofo_id = _detect_nofo_number(nofo_text)
+    if nofo_id:
+        return NOFO_SPECIFIC_RULES[nofo_id]
+    return ""
+
+
 def _try_ocr_page(path: Path, page_index: int) -> str:
     """Attempt OCR on a single page that has images but no extractable text."""
     try:
@@ -747,12 +824,13 @@ The evaluation criteria (Sections A, B, C, D with point values) are located in t
             # Inject verb map for all criteria
             verb_map_prompt = _build_verb_map_prompt(budget_rules, name)
 
+        nofo_rules = _get_nofo_rules(nofo_text)
         scoring_instructions = f"""Score this single criterion using the Equitable Federal Grant Scoring Formula v1.
 
 CRITERION: {name}
 MAXIMUM POINTS: {points}
 AGENCY: {agency}{sub_instruction}{budget_prompt}{verb_map_prompt}
-
+{nofo_rules}
 NOFO TEXT (find the evaluation questions/bullets for this criterion):
 {nofo_text[:50000]}
 
@@ -1509,7 +1587,11 @@ Do NOT fabricate findings. Only report what you observe in the application. If a
         app_start = application_text[:40000]
         app_end = application_text[-25000:] if len(application_text) > 65000 else ""
         app_combined = app_start + ("\n\n[...middle pages omitted for brevity...]\n\n" + app_end if app_end else "")
-        prompt = (f"Agency: {agency}\n\nRUBRIC:\n{rubric_list}\n\nNOFO GUIDANCE:\n{nofo_text[:50000]}\n\n"
+        overview_nofo_rules = _get_nofo_rules(nofo_text)
+        prompt = f"Agency: {agency}\n\nRUBRIC:\n{rubric_list}\n\n"
+        if overview_nofo_rules:
+            prompt += overview_nofo_rules + "\n\n"
+        prompt += (f"NOFO GUIDANCE:\n{nofo_text[:50000]}\n\n"
                   f"APPLICATION (beginning + budget/end pages):\n{app_combined}\n\n"
                   "Complete the OVERVIEW PRESENTATION INFORMATION worksheet section and provide the budget recommendation.\n\n"
                   "BUDGET INSTRUCTIONS: Extract the EXACT annual budget amounts for ALL years of the project period. "
