@@ -413,6 +413,7 @@ export const getReviewResults = async (reviewId: string): Promise<ReviewResults>
       budget: result.budget || undefined,
       overview: result.overview || undefined,
       overall_summary: result.overall_summary || undefined,
+      full_result: result,
       audit_status: result.audit_status || undefined,
       audit_summary: result.audit_summary || undefined,
       cpp: result.cpp || undefined,
