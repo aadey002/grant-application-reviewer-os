@@ -505,7 +505,7 @@ INSTRUCTIONS:
 
     # --- Call Claude ---
     client = anthropic.Anthropic()
-    model = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
+    model = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6-20250620")
     tool = _consensus_tool(criteria)
 
     # Use streaming to handle large responses (required for >10 min operations)
