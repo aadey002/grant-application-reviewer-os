@@ -256,6 +256,25 @@ const SafeReviewDashboard: React.FC = () => {
   const current = reviews[selected] ?? reviews[0] ?? null;
   const scoreTotal = useMemo(() => current?.final_score ?? null, [current]);
 
+  // Cached signed URLs for citation deep-links
+  const pdfUrlCache = useRef<Record<string, string>>({});
+  const openPdfAtPage = useCallback(async (type: 'app' | 'nofo', page: number) => {
+    const cacheKey = type === 'app' ? 'app-' + (current?.application_id ?? '') : 'nofo-' + (currentReviewId ?? '');
+    if (!pdfUrlCache.current[cacheKey]) {
+      try {
+        if (type === 'app' && current?.application_id && currentReviewId) {
+          const { url } = await getApplicationViewUrl(currentReviewId, current.application_id);
+          pdfUrlCache.current[cacheKey] = url;
+        } else if (type === 'nofo' && currentReviewId) {
+          const url = await getNofoViewUrl(currentReviewId);
+          pdfUrlCache.current[cacheKey] = url;
+        }
+      } catch { return; }
+    }
+    const baseUrl = pdfUrlCache.current[cacheKey];
+    if (baseUrl) window.open(baseUrl + '#page=' + page, '_blank');
+  }, [current, currentReviewId]);
+
   // Auto-select first review if current is null but reviews exist
   useEffect(() => {
     if (reviews.length > 0 && selected >= reviews.length) {
@@ -2568,14 +2587,18 @@ const SafeReviewDashboard: React.FC = () => {
                                         <td className="p-2 border text-xs">
                                           {ra.requirement_text}
                                           {ra.nofo_pages?.length > 0 && (
-                                            <div className="mt-1"><span className="rounded bg-amber-100 text-amber-800 px-1.5 py-0.5 text-[10px] font-bold">NOFO Pg. {ra.nofo_pages.join(', ')}</span></div>
+                                            <div className="mt-1 flex flex-wrap gap-1">{ra.nofo_pages.map((pg: number) => (
+                                              <button key={pg} onClick={() => openPdfAtPage('nofo', pg)} className="rounded bg-amber-100 text-amber-800 px-1.5 py-0.5 text-[10px] font-bold hover:bg-amber-200 hover:underline cursor-pointer" title={'Open NOFO page ' + pg}>NOFO Pg. {pg}</button>
+                                            ))}</div>
                                           )}
                                         </td>
                                         <td className="p-2 border"><span className={'rounded px-1.5 py-0.5 text-[10px] font-bold ' + verb.cls}>{verb.label}</span></td>
                                         <td className="p-2 border text-xs">
                                           {explanation}
                                           {ra.application_pages?.length > 0 && (
-                                            <div className="mt-1"><span className="rounded bg-blue-100 text-blue-800 px-1.5 py-0.5 text-[10px] font-bold">AOR Pg. {ra.application_pages.join(', ')}</span></div>
+                                            <div className="mt-1 flex flex-wrap gap-1">{ra.application_pages.map((pg: number) => (
+                                              <button key={pg} onClick={() => openPdfAtPage('app', pg)} className="rounded bg-blue-100 text-blue-800 px-1.5 py-0.5 text-[10px] font-bold hover:bg-blue-200 hover:underline cursor-pointer" title={'Open application page ' + pg}>AOR Pg. {pg}</button>
+                                            ))}</div>
                                           )}
                                         </td>
                                         <td className="p-2 border"><span className={'rounded px-1.5 py-0.5 text-[10px] font-bold ' + (demo === 'Demonstrated' ? 'bg-emerald-100 text-emerald-800' : demo === 'Plan OK' ? 'bg-indigo-100 text-indigo-800' : 'bg-red-100 text-red-800')}>{demo}</span></td>
@@ -2832,7 +2855,9 @@ const SafeReviewDashboard: React.FC = () => {
                                   return (
                                     <div key={label + '-' + fi} className={'mb-2 rounded bg-white border p-2.5 ' + borderCls}>
                                       <p className="text-sm leading-relaxed text-slate-800">{comment}</p>
-                                      <p className={'text-xs mt-1 font-semibold ' + citeCls}>AOR App p. {(f.application_pages || []).join(', ')}</p>
+                                      <span className={'text-xs mt-1 font-semibold flex flex-wrap gap-1 ' + citeCls}>{(f.application_pages || []).map((pg: number) => (
+                                        <button key={pg} onClick={() => openPdfAtPage('app', pg)} className="hover:underline cursor-pointer" title={'Open application page ' + pg}>AOR App p. {pg}</button>
+                                      ))}</span>
                                       {f._type === 'w' && f.nofo_requirement && <p className="text-xs text-red-600 mt-1"><span className="font-semibold">NOFO requirement:</span> {f.nofo_requirement}</p>}
                                       {f._type === 'w' && f.impact && <p className="text-xs text-red-600 mt-0.5 italic"><span className="font-semibold not-italic">Impact:</span> {f.impact}</p>}
                                     </div>
