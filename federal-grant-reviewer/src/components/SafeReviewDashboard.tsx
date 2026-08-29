@@ -226,22 +226,21 @@ const SafeReviewDashboard: React.FC = () => {
       try {
         const dbReviews = await listReviews();
         if (cancelled) return;
+        // Build session list from grant_reviews ONLY — localStorage is supplementary
         const local = loadStoredReviews();
-        const localIds = new Set(local.map(r => r.review_id));
-        const merged = [...local];
-        for (const db of dbReviews) {
-          if (!localIds.has(db.id)) {
-            merged.push({
-              review_id: db.id,
-              job_ids: [],
-              agency: db.agency,
-              timestamp: db.created_at,
-              nofo_name: db.nofo_filename,
-              app_names: db.app_names,
-              status: (db.status === 'completed' ? 'completed' : db.status === 'failed' ? 'failed' : 'processing') as StoredReview['status'],
-            });
-          }
-        }
+        const localMap = new Map(local.map(r => [r.review_id, r]));
+        const merged: StoredReview[] = dbReviews.map(db => {
+          const cached = localMap.get(db.id);
+          return {
+            review_id: db.id,
+            job_ids: cached?.job_ids ?? [],
+            agency: db.agency,
+            timestamp: db.created_at,
+            nofo_name: db.nofo_filename,
+            app_names: db.app_names,
+            status: (db.status === 'completed' ? 'completed' : db.status === 'failed' ? 'failed' : 'processing') as StoredReview['status'],
+          };
+        });
         saveStoredReviews(merged);
         setStoredReviews(merged);
         setDbLoaded(true);
