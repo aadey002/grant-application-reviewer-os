@@ -161,6 +161,39 @@ def _select(sb: Client, table: str, match: dict[str, Any]) -> list[dict[str, Any
 
 
 # ---------------------------------------------------------------------------
+# Startup: one-time cleanup of stale grant_reviews stuck in 'processing'
+# ---------------------------------------------------------------------------
+
+@app.on_event("startup")
+def _cleanup_stale_reviews():
+    """Mark grant_reviews as 'completed' where all their processing_jobs are already done."""
+    try:
+        sb = get_supabase()
+        # Find reviews stuck in processing/approved/rubric_approved
+        stale = (
+            sb.table("grant_reviews")
+            .select("id")
+            .in_("status", ["processing", "approved", "rubric_approved"])
+            .execute()
+            .data or []
+        )
+        fixed = 0
+        for row in stale:
+            rid = row["id"]
+            jobs = _select(sb, "processing_jobs", {"review_id": rid})
+            if jobs and all(j.get("status") == "completed" for j in jobs):
+                _update(sb, "grant_reviews", {"id": rid}, {
+                    "status": "completed",
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                })
+                fixed += 1
+        if fixed:
+            logger.info("Startup cleanup: marked %d stale grant_reviews as completed", fixed)
+    except Exception as exc:
+        logger.warning("Startup cleanup failed (non-fatal): %s", exc)
+
+
+# ---------------------------------------------------------------------------
 # Health
 # ---------------------------------------------------------------------------
 
@@ -1251,6 +1284,26 @@ def _prescore_document_audit(
 
 
 # ---------------------------------------------------------------------------
+# Helper: mark grant_reviews completed when all jobs finish
+# ---------------------------------------------------------------------------
+
+def _check_and_complete_review(sb: Any, review_id: str) -> None:
+    """If every processing_job for this review_id is 'completed', set grant_reviews.status = 'completed'."""
+    try:
+        all_jobs = _select(sb, "processing_jobs", {"review_id": review_id})
+        if not all_jobs:
+            return
+        if all(j.get("status") == "completed" for j in all_jobs):
+            _update(sb, "grant_reviews", {"id": review_id}, {
+                "status": "completed",
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            })
+            logger.info("All jobs done — grant_reviews %s marked completed", review_id)
+    except Exception as exc:
+        logger.warning("Could not update grant_reviews status for %s: %s", review_id, exc)
+
+
+# ---------------------------------------------------------------------------
 # Background: _process_job
 # ---------------------------------------------------------------------------
 
@@ -1552,6 +1605,9 @@ def _process_job(
 
         logger.info("Job %s completed — score %s/%s", job_id,
                     review_result.get("final_score"), review_result.get("maximum_score"))
+
+        # -- Check if ALL jobs for this review are done → mark grant_reviews completed --
+        _check_and_complete_review(sb, review_id)
 
     except Exception as exc:
         logger.exception("Job %s failed: %s", job_id, exc)
